@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trend Detection and Extrapolation — Phase 4</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Trend Detection and Extrapolation</h1>
+<p class="subtitle">Phase 4 — Working Capital Dynamics, Page 2</p>
+
+<!-- ─── 1. THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>Your business has quarterly DSO values of 28, 31, 33, 36 days over the past year. Customers are paying slower each quarter. If this trend continues, what will DSO be in 2 years? And how does worsening DSO drag on your actual cash receipts?</p>
+<p>You need to detect the trend, extrapolate it sensibly, and quantify the cash impact — without letting the extrapolation run to absurd values.</p>
+</div>
+
+<!-- ─── 2. APPLYING OLS ─────────────────────────────── -->
+
+<h2>1. Detecting the trend with OLS</h2>
+
+<p>We have four quarterly DSO observations. Let $t = 1, 2, 3, 4$ index the quarters and $y_t$ be the DSO at quarter $t$. We want the best-fit line $y = a + bt$ using ordinary least squares, as derived in <a href="../phase0/04-ols-regression.html">Phase 0, page 4</a>.</p>
+
+<p><strong>The data:</strong></p>
+
+<table>
+<tr><th>Quarter $t$</th><th>DSO $y_t$</th></tr>
+<tr><td>1</td><td>28</td></tr>
+<tr><td>2</td><td>31</td></tr>
+<tr><td>3</td><td>33</td></tr>
+<tr><td>4</td><td>36</td></tr>
+</table>
+
+<p><strong>Step 1: Means.</strong></p>
+<div class="display-math">$$\bar{t} = \frac{1+2+3+4}{4} = 2.5, \qquad \bar{y} = \frac{28+31+33+36}{4} = 32$$</div>
+
+<p><strong>Step 2: Slope.</strong> From the OLS formula $b = \frac{\sum(t_i - \bar{t})(y_i - \bar{y})}{\sum(t_i - \bar{t})^2}$:</p>
+
+<table>
+<tr><th>$t_i$</th><th>$t_i - \bar{t}$</th><th>$y_i - \bar{y}$</th><th>$(t_i - \bar{t})(y_i - \bar{y})$</th><th>$(t_i - \bar{t})^2$</th></tr>
+<tr><td>1</td><td>-1.5</td><td>-4</td><td>6</td><td>2.25</td></tr>
+<tr><td>2</td><td>-0.5</td><td>-1</td><td>0.5</td><td>0.25</td></tr>
+<tr><td>3</td><td>0.5</td><td>1</td><td>0.5</td><td>0.25</td></tr>
+<tr><td>4</td><td>1.5</td><td>4</td><td>6</td><td>2.25</td></tr>
+</table>
+
+<div class="display-math">$$b = \frac{6 + 0.5 + 0.5 + 6}{2.25 + 0.25 + 0.25 + 2.25} = \frac{13}{5} = 2.6 \text{ days/quarter}$$</div>
+
+<p><strong>Step 3: Intercept.</strong></p>
+<div class="display-math">$$a = \bar{y} - b\bar{t} = 32 - 2.6 \times 2.5 = 32 - 6.5 = 25.5$$</div>
+
+<p>So the trend line is $\hat{y}(t) = 25.5 + 2.6t$. DSO is rising at 2.6 days per quarter — roughly 10 days per year.</p>
+
+<!-- ─── 3. EXTRAPOLATION WITH CLAMPING ─────────────────────────────── -->
+
+<h2>2. Linear extrapolation with clamping</h2>
+
+<p>Now we want to project DSO forward in the forecast, which operates on <em>weekly</em> granularity. Since the slope $b$ is in days per quarter and there are 13 weeks per quarter, we convert:</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Effective DSO</div>
+<p>At forecast week $w$, the effective DSO is</p>
+<div class="display-math">$$\text{DSO}_{\text{eff}}(w) = \text{clamp}\!\left(\text{DSO}_{\text{base}} + b \times \frac{w}{13},\; 7,\; 120\right)$$</div>
+<p>where $\text{clamp}(x, L, U) = \max(L, \min(x, U))$.</p>
+</div>
+
+<p><strong>Why $w/13$?</strong> The slope $b$ has units of days per quarter. Week $w$ corresponds to $w/13$ quarters into the future. So $b \times w/13$ is the accumulated change in DSO by week $w$.</p>
+
+<p><strong>Why clamp to [7, 120]?</strong> Two guard rails:</p>
+<ul>
+<li><strong>Lower bound 7:</strong> No business can process and collect payment in under a week. Even instant-pay customers need banking days. DSO below 7 is physically unrealistic.</li>
+<li><strong>Upper bound 120:</strong> If DSO exceeds 120 days (4 months), the business has a collections crisis that the model shouldn't blindly extrapolate through. Past 120, the forecast should flag a warning, not keep pushing DSO higher.</li>
+</ul>
+
+<p>Without clamping, a slope of 2.6 days/quarter would project DSO to $30.5 + 2.6 \times 40/13 = 38.5$ at week 40, which is fine — but by quarter 40 ($w = 520$), DSO would hit $30.5 + 2.6 \times 40 = 134.5$ days. That's beyond credible, and the clamp catches it.</p>
+
+<!-- ─── 4. DSO DRAG ON CASH RECEIPTS ─────────────────────────────── -->
+
+<h2>3. DSO drag on cash receipts</h2>
+
+<p>A rising DSO doesn't just delay cash — it <em>reduces</em> the effective cash collected per period. Here's why: if DSO rises from 30 to 40 days, you're carrying an extra 10 days of revenue as receivables. That extra receivable has to be <em>funded</em>, which drags on your cash position.</p>
+
+<p>We quantify this as an annual drag factor:</p>
+
+<div class="theorem-box">
+<div class="label">Definition — DSO Drag Factor</div>
+<p>Given a slope $b$ (days/quarter) from the DSO trend regression:</p>
+<div class="display-math">$$\text{annual\_drag} = \frac{b \times 4}{365}$$</div>
+<div class="display-math">$$\text{drag\_factor}(\text{year}) = \max\!\left(0.70,\; 1 - \text{annual\_drag} \times \text{year}\right)$$</div>
+<p>The drag factor is only applied when $b > 1$ day/quarter. Below that threshold, the trend is noise, not signal.</p>
+</div>
+
+<p>The formula converts the slope from days/quarter to a fractional annual rate. If DSO rises by $b$ days per quarter, that's $4b$ days per year, which as a fraction of a 365-day year is $4b/365$.</p>
+
+<p><strong>The 1 day/quarter threshold:</strong> small quarter-to-quarter fluctuations in DSO are normal — seasonal patterns, invoice timing, client mix. A slope below 1 day/quarter is within noise. Only persistent trends above this threshold warrant modelling as a drag.</p>
+
+<h3>The 70% floor</h3>
+
+<div class="proof-box" id="proof-drag-positive">
+<div class="label">Proof — drag_factor is always positive</div>
+<p>We need to show $\text{drag\_factor}(\text{year}) > 0$ for all year $\geq 0$.</p>
+<p>By construction, $\text{drag\_factor}(\text{year}) = \max(0.70, 1 - \text{annual\_drag} \times \text{year})$. Since $\max(0.70, x) \geq 0.70 > 0$ for any $x$, the drag factor is always at least 0.70.</p>
+<p>Without the floor, if $\text{annual\_drag} = 0.0285$ and $\text{year} = 40$, then $1 - 0.0285 \times 40 = 1 - 1.14 = -0.14$. A negative drag factor would mean <em>negative</em> cash receipts — the model would predict that customers are taking money <em>from</em> you, which is nonsensical. The 70% floor prevents this.</p>
+<div class="qed">∎</div>
+</div>
+
+<div class="proof-box" id="proof-drag-linear">
+<div class="label">Proof — drag_factor decreases linearly with year</div>
+<p>For years where the floor is not binding (i.e., $1 - \text{annual\_drag} \times \text{year} \geq 0.70$):</p>
+<div class="display-math">$$\text{drag\_factor}(\text{year}) = 1 - \text{annual\_drag} \times \text{year}$$</div>
+<p>This is a linear function of year with slope $-\text{annual\_drag}$ and intercept 1. It decreases at a constant rate of $\text{annual\_drag}$ per year.</p>
+<p>The floor binds when $1 - \text{annual\_drag} \times \text{year} < 0.70$, i.e., when $\text{year} > \frac{0.30}{\text{annual\_drag}}$. Beyond that year, the drag factor is constant at 0.70.</p>
+<p>So the full drag_factor function is piecewise linear: decreasing linearly until it hits 0.70, then flat.</p>
+<div class="qed">∎</div>
+</div>
+
+<!-- ─── 5. FULL WORKED EXAMPLE ─────────────────────────────── -->
+
+<h2>4. Full worked example</h2>
+
+<p>Using our data: $\text{DSO}_{\text{base}} = 30.5$ days, slope $b = 2.6$ days/quarter.</p>
+
+<p><strong>Extrapolated DSO at key weeks:</strong></p>
+
+<table>
+<tr><th>Week $w$</th><th>Quarters $w/13$</th><th>Raw DSO</th><th>Clamped DSO</th></tr>
+<tr><td>1</td><td>0.077</td><td>$30.5 + 2.6 \times 0.077 = 30.7$</td><td>30.7</td></tr>
+<tr><td>13</td><td>1.0</td><td>$30.5 + 2.6 = 33.1$</td><td>33.1</td></tr>
+<tr><td>26</td><td>2.0</td><td>$30.5 + 5.2 = 35.7$</td><td>35.7</td></tr>
+<tr><td>52</td><td>4.0</td><td>$30.5 + 10.4 = 40.9$</td><td>40.9</td></tr>
+<tr><td>104</td><td>8.0</td><td>$30.5 + 20.8 = 51.3$</td><td>51.3</td></tr>
+<tr><td>156</td><td>12.0</td><td>$30.5 + 31.2 = 61.7$</td><td>61.7</td></tr>
+</table>
+
+<p>At week 156 (3 years), DSO has roughly doubled. The clamp at 120 would not bind until $30.5 + 2.6 \times w/13 = 120$, i.e., $w = 13 \times (120 - 30.5)/2.6 = 13 \times 34.4 = 448$ weeks — about 8.6 years out. For a 5-year forecast, the clamp is a safety net that doesn't activate.</p>
+
+<p><strong>Drag factor at each year:</strong></p>
+
+<div class="display-math">$$\text{annual\_drag} = \frac{2.6 \times 4}{365} = \frac{10.4}{365} = 0.0285$$</div>
+
+<p>Since $b = 2.6 > 1$, the drag is active.</p>
+
+<table>
+<tr><th>Year</th><th>$1 - 0.0285 \times \text{year}$</th><th>drag_factor</th></tr>
+<tr><td>1</td><td>0.9715</td><td>0.972</td></tr>
+<tr><td>2</td><td>0.9430</td><td>0.943</td></tr>
+<tr><td>3</td><td>0.9145</td><td>0.915</td></tr>
+<tr><td>4</td><td>0.8860</td><td>0.886</td></tr>
+<tr><td>5</td><td>0.8575</td><td>0.858</td></tr>
+</table>
+
+<p>By year 5, the rising DSO has created a ~14% drag on cash receipts relative to what a stable DSO would deliver. On £780k annual revenue (£15k/week), that's roughly £110k less cash collected than the P&L suggests — a meaningful gap between "profit" and "cash."</p>
+
+<p>The floor at 0.70 would bind at year $= 0.30 / 0.0285 = 10.5$. For any forecast horizon under 10 years, the floor is a safety net only.</p>
+
+<!-- ─── 6. HISTORY ─────────────────────────────── -->
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p>Trend extrapolation of working capital metrics is standard practice in credit risk analysis. The <strong>AFP</strong> (Association for Financial Professionals) recommends monitoring DSO trends quarterly; a sustained rise of more than 5 days/year is typically a red flag for collections deterioration. The <strong>CFA Institute</strong> credit analysis curriculum treats rising DSO as an early warning indicator — it often precedes liquidity problems by 6–12 months. Our mathematical treatment (OLS on quarterly DSO with clamped extrapolation) is a formalisation of what credit analysts do informally when they say "the trend is concerning."</p>
+</div>
+
+<!-- ─── 7. WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>Without clamping:</strong> a slope of 2.6 days/quarter extrapolated over 10 years gives DSO = $30.5 + 2.6 \times 40 = 134.5$ days. Over 20 years, DSO = 238.5 days — more than 8 months. No business survives that level of collections failure. The unclamped model would generate fantasy receivables balances, inflating the balance sheet beyond any reasonable bound.</p>
+<p><strong>Without the drag threshold:</strong> a slope of 0.3 days/quarter — essentially noise from seasonal variation — would create a spurious annual drag of 0.33%. Over 5 years, the model would shave 1.6% off cash receipts for no real reason. Worse, the direction might reverse next quarter. The 1 day/quarter threshold ensures only genuine trends are modelled.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">Trend detection tells you where working capital is heading; clamping and thresholds stop the projection from running off a cliff.</div>
+
+<!-- ─── 8. EXERCISES ─────────────────────────────── -->
+
+<h2>5. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — Derive drag_factor and prove the floor</div>
+<p>Starting from the definition $\text{annual\_drag} = 4b/365$ and $\text{drag\_factor}(\text{year}) = \max(0.70, 1 - \text{annual\_drag} \times \text{year})$:</p>
+<ol>
+<li>Show that drag_factor(0) = 1 (no drag at the start).</li>
+<li>Prove that for any $b > 0$ and year $\geq 0$, drag_factor never produces negative receipts.</li>
+<li>Find the year at which the floor binds, as a function of $b$.</li>
+</ol>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Part 1:</strong> At year = 0: $1 - \text{annual\_drag} \times 0 = 1$. Since $\max(0.70, 1) = 1$, drag_factor(0) = 1. No drag at the start, as expected.</p>
+
+<p><strong>Part 2:</strong> For any $b > 0$ and year $\geq 0$, $\text{drag\_factor}(\text{year}) = \max(0.70, 1 - \text{annual\_drag} \times \text{year})$. The $\max$ with 0.70 ensures the output is at least 0.70. Since $0.70 > 0$, drag_factor is strictly positive for all inputs. Cash receipts (= revenue $\times$ drag_factor) are therefore always positive.</p>
+
+<p><strong>Part 3:</strong> The floor binds when $1 - \text{annual\_drag} \times \text{year} < 0.70$, i.e.:</p>
+<div class="display-math">$$\text{year} > \frac{0.30}{\text{annual\_drag}} = \frac{0.30}{4b/365} = \frac{0.30 \times 365}{4b} = \frac{109.5}{4b} = \frac{27.375}{b}$$</div>
+<p>For $b = 2.6$: year $> 27.375/2.6 = 10.5$ years. For $b = 5$ (severe deterioration): year $> 27.375/5 = 5.5$ years.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — 8 quarters of DSO: trend, extrapolation, drag</div>
+<p>A business has 8 quarters of DSO data: 24, 25, 27, 26, 29, 30, 32, 34. Weekly revenue is £18,000.</p>
+<ol>
+<li>Fit an OLS regression to find the slope (days/quarter).</li>
+<li>Extrapolate DSO at weeks 13, 26, 52, 104, 156, 208.</li>
+<li>Compute the drag factor at years 1 through 5.</li>
+<li>At year 3, how much less cash does the business collect annually compared to a stable-DSO scenario?</li>
+</ol>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Part 1: OLS regression.</strong></p>
+<p>$t = 1, 2, \ldots, 8$. $\bar{t} = 4.5$. $\bar{y} = \frac{24+25+27+26+29+30+32+34}{8} = \frac{227}{8} = 28.375$.</p>
+
+<table>
+<tr><th>$t_i$</th><th>$t_i - 4.5$</th><th>$y_i - 28.375$</th><th>Product</th><th>$(t_i - 4.5)^2$</th></tr>
+<tr><td>1</td><td>-3.5</td><td>-4.375</td><td>15.3125</td><td>12.25</td></tr>
+<tr><td>2</td><td>-2.5</td><td>-3.375</td><td>8.4375</td><td>6.25</td></tr>
+<tr><td>3</td><td>-1.5</td><td>-1.375</td><td>2.0625</td><td>2.25</td></tr>
+<tr><td>4</td><td>-0.5</td><td>-2.375</td><td>1.1875</td><td>0.25</td></tr>
+<tr><td>5</td><td>0.5</td><td>0.625</td><td>0.3125</td><td>0.25</td></tr>
+<tr><td>6</td><td>1.5</td><td>1.625</td><td>2.4375</td><td>2.25</td></tr>
+<tr><td>7</td><td>2.5</td><td>3.625</td><td>9.0625</td><td>6.25</td></tr>
+<tr><td>8</td><td>3.5</td><td>5.625</td><td>19.6875</td><td>12.25</td></tr>
+</table>
+
+<div class="display-math">$$b = \frac{15.3125 + 8.4375 + 2.0625 + 1.1875 + 0.3125 + 2.4375 + 9.0625 + 19.6875}{42} = \frac{58.5}{42} = 1.393 \text{ days/quarter}$$</div>
+
+<p>Intercept: $a = 28.375 - 1.393 \times 4.5 = 28.375 - 6.268 = 22.107$.</p>
+<p>Base DSO (at the last observed quarter, $t = 8$): $\hat{y}(8) = 22.107 + 1.393 \times 8 = 33.25$ days. We use this as $\text{DSO}_{\text{base}}$.</p>
+
+<p><strong>Part 2: Extrapolation.</strong></p>
+<div class="display-math">$$\text{DSO}_{\text{eff}}(w) = \text{clamp}(33.25 + 1.393 \times w/13,\; 7,\; 120)$$</div>
+
+<table>
+<tr><th>Week</th><th>$w/13$</th><th>Raw DSO</th><th>Clamped</th></tr>
+<tr><td>13</td><td>1.0</td><td>34.6</td><td>34.6</td></tr>
+<tr><td>26</td><td>2.0</td><td>36.0</td><td>36.0</td></tr>
+<tr><td>52</td><td>4.0</td><td>38.8</td><td>38.8</td></tr>
+<tr><td>104</td><td>8.0</td><td>44.4</td><td>44.4</td></tr>
+<tr><td>156</td><td>12.0</td><td>50.0</td><td>50.0</td></tr>
+<tr><td>208</td><td>16.0</td><td>55.5</td><td>55.5</td></tr>
+</table>
+
+<p><strong>Part 3: Drag factor.</strong></p>
+<div class="display-math">$$\text{annual\_drag} = \frac{1.393 \times 4}{365} = \frac{5.571}{365} = 0.01526$$</div>
+<p>Since $b = 1.393 > 1$, drag is active.</p>
+
+<table>
+<tr><th>Year</th><th>drag_factor</th></tr>
+<tr><td>1</td><td>$\max(0.70, 1 - 0.01526) = 0.985$</td></tr>
+<tr><td>2</td><td>$\max(0.70, 1 - 0.03051) = 0.969$</td></tr>
+<tr><td>3</td><td>$\max(0.70, 1 - 0.04577) = 0.954$</td></tr>
+<tr><td>4</td><td>$\max(0.70, 1 - 0.06103) = 0.939$</td></tr>
+<tr><td>5</td><td>$\max(0.70, 1 - 0.07628) = 0.924$</td></tr>
+</table>
+
+<p><strong>Part 4: Cash impact at year 3.</strong></p>
+<p>Annual revenue = £18,000 $\times$ 52 = £936,000. With drag: £936,000 $\times$ 0.954 = £892,944. Cash shortfall versus stable DSO: £936,000 - £892,944 = £43,056.</p>
+<p>The rising DSO costs this business roughly £43k in year 3 alone — cash that's earned on the P&L but trapped in receivables.</p>
+</div>
+</details>
+</div>
+
+<div class="nav">
+<a href="01-dso-dpo.html">&larr; DSO, DPO, and CCC</a>
+<a href="../phase5/01-random-walks.html">Next: Random Walks &rarr;</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

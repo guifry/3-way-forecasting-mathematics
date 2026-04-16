@@ -1,0 +1,96 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fibonacci — Mathematicians</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head><body>
+
+<h1>Fibonacci (c.&thinsp;1170&ndash;c.&thinsp;1250)</h1>
+<p class="subtitle">The merchant&rsquo;s son who brought arithmetic to Europe.</p>
+
+<h2>The Contribution</h2>
+
+<p>Leonardo of Pisa &mdash; known since the nineteenth century as Fibonacci &mdash; grew up
+in the Mediterranean trading world. His father was a customs official in Bugia (modern
+B&eacute;ja&iuml;a, Algeria), and the young Leonardo travelled widely across North
+Africa, Egypt, Syria, and Constantinople. Everywhere he went, he studied the methods
+local merchants used for calculation.</p>
+
+<p>What he found was that the Hindu-Arabic numeral system &mdash; the digits 0 through 9,
+with positional notation &mdash; was vastly superior to the Roman numerals still used
+across Europe. In 1202, he published <em>Liber Abaci</em> (the Book of Calculation), a
+comprehensive treatise that introduced the Hindu-Arabic system to a European audience
+and demonstrated its power through hundreds of worked examples.</p>
+
+<p>The book was not an abstract mathematical text. It was a practical manual for merchants.
+Its chapters covered currency exchange, profit calculation, the conversion of weights
+and measures, and &mdash; crucially &mdash; the mathematics of interest. Fibonacci
+showed how to compute simple and compound interest, how to discount future payments
+to their present value, and how to compare investments with different terms.</p>
+
+<p>Consider the problem of present value. A merchant is promised 100 bezants in one year.
+If the prevailing interest rate is 20%, what is that promise worth today? Fibonacci
+reasoned that if you invest $P$ today at 20%, you will have $P \times \tfrac{6}{5}$
+in a year. So the present value of 100 bezants in one year is:</p>
+
+$$P = 100 \times \frac{5}{6} \approx 83.33 \text{ bezants}$$
+
+<p>This is discounting &mdash; running compound interest backwards &mdash; and Fibonacci
+was among the first to set it out clearly, with worked examples, for a commercial
+audience.</p>
+
+<h2>The Context</h2>
+
+<p>Thirteenth-century Italy was the commercial engine of Europe. Pisa, Genoa, Venice,
+and Florence were city-states whose wealth depended on trade across the Mediterranean.
+Merchants needed to convert between dozens of currencies, compute profits on complex
+multi-leg trading voyages, and evaluate whether a deferred payment was worth more or
+less than immediate cash.</p>
+
+<p>The tools available were clumsy. Roman numerals made multiplication painful and
+division nearly impossible. Calculation was done on counting boards (abaci), with
+the results transcribed into Roman notation. <em>Liber Abaci</em> offered a better way:
+compute directly with Hindu-Arabic numerals, on paper, using algorithms that any
+literate merchant could learn.</p>
+
+<p>Fibonacci is best remembered today for the sequence that bears his name &mdash;
+1, 1, 2, 3, 5, 8, 13, &hellip; &mdash; which appeared in <em>Liber Abaci</em> as a
+playful problem about the breeding of rabbits. But the sequence was a minor aside in
+a book whose real purpose was to revolutionise commercial arithmetic. The rabbit problem
+occupies a few lines; the chapters on interest and exchange fill hundreds of pages.</p>
+
+<p>The impact was enormous, though slow. It took two centuries for Hindu-Arabic numerals
+to fully displace Roman ones in European commerce. But the transition was inexorable,
+and <em>Liber Abaci</em> was its catalyst.</p>
+
+<h2>The Legacy</h2>
+
+<p>In this course, Fibonacci&rsquo;s work matters in <strong>Phase 1, page 2</strong>, where
+we study geometric series and discounting. The present-value calculation that Fibonacci
+demonstrated with bezants is exactly the one we use with pounds and dollars: divide a
+future cash flow by $(1 + r)^t$ to obtain its value today.</p>
+
+<p>More broadly, <em>Liber Abaci</em> established financial mathematics as a discipline.
+Before Fibonacci, interest calculations were the province of merchants who learned by
+apprenticeship. After Fibonacci, they were written down, systematised, and teachable.
+The line from <em>Liber Abaci</em> to modern discounted cash flow analysis is direct,
+even if it stretches across eight centuries.</p>
+
+<p>Every time a forecaster discounts a projected cash flow to its present value, they
+are performing a calculation that a Pisan merchant&rsquo;s son first wrote out in
+1202.</p>
+
+<div class="nav">
+  <a href="../index.html">&larr; Back to index</a>
+  <a href="horngren.html">Next: Horngren &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body></html>

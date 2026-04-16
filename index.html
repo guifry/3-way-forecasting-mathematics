@@ -1,0 +1,204 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Three-Way Forecasting — The Mathematics</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '$', right: '$', display: false}]});"></script>
+</head><body>
+
+<h1>Three-Way Forecasting &mdash; The Mathematics</h1>
+<p class="subtitle">Every equation behind a three-statement financial forecast, from first principles.</p>
+
+<p>This course builds a complete three-way forecast &mdash; income statement, balance sheet, and cash flow statement, all internally consistent &mdash; and explains every piece of mathematics along the way. No black boxes. If a formula appears, you will know where it comes from and why it works.</p>
+
+<hr>
+
+<div class="phase-label">Phase 0 &mdash; The Statistical Toolkit</div>
+<em>The basic tools you need before you can forecast anything: averages, spread, percentiles, regression, and patterns in data.</em>
+
+<div class="index-list">
+  <a href="phase0/01-mean-and-median.html">1. Mean and Median
+    <span class="desc">Two ways to summarise a dataset. When they agree, when they diverge, and which one to trust.</span>
+  </a>
+  <a href="phase0/02-dispersion.html">2. Variance and Standard Deviation
+    <span class="desc">Measuring spread. Why we square the deviations, and what $\sigma$ actually tells you.</span>
+  </a>
+  <a href="phase0/03-percentiles.html">3. Percentiles and Ranking
+    <span class="desc">Where does this company sit relative to its peers? Quartiles, deciles, and the percentile formula.</span>
+  </a>
+  <a href="phase0/04-linear-regression.html">4. Linear Regression
+    <span class="desc">Fitting a straight line through noisy data. Least squares, the slope formula, and $R^2$.</span>
+  </a>
+  <a href="phase0/05-recurring-patterns.html">5. Recurring Patterns
+    <span class="desc">Seasonality in data. How to detect it, measure it, and separate it from the trend.</span>
+  </a>
+</div>
+
+<hr>
+
+<div class="phase-label">Phase 1 &mdash; Exponential Growth and the Time Value of Money</div>
+<em>Money today is worth more than money tomorrow. Compound interest, discounting, and the mathematics of growth.</em>
+
+<div class="index-list">
+  <a href="phase1/01-compound-interest.html">1. Compound Interest
+    <span class="desc">The exponential function as a financial tool. $(1+r)^n$ and the rule of 72.</span>
+  </a>
+  <a href="phase1/02-geometric-series.html">2. Discounting
+    <span class="desc">Running compound interest backwards. Present value, NPV, and why future cash flows are worth less.</span>
+  </a>
+  <a href="phase1/03-inflation-and-blended-growth.html">3. Inflation and Blended Growth
+    <span class="desc">Real vs nominal rates. Fisher's equation. Combining multiple growth rates into one.</span>
+  </a>
+</div>
+
+<hr>
+
+<div class="phase-label">Phase 2 &mdash; Seasonal Decomposition</div>
+<em>Revenue peaks in December. Costs spike in March. Separating the seasonal pattern from the underlying trend.</em>
+
+<div class="index-list">
+  <a href="phase2/01-moving-averages.html">1. Moving Averages
+    <span class="desc">Smoothing out noise. Simple and weighted moving averages, window choice, and edge effects.</span>
+  </a>
+  <a href="phase2/02-multiplicative-decomposition.html">2. Additive vs Multiplicative Decomposition
+    <span class="desc">Does the seasonal swing grow with the level? Choosing the right decomposition model.</span>
+  </a>
+  <a href="phase2/03-seasonal-floor.html">3. Seasonal Indices
+    <span class="desc">Computing the seasonal factor for each period. Normalisation and applying indices to forecasts.</span>
+  </a>
+  <a href="phase2/04-dampened-seasonality.html">4. Detrending
+    <span class="desc">Removing the trend to isolate seasonality. Residual analysis and goodness of fit.</span>
+  </a>
+  <a href="phase2/05-why-not-arima.html">5. Why Not ARIMA?
+    <span class="desc">When simple decomposition is enough and when you need heavier machinery. Scope and limits.</span>
+  </a>
+</div>
+
+<hr>
+
+<div class="phase-label">Phase 3 &mdash; The Accounting Identity</div>
+<em>Assets = Liabilities + Equity. The conservation law that ties the three financial statements together.</em>
+
+<div class="index-list">
+  <a href="phase3/01-double-entry.html">1. Double-Entry Bookkeeping
+    <span class="desc">Every transaction has two sides. Pacioli's system and why the books always balance.</span>
+  </a>
+  <a href="phase3/02-projected-pl.html">2. The Three Statements
+    <span class="desc">Income statement, balance sheet, cash flow statement. What each one measures and how they connect.</span>
+  </a>
+  <a href="phase3/03-balance-sheet.html">3. The Plug
+    <span class="desc">Cash as the balancing item. Why the three-way forecast is over-determined and how we resolve it.</span>
+  </a>
+  <a href="phase3/04-cash-flow-statement.html">4. The Cash Flow Statement
+    <span class="desc">Indirect method: start from profit, adjust for non-cash items and working capital changes.</span>
+  </a>
+</div>
+
+<hr>
+
+<div class="phase-label">Phase 4 &mdash; Working Capital Dynamics</div>
+<em>The gap between when you pay your suppliers and when your customers pay you. DSO, DPO, and the cash conversion cycle.</em>
+
+<div class="index-list">
+  <a href="phase4/01-dso-dpo.html">1. DSO and DPO
+    <span class="desc">Days sales outstanding, days payable outstanding. Measuring how fast cash moves through the business.</span>
+  </a>
+  <a href="phase4/02-trend-extrapolation.html">2. Trend Extrapolation
+    <span class="desc">Projecting DSO and DPO forward using regression. Converting ratios into balance sheet forecasts.</span>
+  </a>
+</div>
+
+<hr>
+
+<div class="phase-label">Phase 5 &mdash; Uncertainty Quantification</div>
+<em>Every forecast is wrong. The question is how wrong, and whether we can quantify the range of plausible outcomes.</em>
+
+<div class="index-list">
+  <a href="phase5/01-random-walks.html">1. Random Walks
+    <span class="desc">The drunkard's walk. Why forecast errors accumulate as $\sigma\sqrt{t}$, not $\sigma t$.</span>
+  </a>
+  <a href="phase5/02-uncertainty-model.html">2. Fan Charts
+    <span class="desc">Visualising uncertainty. Probability bands that widen with the forecast horizon.</span>
+  </a>
+  <a href="phase5/03-combining-uncertainties.html">3. Combining Uncertainties
+    <span class="desc">When multiple uncertain inputs feed into one output. Propagation of errors and correlation.</span>
+  </a>
+</div>
+
+<hr>
+
+<div class="phase-label">Phase 6 &mdash; Scenarios and Sensitivity</div>
+<em>What if revenue grows 5% instead of 10%? Adjusting the forecast without rebuilding it from scratch.</em>
+
+<div class="index-list">
+  <a href="phase6/01-adjustment-algebra.html">1. Adjustment Algebra
+    <span class="desc">Changing one assumption and tracing the effect through all three statements. Partial derivatives of a forecast.</span>
+  </a>
+  <a href="phase6/02-fragments-and-cascade.html">2. Fragments and Cascade
+    <span class="desc">Building scenarios from independent fragments. How adjustments cascade through the model.</span>
+  </a>
+</div>
+
+<hr>
+
+<div class="phase-label">Phase 7 &mdash; The Full Model Walkthrough</div>
+<em>Putting it all together. From raw ledger data to a complete three-way forecast with uncertainty bands.</em>
+
+<div class="index-list">
+  <a href="phase7/01-ledger-to-assumptions.html">1. Ledger to Assumptions
+    <span class="desc">Extracting growth rates, seasonal patterns, and working capital ratios from historical data.</span>
+  </a>
+  <a href="phase7/02-full-projection.html">2. Building the Forecast
+    <span class="desc">Assembling the three statements step by step. Checking the balance and resolving the plug.</span>
+  </a>
+  <a href="phase7/03-direct-method.html">3. The Direct Method
+    <span class="desc">An alternative cash flow construction. When to use direct vs indirect, and how they reconcile.</span>
+  </a>
+</div>
+
+<hr>
+
+<div class="phase-label">Mathematician Biographies</div>
+<em>The people behind the mathematics. Short biographies focused on what each person contributed to the tools used in this course.</em>
+
+<div class="index-list">
+  <a href="mathematicians/gauss.html">Carl Friedrich Gauss (1777&ndash;1855)
+    <span class="desc">Predicted the orbit of Ceres using least squares. The theoretical foundation of linear regression.</span>
+  </a>
+  <a href="mathematicians/legendre.html">Adrien-Marie Legendre (1752&ndash;1833)
+    <span class="desc">Published the method of least squares in 1805. The first clear formulation of the regression recipe.</span>
+  </a>
+  <a href="mathematicians/galton.html">Francis Galton (1822&ndash;1911)
+    <span class="desc">Coined "regression to the mean." Introduced percentiles and the concept of correlation.</span>
+  </a>
+  <a href="mathematicians/pacioli.html">Luca Pacioli (1447&ndash;1517)
+    <span class="desc">Codified double-entry bookkeeping. The accounting identity that makes three-way forecasting possible.</span>
+  </a>
+  <a href="mathematicians/brown-wiener.html">Robert Brown &amp; Norbert Wiener
+    <span class="desc">Brownian motion: from pollen grains to the $\sigma\sqrt{t}$ law behind fan charts.</span>
+  </a>
+  <a href="mathematicians/britton-fisher-whitley.html">Britton, Fisher &amp; Whitley
+    <span class="desc">Invented the fan chart at the Bank of England. Turning uncertainty into a visual language.</span>
+  </a>
+  <a href="mathematicians/quetelet.html">Adolphe Quetelet (1796&ndash;1874)
+    <span class="desc">Invented the &ldquo;average man.&rdquo; Pioneered applying statistics to social phenomena using the normal distribution.</span>
+  </a>
+  <a href="mathematicians/pearson.html">Karl Pearson (1857&ndash;1936)
+    <span class="desc">Named &ldquo;standard deviation,&rdquo; developed the chi-squared test, and founded the first statistics department.</span>
+  </a>
+  <a href="mathematicians/tukey.html">John Tukey (1915&ndash;2000)
+    <span class="desc">Invented the box plot and Tukey fences. The father of exploratory data analysis.</span>
+  </a>
+  <a href="mathematicians/bernoulli.html">Jacob Bernoulli (1655&ndash;1705)
+    <span class="desc">Discovered the constant $e$ through compound interest and proved the law of large numbers.</span>
+  </a>
+  <a href="mathematicians/fibonacci.html">Fibonacci (c.&thinsp;1170&ndash;c.&thinsp;1250)
+    <span class="desc">Liber Abaci introduced Hindu-Arabic numerals to Europe, motivated by commerce and interest calculations.</span>
+  </a>
+  <a href="mathematicians/horngren.html">Charles Horngren (1926&ndash;2011)
+    <span class="desc">Defined the modern framework for CVP analysis and cost behaviour classification.</span>
+  </a>
+</div>
+
+<script src="nav.js"></script><script src="tutor.js"></script></body></html>

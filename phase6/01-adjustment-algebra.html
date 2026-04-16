@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Adjustment Algebra — Phase 6</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>The Adjustment Algebra</h1>
+<p class="subtitle">Phase 6 — Scenarios and Sensitivity, Page 1</p>
+
+<div class="problem-box">
+  <div class="label">The problem</div>
+  <p>Three stakeholders want to modify the forecast. The sales director says "revenue +10%." The FP&amp;A analyst says "add £5k per week." The CEO says "override to £80k per week." Each adjustment is a different <em>type</em> of operation. How do they compose? In what order? What happens when they conflict?</p>
+</div>
+
+<h2>1. Three Adjustment Types</h2>
+
+<p>Every scenario adjustment to a forecast line falls into exactly one of three categories. Let $v$ denote the original (baseline) value of a driver at a given week.</p>
+
+<div class="theorem-box">
+  <div class="label">Definition — Multiplier Adjustment</div>
+  <p>A <strong>multiplier</strong> $m$ scales the value proportionally:</p>
+  <div class="display-math">$$\text{adjusted} = v \times m$$</div>
+  <p>Multiple multipliers compose by multiplication: applying $m_1$ then $m_2$ gives $v \times m_1 \times m_2$. A "revenue +10%" instruction corresponds to $m = 1.10$.</p>
+</div>
+
+<div class="theorem-box">
+  <div class="label">Definition — Delta Adjustment</div>
+  <p>A <strong>delta</strong> $d$ adds or subtracts an absolute amount:</p>
+  <div class="display-math">$$\text{adjusted} = v + d$$</div>
+  <p>Multiple deltas compose by summation: applying $d_1$ then $d_2$ gives $v + d_1 + d_2$. "Add £5k per week" corresponds to $d = 5{,}000$. A negative delta represents a reduction: "cut £3k/week" is $d = -3{,}000$.</p>
+</div>
+
+<p>Multipliers and deltas form algebraic groups under their respective operations. Multipliers compose under multiplication (with identity $m = 1$), and deltas compose under addition (with identity $d = 0$). This means any number of adjustments of the same type can be collapsed into a single equivalent adjustment before application.</p>
+
+<div class="theorem-box">
+  <div class="label">Definition — Override Adjustment</div>
+  <p>An <strong>override</strong> $o$ replaces the value entirely:</p>
+  <div class="display-math">$$\text{adjusted} = o$$</div>
+  <p>The original value $v$ is discarded. When multiple overrides exist for the same driver at the same week, the <strong>last override wins</strong> — the one with the latest <code>start_week</code> takes precedence.</p>
+</div>
+
+<h2>2. Application Order</h2>
+
+<p>The three types do not commute freely. We must fix an order.</p>
+
+<div class="theorem-box">
+  <div class="label">Theorem — Canonical Application Order</div>
+  <p>Given baseline value $v$, multipliers $\{m_i\}$, deltas $\{d_j\}$, and override $o$ (if any), the adjusted value is:</p>
+  <div class="display-math">$$\text{adjusted} = \begin{cases} o & \text{if an override exists} \\ \left(v \times \prod_i m_i\right) + \sum_j d_j & \text{otherwise} \end{cases}$$</div>
+  <p>The order is: <strong>multipliers first, then deltas, then override</strong>.</p>
+</div>
+
+<div class="proof-box" id="proof-non-commutativity">
+  <div class="label">Proof — Non-Commutativity of Multiplier and Delta</div>
+  <p>Let $v = 100{,}000$, $m = 1.10$, $d = 5{,}000$.</p>
+  <p><strong>Multiplier then delta:</strong></p>
+  <div class="display-math">$$100{,}000 \times 1.10 + 5{,}000 = 110{,}000 + 5{,}000 = \text{£}115{,}000$$</div>
+  <p><strong>Delta then multiplier:</strong></p>
+  <div class="display-math">$$(100{,}000 + 5{,}000) \times 1.10 = 105{,}000 \times 1.10 = \text{£}115{,}500$$</div>
+  <p>Since £115,000 ≠ £115,500, the operations do not commute. ∎</p>
+</div>
+
+<p><strong>Why this order?</strong> Multipliers are <strong>scale-invariant</strong> — "10% more" means 10% of whatever the baseline is. Deltas are <strong>absolute</strong> — "£5k extra" means exactly £5,000 regardless of scale. If we applied delta first, the multiplier would scale the delta too (turning £5k into £5.5k), which is almost never what the stakeholder intended. The canonical order preserves the intuitive meaning of each adjustment type.</p>
+
+<p>To see this more formally, consider what each stakeholder <em>means</em>. The sales director says "10% more revenue" — she means 10% of the baseline, not 10% of the baseline-plus-some-delta. The FP&amp;A analyst says "add £5k for a new contract" — he means exactly £5,000 regardless of any percentage adjustment. The canonical order M-then-D respects both intentions simultaneously.</p>
+
+<p>Note that override always comes last because it renders all prior adjustments moot. If the CEO says "revenue is £80k, full stop," then neither the 10% uplift nor the £5k addition matters. The override is a <strong>terminal operation</strong> — it discards the adjustment pipeline entirely.</p>
+
+<h2>3. The Delay Adjustment</h2>
+
+<p>There is a fourth type that operates on <em>time</em> rather than <em>value</em>.</p>
+
+<div class="theorem-box">
+  <div class="label">Definition — Delay Adjustment</div>
+  <p>A <strong>delay</strong> with offset $\tau$ shifts cash flows forward by $\tau$ weeks. For a cash flow vector $c = (c_1, c_2, \ldots, c_W)$ over a $W$-week forecast:</p>
+  <div class="display-math">$$c'_w = \begin{cases} c_{w - \tau} & \text{if } w - \tau \geq 1 \\ 0 & \text{if } w - \tau < 1 \end{cases}$$</div>
+  <p>Values shifted beyond week $W$ are <strong>lost</strong> (truncation). Negative $\tau$ brings cash flows earlier.</p>
+</div>
+
+<p><strong>Application:</strong> "Customers start paying 4 weeks late" translates to DELAY $\tau = +4$ on the receipts line. Week 1's receipts move to week 5; weeks 1-4 become zero. Any receipts originally in weeks $W{-}3$ to $W$ fall off the end of the forecast window.</p>
+
+<h3>Delay worked example</h3>
+
+<p>Suppose a 6-week receipts forecast before delay:</p>
+
+<table>
+  <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr>
+  <tr><td>Receipts</td><td>£10,000</td><td>£12,000</td><td>£8,000</td><td>£15,000</td><td>£11,000</td><td>£9,000</td></tr>
+</table>
+
+<p>Apply DELAY $\tau = +2$:</p>
+
+<table>
+  <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr>
+  <tr><td>Receipts</td><td>£0</td><td>£0</td><td>£10,000</td><td>£12,000</td><td>£8,000</td><td>£15,000</td></tr>
+</table>
+
+<p>Weeks 1-2 are zero (no receipts existed 2 weeks before week 1). Weeks 5 and 6 of the original (£11,000 and £9,000) would land in weeks 7 and 8 — beyond the forecast window — and are <strong>truncated</strong>. Total receipts fall from £65,000 to £45,000. The £20,000 difference is real lost visibility: those cash flows still happen, but outside the forecast horizon.</p>
+
+<p>Delays compose additively: DELAY $\tau_1$ followed by DELAY $\tau_2$ is equivalent to DELAY $\tau_1 + \tau_2$. This follows directly from the shift property: shifting by $\tau_1$ then $\tau_2$ moves each element by $\tau_1 + \tau_2$ positions.</p>
+
+<h3>Interaction with value adjustments</h3>
+
+<p>Delays operate on a <em>different axis</em> (time) than multipliers, deltas, and overrides (value). The canonical order is: apply <strong>value adjustments first</strong> (M, D, O), then apply <strong>delay</strong>. This ensures the delay shifts the already-adjusted values. Applying delay first and then value adjustments would adjust values that are about to move to different weeks — logically incoherent.</p>
+
+<h2>4. Override Resolution</h2>
+
+<div class="theorem-box">
+  <div class="label">Definition — Override Resolution Rule</div>
+  <p>When multiple overrides target the same driver $d$ at the same week $w$, each with a <code>start_week</code> $s_i$, the winning override is:</p>
+  <div class="display-math">$$o^* = o_k \quad \text{where } k = \arg\max_i \{s_i : s_i \leq w\}$$</div>
+  <p>In words: the override whose effective start date is latest (but not after week $w$) wins.</p>
+</div>
+
+<p>This rule ensures that more recent scenario instructions take precedence over older ones, which matches the natural expectation that "the latest decision wins."</p>
+
+<h3>Override resolution example</h3>
+
+<p>Two overrides target revenue at week 10:</p>
+<ul>
+  <li>Override A: value = £70,000, start_week = 5 (effective from week 5 onwards).</li>
+  <li>Override B: value = £85,000, start_week = 8 (effective from week 8 onwards).</li>
+</ul>
+
+<p>At week 10, both overrides are active ($s_A = 5 \leq 10$ and $s_B = 8 \leq 10$). Since $s_B > s_A$, override B wins: revenue at week 10 = £85,000. At week 6, only override A is active ($s_A = 5 \leq 6$, but $s_B = 8 > 6$), so revenue at week 6 = £70,000.</p>
+
+<h2>5. Formal Composition</h2>
+
+<p>We can express the full adjustment pipeline as a single function. Let $\mathcal{M} = \{m_1, \ldots, m_p\}$ be the set of multipliers, $\mathcal{D} = \{d_1, \ldots, d_q\}$ the deltas, $\mathcal{O}$ the set of overrides (at most one active per driver per week after resolution), and $\tau$ the delay offset. The adjusted value at week $w$ is:</p>
+
+<div class="display-math">$$A(v, w) = \begin{cases} o^*(w) & \text{if } \mathcal{O} \text{ has an active override at } w \\ \left(v \times \prod_{i=1}^{p} m_i\right) + \sum_{j=1}^{q} d_j & \text{otherwise} \end{cases}$$</div>
+
+<p>After computing $A(v, w)$ for all weeks, the delay is applied to the entire vector: $A'(w) = A(w - \tau)$ with truncation at the boundaries.</p>
+
+<p>This composition is <strong>deterministic</strong>: given the same baseline and the same set of adjustments, the result is always identical, regardless of the order in which adjustments are submitted. The algebra resolves all ambiguity.</p>
+
+<h2>6. Worked Example</h2>
+
+<p>Consider a 4-week revenue forecast with baseline values:</p>
+
+<table>
+  <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+  <tr><td>Baseline</td><td>£50,000</td><td>£52,000</td><td>£48,000</td><td>£55,000</td></tr>
+</table>
+
+<p>Three adjustments are submitted:</p>
+<ol>
+  <li><strong>Multiplier</strong> $m = 1.10$ (revenue +10%), effective all weeks.</li>
+  <li><strong>Delta</strong> $d = +3{,}000$ (add £3k/week), effective all weeks.</li>
+  <li><strong>Override</strong> $o = 60{,}000$ for week 3 only (start_week = 3).</li>
+</ol>
+
+<p><strong>Step 1 — Apply multiplier:</strong></p>
+<table>
+  <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+  <tr><td>After M</td><td>£55,000</td><td>£57,200</td><td>£52,800</td><td>£60,500</td></tr>
+</table>
+
+<p><strong>Step 2 — Apply delta:</strong></p>
+<table>
+  <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+  <tr><td>After M+D</td><td>£58,000</td><td>£60,200</td><td>£55,800</td><td>£63,500</td></tr>
+</table>
+
+<p><strong>Step 3 — Apply override (week 3 only):</strong></p>
+<table>
+  <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+  <tr><td>Final</td><td>£58,000</td><td>£60,200</td><td><strong>£60,000</strong></td><td>£63,500</td></tr>
+</table>
+
+<p>Week 3's multiplier and delta are discarded — the override replaces everything.</p>
+
+<h3>Extending the example with delay</h3>
+
+<p>Now suppose a DELAY $\tau = +1$ is also applied (payments arrive one week late). The final adjusted vector before delay is (£58,000, £60,200, £60,000, £63,500). After shifting by +1:</p>
+
+<table>
+  <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+  <tr><td>After delay</td><td>£0</td><td>£58,000</td><td>£60,200</td><td>£60,000</td></tr>
+</table>
+
+<p>Week 1 receives nothing (the original week 0 is before the forecast). Week 4's original £63,500 would land in week 5 — beyond our 4-week window — and is truncated. The total visible cash drops from £241,700 to £178,200.</p>
+
+<h3>Multiple multiplier composition</h3>
+
+<p>Consider two separate multiplier instructions on the same line: "revenue +10%" ($m_1 = 1.10$) and "apply 5% discount" ($m_2 = 0.95$). They compose multiplicatively:</p>
+
+<div class="display-math">$$v \times m_1 \times m_2 = v \times 1.10 \times 0.95 = v \times 1.045$$</div>
+
+<p>The net effect is a 4.5% increase — not 5% (which would be $1.10 - 0.05$). Multipliers compose geometrically, not additively. A +10% followed by a -10% gives $v \times 1.10 \times 0.90 = v \times 0.99$, not $v \times 1.00$. This is not a rounding error; it is the algebra of proportional changes.</p>
+
+<div class="history-box">
+  <div class="label">Historical note</div>
+  <p><strong>Scenario analysis</strong> in corporate finance dates to the 1960s, when Royal Dutch Shell pioneered the use of multiple plausible futures for strategic planning. The mathematical formalisation of stochastic simulation — <strong>Monte Carlo methods</strong> — was developed by <strong>Stanislaw Ulam</strong> and <strong>John von Neumann</strong> at Los Alamos in the late 1940s, originally for neutron diffusion problems. The name "Monte Carlo" was suggested by Ulam's colleague Nicholas Metropolis, after the casino district in Monaco. Today, every major financial institution uses Monte Carlo simulation to stress-test portfolios and forecasts.</p>
+</div>
+
+<div class="break-box">
+  <div class="label">What breaks</div>
+  <p><strong>If you apply delta before multiplier:</strong> the delta gets scaled. A stakeholder who said "add £5k" would see their adjustment become £5.5k (or £4.5k, depending on the multiplier). The absolute meaning of the delta is lost.</p>
+  <p><strong>If you have no override priority rule:</strong> two stakeholders who both override the same week to different values produce an undefined result. Without "latest start_week wins," the system must either reject the scenario (unhelpful) or pick arbitrarily (dangerous).</p>
+</div>
+
+<h2>7. Exercises</h2>
+
+<div class="exercise">
+  <span class="exercise-label">Exercise 1 (Academic)</span>
+  <p>Prove algebraically that for arbitrary $v > 0$, $m \neq 1$, and $d \neq 0$, the composition "multiplier then delta" differs from "delta then multiplier."</p>
+  <details>
+    <summary>Solution</summary>
+    <div>
+      <p>Multiplier then delta: $f(v) = v \cdot m + d$.</p>
+      <p>Delta then multiplier: $g(v) = (v + d) \cdot m = v \cdot m + d \cdot m$.</p>
+      <p>Difference:</p>
+      <div class="display-math">$$g(v) - f(v) = (v \cdot m + d \cdot m) - (v \cdot m + d) = d \cdot m - d = d(m - 1)$$</div>
+      <p>Since $d \neq 0$ and $m \neq 1$, we have $d(m-1) \neq 0$, so $f(v) \neq g(v)$. The two compositions are never equal when both adjustments are non-trivial. ∎</p>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <span class="exercise-label">Exercise 2 (Applied)</span>
+  <p>A 4-week COGS forecast has baseline values £30k, £32k, £28k, £35k. Three stakeholders submit adjustments:</p>
+  <ul>
+    <li>Stakeholder A: multiplier $m = 0.95$ (costs down 5%), all weeks.</li>
+    <li>Stakeholder B: delta $d = +2{,}000$ (add £2k for new supplier cost), all weeks.</li>
+    <li>Stakeholder C: override week 4 to £30,000 (start_week = 4).</li>
+  </ul>
+  <p>Compute the final adjusted values for all four weeks.</p>
+  <details>
+    <summary>Solution</summary>
+    <div>
+      <p><strong>Step 1 — Multiplier ($\times 0.95$):</strong></p>
+      <p>Week 1: $30{,}000 \times 0.95 = \text{£}28{,}500$</p>
+      <p>Week 2: $32{,}000 \times 0.95 = \text{£}30{,}400$</p>
+      <p>Week 3: $28{,}000 \times 0.95 = \text{£}26{,}600$</p>
+      <p>Week 4: $35{,}000 \times 0.95 = \text{£}33{,}250$</p>
+      <p><strong>Step 2 — Delta ($+ 2{,}000$):</strong></p>
+      <p>Week 1: $28{,}500 + 2{,}000 = \text{£}30{,}500$</p>
+      <p>Week 2: $30{,}400 + 2{,}000 = \text{£}32{,}400$</p>
+      <p>Week 3: $26{,}600 + 2{,}000 = \text{£}28{,}600$</p>
+      <p>Week 4: $33{,}250 + 2{,}000 = \text{£}35{,}250$</p>
+      <p><strong>Step 3 — Override (week 4 only):</strong></p>
+      <p>Week 4 is overridden to £30,000. Weeks 1-3 unchanged.</p>
+      <p><strong>Final values:</strong> £30,500 | £32,400 | £28,600 | <strong>£30,000</strong>.</p>
+    </div>
+  </details>
+</div>
+
+<hr>
+
+<div class="exercise">
+  <span class="exercise-label">Exercise 3 (Applied)</span>
+  <p>A receipts forecast for weeks 1-6 is: £20k, £25k, £18k, £30k, £22k, £28k. Apply a DELAY of $\tau = +3$ weeks. What is the total visible cash? How much is truncated?</p>
+  <details>
+    <summary>Solution</summary>
+    <div>
+      <p>Original total: £20k + £25k + £18k + £30k + £22k + £28k = £143,000.</p>
+      <p>After DELAY +3:</p>
+      <table>
+        <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr>
+        <tr><td>Receipts</td><td>£0</td><td>£0</td><td>£0</td><td>£20,000</td><td>£25,000</td><td>£18,000</td></tr>
+      </table>
+      <p>Weeks 1-3 are zero (no source weeks exist before week 1). Weeks 4-6 receive the values from weeks 1-3.</p>
+      <p>Weeks 4, 5, 6 of the original (£30k, £22k, £28k = £80,000) would land in weeks 7, 8, 9 — beyond the 6-week window.</p>
+      <p>Visible total: £20k + £25k + £18k = £63,000. Truncated: £143,000 - £63,000 = £80,000.</p>
+    </div>
+  </details>
+</div>
+
+<div class="oneliner">Every scenario adjustment is a multiplier, a delta, or an override — applied in that order, composed without ambiguity.</div>
+
+<div class="nav">
+  <a href="../phase5/03-combining-uncertainties.html">&larr; Combining Uncertainties</a>
+  <a href="02-fragments-and-cascade.html">Next: Fragment Application and Balance Cascade &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The 13-Week Direct Method — Phase 7</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>The 13-Week Direct Method</h1>
+<p class="subtitle">Phase 7 — The Full Model Walkthrough, Page 3</p>
+
+<div class="problem-box">
+  <div class="label">The problem</div>
+  <p>For the next 13 weeks, you have actual invoices with due dates and actual bills with payment terms. Why project from rates and ratios when you can use the real transaction data? The <strong>direct method</strong> builds the cash forecast from individual cash movements, giving precise near-term visibility that rate-based projections cannot match.</p>
+</div>
+
+<h2>1. The Direct Method (IAS 7)</h2>
+
+<div class="theorem-box">
+  <div class="label">Definition — Direct Cash Flow Forecast</div>
+  <p>For each week $w$ in the forecast horizon:</p>
+  <div class="display-math">$$\text{receipts}(w) = \sum_{i : \text{due}(i) \in w} \text{invoice}_i.\text{amount}$$</div>
+  <div class="display-math">$$\text{disbursements}(w) = \sum_{j : \text{due}(j) \in w} \text{bill}_j.\text{amount} + \sum_{k} \text{recurring}_k(w)$$</div>
+  <div class="display-math">$$\text{net}(w) = \text{receipts}(w) - \text{disbursements}(w)$$</div>
+  <div class="display-math">$$\text{closing}(w) = \text{opening}(w) + \text{net}(w)$$</div>
+  <p>where $\text{opening}(w) = \text{closing}(w - 1)$ and $\text{opening}(1)$ is the current bank balance.</p>
+</div>
+
+<p>Each invoice and bill is placed into a week based on its <strong>due date</strong>. Recurring streams (rent, salaries, subscriptions) are placed by their scheduled payment date. No rates, no ratios, no DSO — just actual amounts in actual weeks.</p>
+
+<p>The direct method answers the treasurer's question: "How much cash will we actually have next Tuesday?" The indirect method answers the CFO's question: "What does our cash position look like over the next five years?" Both are valid; they serve different horizons and different audiences.</p>
+
+<h3>Data sources for the direct method</h3>
+
+<p>The direct method requires access to the <strong>open AR ledger</strong> (all unpaid sales invoices with due dates) and the <strong>open AP ledger</strong> (all unpaid purchase bills with due dates). Additionally, it needs the <strong>recurring payment schedule</strong> — salary run dates, rent due dates, subscription renewal dates, tax payment dates (VAT quarterly, PAYE monthly, corporation tax instalments). Each of these is a known future cash movement with a known date and a known amount.</p>
+
+<h2>2. Contrast with Indirect</h2>
+
+<p>The indirect method (Phase 3, p2) starts from net profit and adjusts for non-cash items and working capital changes. It uses <em>rates</em> — DSO determines when revenue becomes cash, DPO determines when costs become cash. The direct method skips all of this: it knows exactly which invoice is due in which week.</p>
+
+<table>
+  <tr><th></th><th>Direct</th><th>Indirect</th></tr>
+  <tr><td>Input</td><td>Individual invoices and bills</td><td>Revenue, costs, DSO, DPO</td></tr>
+  <tr><td>Granularity</td><td>Transaction-level</td><td>Aggregate rates</td></tr>
+  <tr><td>Timing precision</td><td>Exact (due dates)</td><td>Average (rate-based lag)</td></tr>
+  <tr><td>Data requirement</td><td>Open AR/AP ledger</td><td>Historical averages</td></tr>
+  <tr><td>Horizon</td><td>Limited by open transactions</td><td>Unlimited (rate-based)</td></tr>
+  <tr><td>Sensitivity to individual transactions</td><td>High (each invoice matters)</td><td>Low (averages smooth out)</td></tr>
+  <tr><td>Audit trail</td><td>Invoice-level</td><td>Assumption-level</td></tr>
+</table>
+
+<p>The direct method answers "how much cash will we receive from Acme Ltd in week 3?" The indirect method answers "how much total cash will we receive in week 3, on average?" These are different questions, and neither is superior — they serve different purposes at different time horizons.</p>
+
+<h2>3. When to Use Each</h2>
+
+<p><strong>Direct: weeks 1-13.</strong> Individual invoices are known. Due dates give precise timing. The forecast reflects actual commercial reality — which customers owe what, and when. Treasury teams use this for daily cash positioning — deciding whether to draw on credit facilities, invest surplus cash, or accelerate collections.</p>
+
+<p><strong>Indirect: weeks 14-260.</strong> Beyond the open transaction horizon, no individual invoices exist yet. Revenue must be projected from growth rates, and cash timing from DSO/DPO ratios. This is the domain of strategic planning — "can we afford the expansion in year 3?" — where individual invoice precision is neither possible nor necessary.</p>
+
+<p><strong>Hybrid:</strong> the forecast engine uses direct for near-term and indirect for long-term. The <strong>handover point</strong> is where open invoices and bills run out — typically around week 10-13, depending on the business's billing cycle and payment terms.</p>
+
+<p>At the handover point, the engine must ensure continuity. The last week of direct forecasting should produce a closing balance that becomes the opening balance for the first week of indirect forecasting. Any discontinuity here — a sudden jump or drop in cash — indicates a mismatch between the transaction data and the rate assumptions. This is actually <em>useful</em>: it highlights whether the DSO/DPO assumptions are consistent with the actual payment behaviour visible in the open ledger.</p>
+
+<h3>Handling partial weeks</h3>
+
+<p>An invoice dated Wednesday 15 January falls into whichever forecast week contains that date. The standard convention is that week boundaries align with Monday-Sunday. An invoice due on a weekend is typically paid on the following Monday — so it falls into the <em>next</em> week. Salary payments, by contrast, typically process on a fixed day (e.g., 25th of each month) regardless of weekday, and the bank clears next business day.</p>
+
+<h2>4. Convergence of Direct to Indirect</h2>
+
+<div class="theorem-box">
+  <div class="label">Theorem — Large-Sample Convergence (Sketch)</div>
+  <p>As the number of transactions per week $n \to \infty$, the direct method receipts converge to the indirect method's revenue projection:</p>
+  <div class="display-math">$$\frac{1}{n} \sum_{i=1}^{n} \text{invoice}_i.\text{amount} \to \mathbb{E}[\text{invoice amount}] = \frac{\text{Revenue}(w)}{n}$$</div>
+  <p>By the <strong>law of large numbers</strong>, individual timing noise (early payments, late payments) averages out, leaving the rate. The direct method's total receipts in week $w$ converge to $\text{Revenue}(w - \text{DSO})$, which is exactly what the indirect method computes.</p>
+</div>
+
+<div class="proof-box" id="proof-convergence-sketch">
+  <div class="label">Proof sketch</div>
+  <p>Let each invoice $i$ have amount $a_i$ and actual payment delay $\tau_i = \text{DSO} + \epsilon_i$, where $\epsilon_i$ is zero-mean noise with finite variance $\sigma^2$. The receipts in week $w$ under the direct method are:</p>
+  <div class="display-math">$$R_{\text{direct}}(w) = \sum_{i : \text{due}(i) \in w} a_i$$</div>
+  <p>As $n \to \infty$, the number of invoices falling due in any given week concentrates around its expectation. The total amount converges (by the strong law of large numbers) to:</p>
+  <div class="display-math">$$R_{\text{direct}}(w) \to \text{Revenue}(w - \text{DSO})$$</div>
+  <p>because the expected payment week for revenue billed in week $w - \text{DSO}$ is week $w$, and the timing noise $\epsilon_i$ averages to zero. For small $n$, individual invoices dominate — a single large invoice being early or late shifts the entire week's receipts. This is precisely why the direct method is superior for near-term (where $n$ is known exactly) and the indirect method is necessary for long-term (where $n$ is projected). ∎</p>
+</div>
+
+<h2>5. Worked Example</h2>
+
+<p>Opening cash balance: £45,000. We have 15 outstanding sales invoices and 10 outstanding purchase bills, plus recurring weekly costs.</p>
+
+<h3>Sales invoices (due dates)</h3>
+<table>
+  <tr><th>Inv #</th><th>Customer</th><th>Amount</th><th>Due week</th></tr>
+  <tr><td>1001</td><td>Acme Ltd</td><td>£12,000</td><td>1</td></tr>
+  <tr><td>1002</td><td>Beacon plc</td><td>£8,500</td><td>1</td></tr>
+  <tr><td>1003</td><td>Crest Co</td><td>£5,200</td><td>1</td></tr>
+  <tr><td>1004</td><td>Delta Inc</td><td>£15,000</td><td>2</td></tr>
+  <tr><td>1005</td><td>Echo Ltd</td><td>£9,800</td><td>2</td></tr>
+  <tr><td>1006</td><td>Falcon plc</td><td>£7,300</td><td>2</td></tr>
+  <tr><td>1007</td><td>Grove Co</td><td>£11,000</td><td>3</td></tr>
+  <tr><td>1008</td><td>Haven Ltd</td><td>£6,400</td><td>3</td></tr>
+  <tr><td>1009</td><td>Iris plc</td><td>£4,800</td><td>3</td></tr>
+  <tr><td>1010</td><td>Jade Co</td><td>£18,000</td><td>3</td></tr>
+  <tr><td>1011</td><td>Knox Ltd</td><td>£3,200</td><td>4</td></tr>
+  <tr><td>1012</td><td>Lumen plc</td><td>£14,500</td><td>4</td></tr>
+  <tr><td>1013</td><td>Metro Co</td><td>£7,600</td><td>4</td></tr>
+  <tr><td>1014</td><td>Nova Ltd</td><td>£9,100</td><td>4</td></tr>
+  <tr><td>1015</td><td>Orion plc</td><td>£6,000</td><td>4</td></tr>
+</table>
+
+<h3>Purchase bills (due dates)</h3>
+<table>
+  <tr><th>Bill #</th><th>Supplier</th><th>Amount</th><th>Due week</th></tr>
+  <tr><td>B201</td><td>Alpha Supply</td><td>£5,000</td><td>1</td></tr>
+  <tr><td>B202</td><td>Beta Materials</td><td>£3,200</td><td>1</td></tr>
+  <tr><td>B203</td><td>Gamma Services</td><td>£7,800</td><td>2</td></tr>
+  <tr><td>B204</td><td>Delta Parts</td><td>£4,500</td><td>2</td></tr>
+  <tr><td>B205</td><td>Epsilon Tech</td><td>£2,900</td><td>2</td></tr>
+  <tr><td>B206</td><td>Zeta Logistics</td><td>£6,100</td><td>3</td></tr>
+  <tr><td>B207</td><td>Eta Consulting</td><td>£3,400</td><td>3</td></tr>
+  <tr><td>B208</td><td>Theta Corp</td><td>£8,200</td><td>4</td></tr>
+  <tr><td>B209</td><td>Iota Mfg</td><td>£5,500</td><td>4</td></tr>
+  <tr><td>B210</td><td>Kappa Ltd</td><td>£4,000</td><td>4</td></tr>
+</table>
+
+<p><strong>Recurring weekly costs:</strong> salaries £8,000 (paid weekly), rent £1,848 (£8,000/month ÷ 4.33), utilities £277 (£1,200/month ÷ 4.33). Total recurring: £10,125/week.</p>
+
+<p>In practice, rent and utilities are paid monthly rather than weekly. For a 4-week direct forecast, you would place the full £8,000 rent payment in the week it falls due, and £0 in other weeks. The weekly smoothing shown here is a simplification for illustration; the real direct method would show the full £8,000 in one week with a corresponding dip in net cash flow.</p>
+
+<h3>4-week direct forecast</h3>
+<table>
+  <tr><th></th><th>W1</th><th>W2</th><th>W3</th><th>W4</th></tr>
+  <tr><td>Receipts</td><td>£25,700</td><td>£32,100</td><td>£40,200</td><td>£40,400</td></tr>
+  <tr><td>Bill payments</td><td>£8,200</td><td>£15,200</td><td>£9,500</td><td>£17,700</td></tr>
+  <tr><td>Recurring</td><td>£10,125</td><td>£10,125</td><td>£10,125</td><td>£10,125</td></tr>
+  <tr><td><strong>Total disbursements</strong></td><td>£18,325</td><td>£25,325</td><td>£19,625</td><td>£27,825</td></tr>
+  <tr><td><strong>Net</strong></td><td>£7,375</td><td>£6,775</td><td>£20,575</td><td>£12,575</td></tr>
+  <tr><td>Opening</td><td>£45,000</td><td>£52,375</td><td>£59,150</td><td>£79,725</td></tr>
+  <tr><td><strong>Closing</strong></td><td>£52,375</td><td>£59,150</td><td>£79,725</td><td>£92,300</td></tr>
+</table>
+
+<p><strong>Verification:</strong> W1 receipts = £12,000 + £8,500 + £5,200 = £25,700. W1 bills = £5,000 + £3,200 = £8,200. Net = £25,700 - £18,325 = £7,375. Closing = £45,000 + £7,375 = £52,375.</p>
+
+<p>Notice the <strong>lumpiness</strong>. Week 3 has the highest receipts (£40,200) because four invoices fall due, including the £18,000 Jade Co invoice. Week 1 has the lowest receipts (£25,700) despite having three invoices — they happen to be smaller. This granularity is invisible in rate-based projections but critical for treasury management. If the company has a minimum cash covenant of £50,000, the direct method shows it is met every week; a rate-based projection might show a different story.</p>
+
+<h3>Concentration risk</h3>
+
+<p>The Jade Co invoice (£18,000) represents 13% of total 4-week receipts. If Jade Co pays late — or disputes the invoice — week 3 receipts drop from £40,200 to £22,200, and the closing balance at week 4 falls from £92,300 to £74,300. This <strong>concentration risk</strong> is a key advantage of the direct method: it makes single-customer dependencies visible. The indirect method, by averaging, hides this risk entirely.</p>
+
+<h3>Comparison with rate-based (indirect) projection</h3>
+
+<p>Total revenue across 4 weeks (direct): £25,700 + £32,100 + £40,200 + £40,400 = £138,400. Average weekly: £34,600.</p>
+
+<p>If we had used an indirect method with $R_0 = \text{£}34{,}600$/week and DSO = 4 weeks, collections each week would be £34,600 — perfectly flat. The direct method reveals the <em>actual</em> timing: week 1 is light (£25,700), week 3 is heavy (£40,200). This lumpiness is invisible to the indirect method but critical for cash management.</p>
+
+<p>The <strong>total</strong> over 4 weeks is the same in both methods (£138,400), which is not a coincidence — the open AR ledger should reconcile to the rate-based projection if the DSO assumption is correct. The difference is entirely in the <em>weekly distribution</em>. The direct method gives the real distribution; the indirect method gives a smoothed approximation.</p>
+
+<table>
+  <tr><th></th><th>W1</th><th>W2</th><th>W3</th><th>W4</th><th>Total</th></tr>
+  <tr><td>Direct receipts</td><td>£25,700</td><td>£32,100</td><td>£40,200</td><td>£40,400</td><td>£138,400</td></tr>
+  <tr><td>Indirect receipts</td><td>£34,600</td><td>£34,600</td><td>£34,600</td><td>£34,600</td><td>£138,400</td></tr>
+  <tr><td>Difference</td><td>-£8,900</td><td>-£2,500</td><td>+£5,600</td><td>+£5,800</td><td>£0</td></tr>
+</table>
+
+<p>The differences sum to zero — exactly as the convergence theorem predicts for a correctly calibrated model.</p>
+
+<h3>When to worry</h3>
+
+<p>If the direct method's 4-week total differs significantly from the indirect method's total, one of two things is wrong:</p>
+<ul>
+  <li>The DSO assumption is incorrect — actual payment behaviour differs from the rate used in the indirect model.</li>
+  <li>The revenue base is shifting — new contracts or lost customers mean the open ledger no longer reflects the average.</li>
+</ul>
+<p>This reconciliation between direct and indirect is itself a valuable diagnostic. Run it every forecast cycle. If the two methods diverge by more than 10%, investigate before publishing the forecast.</p>
+
+<h3>Practical implementation</h3>
+
+<p>In practice, the direct method requires a data feed from the accounting system — specifically, the aged receivables and aged payables reports. Most modern accounting packages (Xero, QuickBooks, Sage) can export this data programmatically. The export should include: invoice number, customer/supplier name, amount, issue date, due date, and current status (open, partially paid, disputed).</p>
+
+<p>Disputed invoices require special treatment. A £50,000 invoice under dispute should not be placed at face value in the week it falls due. Common approaches: exclude it entirely (conservative), include at 50% (moderate), or include at full value with a scenario note (aggressive). The choice depends on the dispute's nature and the company's dispute resolution history. Partially paid invoices should reflect only the outstanding balance, not the original invoice amount. Credit notes must be netted off against the relevant invoice before placement into the forecast week.</p>
+
+<p>The data pipeline — from accounting system to direct forecast — should be automated. Manual data entry for 200+ open invoices is error-prone and time-consuming. A weekly automated export ensures the direct forecast always reflects the latest AR/AP position without human intervention.</p>
+
+<div class="history-box">
+  <div class="label">Historical note</div>
+  <p>IAS 7 (Statement of Cash Flows) explicitly <em>encourages</em> the direct method, calling it the approach that "provides information which may be useful in estimating future cash flows." In practice, fewer than 5% of listed companies use the direct method in their published accounts — the indirect method is far more common because it requires only P&amp;L and balance sheet data, which are already prepared. However, in <strong>treasury management</strong>, the direct method dominates. The Association for Financial Professionals (AFP) recommends direct cash forecasting as best practice for short-term liquidity management, precisely because of its transaction-level precision.</p>
+</div>
+
+<div class="break-box">
+  <div class="label">What breaks</div>
+  <p><strong>If a major invoice is delayed:</strong> the direct method is a <strong>single-point-of-failure</strong> system. If Acme Ltd's £12,000 invoice (due week 1) slips to week 3, the entire week 1 forecast drops by £12,000 and week 3 jumps correspondingly. The indirect method, by averaging over many transactions, is more robust to individual delays — but less precise.</p>
+  <p><strong>If you use the direct method beyond 13 weeks:</strong> open invoices and bills run out. Receipts drop to zero (or to just recurring items), making the cash forecast collapse — not because the business has no future revenue, but because those invoices haven't been raised yet. The model becomes dangerously misleading, showing a cash crisis that does not exist. This is the most dangerous failure mode in cash forecasting: a technically correct calculation producing a practically meaningless result. The handover to indirect projection at the right week prevents this.</p>
+</div>
+
+<h2>6. Exercises</h2>
+
+<div class="exercise">
+  <span class="exercise-label">Exercise 1 (Academic)</span>
+  <p>Sketch a proof that as the number of invoices per week $n \to \infty$, the direct method's weekly receipts converge to the indirect method's rate-based projection.</p>
+  <details>
+    <summary>Solution</summary>
+    <div>
+      <p>Let $n$ invoices be raised in week $w_0$, each with amount $a_i \sim F_a$ (i.i.d. from some distribution with mean $\mu_a$) and payment delay $\tau_i = \text{DSO} + \epsilon_i$ where $\epsilon_i \sim F_\epsilon$ with $\mathbb{E}[\epsilon_i] = 0$ and $\text{Var}(\epsilon_i) = \sigma^2 < \infty$.</p>
+      <p>Total revenue in week $w_0$: $R(w_0) = \sum_{i=1}^n a_i$. By SLLN, $R(w_0) / n \to \mu_a$.</p>
+      <p>The receipts in week $w = w_0 + \text{DSO}$ under the direct method are:</p>
+      <div class="display-math">$$R_{\text{direct}}(w) = \sum_{i : \lfloor \tau_i \rfloor = \text{DSO}} a_i$$</div>
+      <p>The fraction of invoices with $\lfloor \tau_i \rfloor = \text{DSO}$ converges to $P(\lfloor \text{DSO} + \epsilon \rfloor = \text{DSO}) = P(-1 < \epsilon \leq 0)$ if $\epsilon$ is continuous, but for the aggregate across all billing weeks, the total receipts in week $w$ sum contributions from multiple billing weeks. As $n \to \infty$ for each billing week:</p>
+      <div class="display-math">$$R_{\text{direct}}(w) \to \sum_{w_0} R(w_0) \cdot P(\tau = w - w_0) \to R(w - \text{DSO})$$</div>
+      <p>because the payment delay distribution concentrates around DSO as $n \to \infty$ (individual timing noise averages out). The indirect method computes exactly $R(w - \text{DSO})$ by construction.</p>
+      <p>The convergence rate is $O(1/\sqrt{n})$ by the central limit theorem. With 10 invoices per week, individual timing noise has standard deviation approximately $\sigma / \sqrt{10} \approx 0.32\sigma$. With 100 invoices per week, it drops to $0.1\sigma$. This is why the direct method matters most for businesses with a small number of large invoices (low $n$, high individual impact) and matters less for businesses with many small transactions (high $n$, noise averages out naturally). ∎</p>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <span class="exercise-label">Exercise 2 (Applied)</span>
+  <p>Given the following 40 invoices and 25 bills, build a 4-week direct forecast and compare to a rate-based projection with $R_0 = \text{£}38{,}000$/week and DSO = 4 weeks.</p>
+
+  <p><strong>Invoices:</strong> W1: 8 invoices totalling £28,400. W2: 12 invoices totalling £42,600. W3: 10 invoices totalling £36,800. W4: 10 invoices totalling £44,200.</p>
+  <p><strong>Bills:</strong> W1: 5 bills totalling £11,500. W2: 7 bills totalling £16,300. W3: 6 bills totalling £13,900. W4: 7 bills totalling £18,200.</p>
+  <p><strong>Recurring:</strong> £9,500/week. Opening cash: £60,000.</p>
+  <details>
+    <summary>Solution</summary>
+    <div>
+      <p><strong>Direct forecast:</strong></p>
+      <table>
+        <tr><th></th><th>W1</th><th>W2</th><th>W3</th><th>W4</th></tr>
+        <tr><td>Receipts</td><td>£28,400</td><td>£42,600</td><td>£36,800</td><td>£44,200</td></tr>
+        <tr><td>Bills</td><td>£11,500</td><td>£16,300</td><td>£13,900</td><td>£18,200</td></tr>
+        <tr><td>Recurring</td><td>£9,500</td><td>£9,500</td><td>£9,500</td><td>£9,500</td></tr>
+        <tr><td>Total out</td><td>£21,000</td><td>£25,800</td><td>£23,400</td><td>£27,700</td></tr>
+        <tr><td>Net</td><td>£7,400</td><td>£16,800</td><td>£13,400</td><td>£16,500</td></tr>
+        <tr><td>Opening</td><td>£60,000</td><td>£67,400</td><td>£84,200</td><td>£97,600</td></tr>
+        <tr><td>Closing</td><td>£67,400</td><td>£84,200</td><td>£97,600</td><td>£114,100</td></tr>
+      </table>
+      <p><strong>Rate-based (indirect) projection:</strong> weekly receipts = £38,000 (constant). Weekly disbursements ≈ average of direct = (£21,000 + £25,800 + £23,400 + £27,700) / 4 = £24,475. Net = £13,525/week (constant).</p>
+      <table>
+        <tr><th></th><th>W1</th><th>W2</th><th>W3</th><th>W4</th></tr>
+        <tr><td>Net (indirect)</td><td>£13,525</td><td>£13,525</td><td>£13,525</td><td>£13,525</td></tr>
+        <tr><td>Closing (indirect)</td><td>£73,525</td><td>£87,050</td><td>£100,575</td><td>£114,100</td></tr>
+      </table>
+      <p><strong>Comparison:</strong> both methods arrive at the same 4-week closing balance (£114,100), but the paths differ. The direct method shows week 1 closing at £67,400 (below the indirect's £73,525) — a £6,125 liquidity gap that the indirect method misses. If the company's minimum cash threshold is £70,000, the direct method correctly flags a breach in week 1; the indirect method does not.</p>
+      <p>Total receipts: direct = £152,000, indirect = £152,000 (4 × £38,000). The totals match, but the weekly distribution reveals the timing risk.</p>
+    </div>
+  </details>
+</div>
+
+<hr>
+
+<div class="exercise">
+  <span class="exercise-label">Exercise 3 (Reflection)</span>
+  <p>A company has one customer who represents 45% of revenue. Their single monthly invoice of £180,000 is due in week 2 of each month. Explain why the direct method is essential for this company's 13-week forecast, and why the indirect method would be dangerously misleading.</p>
+  <details>
+    <summary>Solution</summary>
+    <div>
+      <p>The indirect method would spread £180,000 / 4.33 = £41,570/week evenly. The real cash flow is £0 for 3 weeks, then £180,000 in week 2 of each month — a massive spike followed by three lean weeks.</p>
+      <p>If this customer pays one week late, £180,000 shifts from one week to the next. The indirect method cannot capture this: it shows £41,570 every week regardless. The company could breach its £50,000 minimum cash covenant in the lean weeks, and the indirect method would never flag it.</p>
+      <p>With 45% revenue concentration, the company is effectively a "few large invoices" business — precisely the case where the direct method's advantage is greatest (low $n$, the law of large numbers has not kicked in).</p>
+    </div>
+  </details>
+</div>
+
+<div class="oneliner">For the next 13 weeks, use what you know — actual invoices and bills — and let the rates take over only when the real data runs out.</div>
+
+<div class="nav">
+  <a href="02-full-projection.html">&larr; The 260-Week Projection</a>
+  <a href="../index.html">Next: Course Index &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body>
+</html>

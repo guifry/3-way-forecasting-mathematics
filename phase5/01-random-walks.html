@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random Walks and Brownian Motion — Phase 5</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Random Walks and Brownian Motion</h1>
+<p class="subtitle">Phase 5 — Uncertainty Quantification, Page 1</p>
+
+<!-- ─── 1. THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>You forecast £50k cash at week 52. But each week, the actual cash deviates slightly from projection — maybe £800 more one week, £1,200 less the next. After 52 weeks of accumulated deviations, how wide is the uncertainty band around your forecast? Is it 52 times the weekly error? Something less? Something more?</p>
+<p>The answer comes from one of the deepest results in probability: the <strong>square root of time</strong> rule. Getting there requires understanding random walks.</p>
+</div>
+
+<!-- ─── 2. COIN FLIP RANDOM WALK ─────────────────────────────── -->
+
+<h2>1. The simplest random walk</h2>
+
+<p>Imagine standing at position 0 on a number line.
+Each step, flip a fair coin: heads you move +1, tails you move -1. After $n$ steps, where are you?</p>
+
+<p>Formally, let $X_1, X_2, \ldots, X_n$ be independent random variables, each taking value +1 or -1 with equal probability $\frac{1}{2}$. The position after $n$ steps is</p>
+
+<div class="display-math">$$S_n = X_1 + X_2 + \cdots + X_n = \sum_{i=1}^{n} X_i$$</div>
+
+<p>This is the simplest possible model of uncertainty accumulation. Each $X_i$ represents a single period's deviation from the plan — positive means overshoot, negative means undershoot. The cumulative position $S_n$ represents the total accumulated error after $n$ periods.</p>
+
+<p>Despite its simplicity, this model captures the essential feature of uncertainty accumulation: errors pile up. The question is <em>how fast</em> they pile up. The answer, as we'll prove, depends crucially on whether the errors are independent.</p>
+
+<p>What can we say about $S_n$? We can compute its mean and variance exactly.</p>
+
+<p><strong>Expected value.</strong> Each step has $E[X_i] = \frac{1}{2}(+1) + \frac{1}{2}(-1) = 0$. By linearity of expectation:</p>
+
+<div class="display-math">$$E[S_n] = \sum_{i=1}^{n} E[X_i] = n \times 0 = 0$$</div>
+
+<p>On average, you end up exactly where you started. This makes sense: the walk has no drift, no tendency to move in either direction. But "on average" hides a lot — individual walks wander far from zero. The expected position is zero, but the <em>typical</em> distance from zero is decidedly not.</p>
+
+<p>An analogy: if you flip a coin 100 times, the <em>expected</em> number of heads is 50. But you wouldn't be surprised by 45 or 55. The mean is 50; the spread around the mean is what we need to quantify. That spread is measured by the variance and standard deviation.</p>
+
+<p><strong>Variance.</strong> Each step has $E[X_i^2] = \frac{1}{2}(1)^2 + \frac{1}{2}(-1)^2 = 1$, so:</p>
+
+<div class="display-math">$$\text{Var}(X_i) = E[X_i^2] - (E[X_i])^2 = 1 - 0^2 = 1$$</div>
+
+<p>Each individual step deviates by exactly 1 unit from the mean (which is 0). The variance of a single step is 1, and the standard deviation is also 1. But what about the variance of the <em>cumulative</em> position $S_n$? That's where things get interesting.</p>
+
+<p>Your first instinct might be: "the variance of a sum is the sum of the variances." And you'd be right — but <em>only</em> because the steps are independent. If they were correlated, you'd need to account for the covariance between every pair of steps. Let's prove this properly.</p>
+
+<!-- ─── 3. VARIANCE OF SUM ─────────────────────────────── -->
+
+<h2>2. Variance of a sum of independent variables</h2>
+
+<div class="theorem-box">
+<div class="label">Theorem — Variance addition for independent variables</div>
+<p>If $X_1, X_2, \ldots, X_n$ are independent random variables with $E[X_i] = 0$ and $\text{Var}(X_i) = \sigma^2$ for all $i$, then</p>
+<div class="display-math">$$\text{Var}\!\left(\sum_{i=1}^{n} X_i\right) = n\sigma^2$$</div>
+<p>and therefore $\text{SD}\!\left(\sum_{i=1}^{n} X_i\right) = \sigma\sqrt{n}$.</p>
+</div>
+
+<div class="proof-box" id="proof-variance-addition">
+<div class="label">Proof</div>
+<p>We prove this from the definition of variance, using two ingredients: the expansion of a square and the independence condition $E[X_i X_j] = E[X_i] E[X_j]$ for $i \neq j$.</p>
+
+<p><strong>Step 1.</strong> Write $S_n = \sum_{i=1}^n X_i$. Since $E[X_i] = 0$, we have $E[S_n] = 0$, so</p>
+<div class="display-math">$$\text{Var}(S_n) = E[S_n^2]$$</div>
+
+<p><strong>Step 2.</strong> Expand the square:</p>
+<div class="display-math">$$S_n^2 = \left(\sum_{i=1}^n X_i\right)^2 = \sum_{i=1}^n X_i^2 + 2\sum_{i < j} X_i X_j$$</div>
+
+<p><strong>Step 3.</strong> Take expectations of both sides:</p>
+<div class="display-math">$$E[S_n^2] = \sum_{i=1}^n E[X_i^2] + 2\sum_{i < j} E[X_i X_j]$$</div>
+
+<p><strong>Step 4.</strong> Apply independence. For $i \neq j$, the variables $X_i$ and $X_j$ are independent, so</p>
+<div class="display-math">$$E[X_i X_j] = E[X_i] \cdot E[X_j] = 0 \cdot 0 = 0$$</div>
+
+<p>All the cross terms vanish. We're left with:</p>
+<div class="display-math">$$E[S_n^2] = \sum_{i=1}^n E[X_i^2] = \sum_{i=1}^n \sigma^2 = n\sigma^2$$</div>
+
+<p>Taking the square root: $\text{SD}(S_n) = \sqrt{n\sigma^2} = \sigma\sqrt{n}$.</p>
+<div class="qed">∎</div>
+</div>
+
+<p>This is the mathematical core of everything that follows. The cross terms vanish <em>because</em> the steps are independent. If they were correlated, those terms would survive and change the answer entirely.</p>
+
+<p>It's worth spelling out why this proof matters for our purposes. In a forecast, each week's deviation from plan is one "step." If weekly deviations are independent (this week's surprise doesn't predict next week's), then the cumulative uncertainty after $n$ weeks is $\sigma\sqrt{n}$, not $\sigma n$. The entire uncertainty quantification framework in this phase rests on this single result.</p>
+
+<p>The theorem generalises immediately: if the variables have different variances $\text{Var}(X_i) = \sigma_i^2$ (but are still independent), then $\text{Var}(\sum X_i) = \sum \sigma_i^2$. The equal-variance case is just the special case where the sum of $n$ copies of $\sigma^2$ gives $n\sigma^2$.</p>
+
+<!-- ─── 4. THE SQUARE ROOT OF TIME RULE ─────────────────────────────── -->
+
+<h2>3. The square root of time rule</h2>
+
+<p>Back to our coin flip walk with $\sigma = 1$. After $n$ steps:</p>
+
+<div class="display-math">$$E[S_n] = 0, \qquad \text{SD}(S_n) = \sqrt{n}$$</div>
+
+<p>The standard deviation grows as $\sqrt{n}$, not $n$. This is the <strong>square root of time rule</strong>, and it's worth pausing to understand <em>why</em>.</p>
+
+<p><strong>Why $\sqrt{n}$ and not $n$?</strong> If every deviation pushed in the same direction (the worst case), after $n$ steps you'd be $n$ steps away from the origin. The standard deviation would be $n$. But deviations don't all push the same way — some weeks overshoot, some undershoot, and they partially cancel. If they perfectly cancelled (the best case), the standard deviation would be 0.</p>
+
+<p>$\sqrt{n}$ is the mathematical truth for <strong>independent</strong> errors. It sits between the worst case ($n$) and the best case (0), much closer to the best case. After 100 steps, the spread is 10 — not 100, not 0.</p>
+
+<p>For concrete intuition, here's a table showing how SD grows relative to the linear (worst-case) bound:</p>
+
+<table>
+<tr><th>Steps $n$</th><th>$\sqrt{n}$ (actual SD)</th><th>$n$ (worst case)</th><th>Ratio $\sqrt{n}/n$</th></tr>
+<tr><td>1</td><td>1.00</td><td>1</td><td>100%</td></tr>
+<tr><td>4</td><td>2.00</td><td>4</td><td>50%</td></tr>
+<tr><td>16</td><td>4.00</td><td>16</td><td>25%</td></tr>
+<tr><td>52</td><td>7.21</td><td>52</td><td>13.9%</td></tr>
+<tr><td>100</td><td>10.00</td><td>100</td><td>10%</td></tr>
+<tr><td>260</td><td>16.12</td><td>260</td><td>6.2%</td></tr>
+</table>
+
+<p>At 260 steps (our 5-year forecast horizon), the actual SD is only 6.2% of what the worst case would predict. The $\sqrt{n}$ rule isn't a minor correction — it's an order-of-magnitude difference. Getting this right is the difference between a useful forecast and a useless one.</p>
+
+<p>Another way to see the $\sqrt{n}$ result: the <strong>signal-to-noise ratio</strong> improves as $\sqrt{n}$. If you average $n$ independent measurements, the average has SD $= \sigma/\sqrt{n}$, which shrinks with $n$. But here we're <em>summing</em>, not averaging — and the sum's SD grows as $\sigma\sqrt{n}$. These are two faces of the same coin: averaging concentrates, summing disperses, both governed by the $\sqrt{n}$ scaling law.</p>
+
+<!-- ─── 5. THE WIENER PROCESS ─────────────────────────────── -->
+
+<h2>4. The Wiener process</h2>
+
+<p>Take the coin flip walk and make it continuous: shrink the step size and time interval together. In the limit, you get the <strong>Wiener process</strong> (also called standard Brownian motion), denoted $W(t)$.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Wiener process</div>
+<p>A stochastic process $\{W(t) : t \geq 0\}$ is a Wiener process if:</p>
+<ul>
+<li>$W(0) = 0$</li>
+<li>Increments are independent: $W(t) - W(s)$ is independent of $W(u) - W(v)$ for non-overlapping intervals</li>
+<li>Increments are normally distributed: $W(t) - W(s) \sim N(0, t - s)$ for $t > s$</li>
+</ul>
+<p>In particular, $W(t) \sim N(0, t)$, so $\text{SD}(W(t)) = \sqrt{t}$.</p>
+</div>
+
+<p>The Wiener process is the continuous-time version of our coin flip walk. The $\sqrt{t}$ scaling of uncertainty carries over directly. If you add a volatility parameter $\sigma$, then $\sigma W(t) \sim N(0, \sigma^2 t)$, and the standard deviation is $\sigma\sqrt{t}$.</p>
+
+<p>The key property is the <strong>independent increments</strong> condition. What happens between time 0 and time 1 tells you nothing about what happens between time 1 and time 2. This is the continuous analogue of the coin flips being independent — and it's what makes the $\sqrt{t}$ rule hold.</p>
+
+<p>The normal distribution of $W(t)$ comes from the <strong>Central Limit Theorem</strong>: the sum of many tiny independent increments converges to a Gaussian. The continuous-time limit of the random walk inherits this normality automatically.</p>
+
+<p>One remarkable consequence: the paths of $W(t)$ are continuous everywhere but differentiable nowhere. The process jiggles so vigorously that you can never define a slope at any point. This matches the intuition that forecasts don't have a smooth "true trajectory" — the actual path is inherently jagged.</p>
+
+<p>For our purposes, the discrete random walk (weekly steps) is a better fit than the continuous Wiener process. Forecasts update weekly, not continuously. But the $\sqrt{n}$ scaling law is identical in both settings — the continuous theory confirms that the discrete result isn't an artefact of working in discrete time.</p>
+
+<p>One technical detail: the Wiener process assumes increments are <em>normally</em> distributed, whereas our coin flip walk has binary increments. The CLT bridges this gap: for large $n$, the distribution of $S_n = \sum X_i$ converges to a normal distribution regardless of the distribution of each $X_i$, provided they're independent with finite variance. So the normal assumption is justified as an approximation for sums of many small independent effects — precisely our forecasting scenario.</p>
+
+<!-- ─── 6. CONNECTION TO FORECASTING ─────────────────────────────── -->
+
+<h2>5. Connection to forecasting</h2>
+
+<p>In a cash-flow forecast, each week's actual result deviates from the projection by some error $\epsilon_w$. If these weekly errors are approximately independent (a reasonable assumption — this week's surprise doesn't predict next week's), then the cumulative forecast error after $n$ weeks is</p>
+
+<div class="display-math">$$\text{Total error} = \sum_{w=1}^{n} \epsilon_w$$</div>
+
+<p>and by our theorem, $\text{SD}(\text{Total error}) = \sigma_{\epsilon}\sqrt{n}$, where $\sigma_{\epsilon}$ is the standard deviation of a single week's forecast error.</p>
+
+<p>This is why the uncertainty band around a forecast widens as $\sqrt{n}$, not as $n$. After 52 weeks, the band is $\sqrt{52} \approx 7.2$ times the single-week uncertainty — not 52 times.</p>
+
+<p>If the weekly forecast error has SD of £2,000, then:</p>
+<ul>
+<li>After 1 week: SD = £2,000</li>
+<li>After 4 weeks: SD = £2,000 $\times$ 2 = £4,000</li>
+<li>After 13 weeks: SD = £2,000 $\times$ 3.6 = £7,211</li>
+<li>After 52 weeks: SD = £2,000 $\times$ 7.2 = £14,422</li>
+</ul>
+
+<p>The uncertainty grows, but <em>sub-linearly</em>. This is good news for forecasters — errors don't compound as badly as you might fear.</p>
+
+<p>There's a subtlety worth emphasising: we're assuming the weekly errors have <em>zero mean</em>. That is, the forecast is unbiased — it doesn't systematically overshoot or undershoot. If the forecast <em>is</em> biased — consistently overshooting or undershooting — then the cumulative error grows linearly with $n$ (the bias accumulates deterministically) <em>plus</em> a $\sqrt{n}$ random component on top.</p>
+
+<p>Formally, if each error has mean $\mu \neq 0$ and variance $\sigma^2$, the cumulative error after $n$ weeks has mean $n\mu$ and standard deviation $\sigma\sqrt{n}$. The bias ($n\mu$) dominates for large $n$, swamping the random variation. This is why building an unbiased base forecast (Phases 1–3) is so important. Bias is the enemy; randomness is manageable.</p>
+
+<p>Note also that the $\sqrt{n}$ rule applies to the <em>standard deviation</em>, not to individual paths. Any single realisation of the forecast can deviate by more or less than $\sigma\sqrt{n}$ — that's the nature of randomness. The SD tells you what's <em>typical</em> across many possible futures, not what will happen in this particular one.</p>
+
+<p>To make this tangible: if the weekly forecast error has SD of £2,000, the 68% confidence interval at week 52 is $\pm£14{,}422$. That means roughly two-thirds of possible futures will end up within £14,422 of the forecast. But one-third won't — and some of those could be significantly further away. The $2\sigma$ interval ($\pm£28{,}844$) captures about 95% of outcomes. The $3\sigma$ interval ($\pm£43{,}267$) captures 99.7%. These nested intervals are the foundation of the fan charts we'll build in the next page.</p>
+
+<!-- ─── 7. HISTORY ─────────────────────────────── -->
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p><a href="../mathematicians/brown-wiener.html">Robert Brown</a> (1827) observed pollen grains jiggling erratically in water under a microscope. He couldn't explain why. <strong>Albert Einstein</strong> (1905) provided the molecular theory: water molecules bombard the pollen grain from all sides, each impact a tiny random push. The cumulative displacement follows the $\sqrt{t}$ law — Einstein derived this from first principles, confirming the atomic hypothesis. <a href="../mathematicians/brown-wiener.html">Norbert Wiener</a> (1923) gave the process its rigorous mathematical foundation, proving the existence of continuous paths with the required properties. In finance, <strong>Black, Scholes, and Merton</strong> (1973) used $\sigma\sqrt{T}$ as the uncertainty scaling in their option pricing formula — the same $\sqrt{t}$ law, now pricing billions in derivatives daily. The connection is exact: option prices increase with $\sqrt{T}$ (time to expiry), not with $T$, because the underlying stock price follows a geometric Brownian motion.</p>
+</div>
+
+<!-- ─── 8. WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>If errors are correlated:</strong> the $\sqrt{n}$ rule fails. When this week's positive error makes next week's positive error more likely (positive autocorrelation), the cross terms $E[X_i X_j]$ don't vanish — they're positive. Variance grows faster than $n$. You'd need <em>fractional Brownian motion</em> with Hurst parameter $H > 0.5$ to model this. Conversely, negative autocorrelation (mean-reverting errors) gives slower-than-$\sqrt{n}$ growth.</p>
+<p><strong>If you assume linear growth of uncertainty:</strong> you'd predict that week 52's uncertainty band is 52 times the weekly error. For a £2,000 weekly SD, that's £104,000 — when the actual figure is £14,422. You'd massively overestimate long-term uncertainty, producing absurdly wide confidence bands that are useless for decision-making. The $\sqrt{n}$ rule is not just elegant — getting it wrong by a factor of 7 is practically devastating.</p>
+<p><strong>If the variance isn't constant:</strong> the theorem assumed $\text{Var}(X_i) = \sigma^2$ for all $i$. If some weeks are inherently more volatile than others (e.g., month-end weeks with large invoice runs), the formula $\text{Var}(S_n) = n\sigma^2$ no longer holds exactly. You'd need $\text{Var}(S_n) = \sum_{i=1}^n \sigma_i^2$ — the general form. The $\sqrt{n}$ scaling still broadly applies provided the $\sigma_i$ don't vary too wildly, but the constant-variance assumption is a simplification worth noting.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">Independent errors accumulate as the square root of time — slower than you fear, faster than you hope.</div>
+
+<!-- ─── 9. EXERCISES ─────────────────────────────── -->
+
+<h2>6. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — Simulate and verify</div>
+<p>Consider a 20-step random walk where each step is $+1$ or $-1$ with equal probability. The table below shows one realisation. Compute the cumulative position at each step and verify that the final position is consistent with $\text{SD} = \sqrt{20} \approx 4.47$.</p>
+<p>Steps: $+1, -1, +1, +1, -1, -1, +1, -1, +1, +1, -1, +1, -1, -1, +1, +1, -1, +1, -1, +1$</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Cumulative positions:</strong></p>
+<table>
+<tr><th>Step</th><th>$X_i$</th><th>$S_i$</th></tr>
+<tr><td>1</td><td>+1</td><td>1</td></tr>
+<tr><td>2</td><td>-1</td><td>0</td></tr>
+<tr><td>3</td><td>+1</td><td>1</td></tr>
+<tr><td>4</td><td>+1</td><td>2</td></tr>
+<tr><td>5</td><td>-1</td><td>1</td></tr>
+<tr><td>6</td><td>-1</td><td>0</td></tr>
+<tr><td>7</td><td>+1</td><td>1</td></tr>
+<tr><td>8</td><td>-1</td><td>0</td></tr>
+<tr><td>9</td><td>+1</td><td>1</td></tr>
+<tr><td>10</td><td>+1</td><td>2</td></tr>
+<tr><td>11</td><td>-1</td><td>1</td></tr>
+<tr><td>12</td><td>+1</td><td>2</td></tr>
+<tr><td>13</td><td>-1</td><td>1</td></tr>
+<tr><td>14</td><td>-1</td><td>0</td></tr>
+<tr><td>15</td><td>+1</td><td>1</td></tr>
+<tr><td>16</td><td>+1</td><td>2</td></tr>
+<tr><td>17</td><td>-1</td><td>1</td></tr>
+<tr><td>18</td><td>+1</td><td>2</td></tr>
+<tr><td>19</td><td>-1</td><td>1</td></tr>
+<tr><td>20</td><td>+1</td><td>2</td></tr>
+</table>
+<p>Final position: $S_{20} = 2$.</p>
+<p>The theoretical SD is $\sqrt{20} \approx 4.47$. Our final position of 2 is within one SD of the mean (0), which is entirely typical — about 68% of walks end within $\pm 4.47$ of zero. This single walk doesn't "prove" the $\sqrt{n}$ rule (you'd need many walks), but it's consistent with it. A final position of, say, 18 would be suspicious ($18/4.47 \approx 4$ standard deviations — extremely unlikely).</p>
+<p><strong>Verification via counting.</strong> Count of +1 steps: positions 1, 3, 4, 7, 9, 10, 12, 15, 16, 18, 20 = 11. Count of -1 steps: positions 2, 5, 6, 8, 11, 13, 14, 17, 19 = 9. Net: $11 - 9 = 2$. Confirmed: $S_{20} = 2$.</p>
+<p>To verify the $\sqrt{n}$ rule empirically, you'd run thousands of 20-step walks and compute the standard deviation of the final positions across all runs. That empirical SD would converge to $\sqrt{20} \approx 4.47$ as the number of simulations grows — a direct computational verification of the theoretical result.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — Explain to a CFO</div>
+<p>A CFO asks: "If our weekly forecast error is £3,000, does that mean at week 52 we could be off by £156,000?" Explain, in plain language backed by mathematics, why the actual uncertainty band at week 52 is roughly 7 times the weekly error, not 52 times.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p>No, the uncertainty band at week 52 is not £156,000. Here's why.</p>
+<p>The CFO's reasoning assumes that every week's error pushes in the same direction — all overshoots or all undershoots. That's the absolute worst case: 52 weeks $\times$ £3,000 = £156,000.</p>
+<p>But in reality, some weeks you overshoot and some you undershoot. These errors are independent — this week's surprise doesn't predict next week's. When you add up 52 independent errors, the positive and negative ones partially cancel.</p>
+<p>Mathematically, if each week's error has standard deviation $\sigma = £3{,}000$ and errors are independent, then the cumulative error after $n$ weeks has standard deviation $\sigma\sqrt{n}$, not $\sigma n$. This is because the variance (the square of SD) adds — $n$ variances give total variance $n\sigma^2$ — but SD is the square root of variance, so $\text{SD} = \sigma\sqrt{n}$.</p>
+<p>At week 52: $\text{SD} = £3{,}000 \times \sqrt{52} = £3{,}000 \times 7.21 = £21{,}633$.</p>
+<p>So the 68% confidence band at week 52 is roughly $\pm £21{,}600$ — not $\pm £156{,}000$. The ratio is $\sqrt{52} \approx 7.2$, not 52. The uncertainty is about 7 times the weekly error, not 52 times.</p>
+<p>To put it another way: the £156,000 scenario requires 52 consecutive weeks of errors all in the same direction. The probability of 52 consecutive coin flips all landing heads is $2^{-52} \approx 2 \times 10^{-16}$. It's not going to happen.</p>
+<p>The key takeaway for the CFO: a one-year forecast with £3,000 weekly error has a 95% confidence band of roughly $\pm 2 \times £21{,}633 = \pm £43{,}266$. That's the range you should plan for — not the catastrophic £156,000 figure. Planning for the worst case would mean holding £156k in idle cash "just in case," when £43k of buffer covers 95% of outcomes. That's over £100k of cash freed up by understanding basic probability — a concrete financial benefit of the $\sqrt{n}$ rule.</p>
+</div>
+</details>
+</div>
+
+<div class="nav">
+<a href="../phase4/02-trend-extrapolation.html">&larr; Trend Extrapolation</a>
+<a href="02-uncertainty-model.html">Next: The Uncertainty Model &rarr;</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

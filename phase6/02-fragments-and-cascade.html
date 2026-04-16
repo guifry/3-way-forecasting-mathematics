@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fragment Application and Balance Cascade — Phase 6</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Fragment Application and Balance Cascade</h1>
+<p class="subtitle">Phase 6 — Scenarios and Sensitivity, Page 2</p>
+
+<div class="problem-box">
+  <div class="label">The problem</div>
+  <p>Two macro signals affect revenue simultaneously: sterling strengthens 3% (reducing export revenue) and inflation rises 2% (increasing nominal prices). If we apply these sequentially — multiply by 0.97 then by 1.02 — we get a different result depending on the order. Worse, after modifying any week's flows, all subsequent cash balances are wrong unless we recalculate them. We need order-independent fragment application and a systematic balance cascade.</p>
+</div>
+
+<h2>1. Independent Fragment Application</h2>
+
+<p>A <strong>fragment</strong> is a single macro adjustment — an FX shift, an inflation change, a rate move. Each fragment has a percentage impact $p_i$ and an intensity $\iota_i$ (defaulting to 1). The key principle: each fragment computes its effect from the <em>original baseline</em>, not from the running total after prior fragments.</p>
+
+<div class="theorem-box">
+  <div class="label">Theorem — Independent Fragment Application</div>
+  <p>Given baseline value $B$ and fragments with percentage impacts $p_1, p_2, \ldots, p_n$ and intensities $\iota_1, \iota_2, \ldots, \iota_n$, each fragment's delta is:</p>
+  <div class="display-math">$$\delta_i = B \times \frac{p_i}{100} \times \iota_i$$</div>
+  <p>The adjusted value is:</p>
+  <div class="display-math">$$\text{adjusted} = B + \sum_{i=1}^{n} \delta_i$$</div>
+  <p>This is <strong>order-independent</strong>: the result does not depend on which fragment is applied first.</p>
+</div>
+
+<div class="proof-box" id="proof-commutativity">
+  <div class="label">Proof — Commutativity of Independent Application</div>
+  <p>Each $\delta_i$ depends only on $B$, $p_i$, and $\iota_i$ — none of which change when other fragments are applied. The adjusted value is $B + \sum_i \delta_i$. Since addition of real numbers is commutative and associative:</p>
+  <div class="display-math">$$B + \delta_1 + \delta_2 = B + \delta_2 + \delta_1$$</div>
+  <p>for any permutation of the deltas. The result is identical regardless of the order in which fragments are evaluated.</p>
+  <p>More generally, for $n$ fragments and any permutation $\sigma$ of $\{1, \ldots, n\}$:</p>
+  <div class="display-math">$$B + \sum_{i=1}^n \delta_{\sigma(i)} = B + \sum_{i=1}^n \delta_i$$</div>
+  <p>This follows directly from the commutativity of addition over the reals. No additional assumptions about the fragments are required — they need not be independent in any probabilistic sense, nor small in magnitude. The result is exact. ∎</p>
+</div>
+
+<h2>2. Why Not Sequential?</h2>
+
+<p>Sequential application multiplies factors:</p>
+
+<div class="display-math">$$\text{Sequential (order 1)}: B \times (1 + p_1/100) \times (1 + p_2/100)$$</div>
+<div class="display-math">$$\text{Sequential (order 2)}: B \times (1 + p_2/100) \times (1 + p_1/100)$$</div>
+
+<p>These two are equal (multiplication commutes), but <em>both differ from independent application</em>. With $B = \text{£}100{,}000$, $p_1 = -3$, $p_2 = +2$:</p>
+
+<p><strong>Sequential:</strong> $100{,}000 \times 0.97 \times 1.02 = 100{,}000 \times 0.9894 = \text{£}98{,}940$.</p>
+<p><strong>Independent:</strong> $\delta_1 = 100{,}000 \times (-0.03) = -3{,}000$. $\delta_2 = 100{,}000 \times 0.02 = +2{,}000$. Adjusted $= 100{,}000 - 3{,}000 + 2{,}000 = \text{£}99{,}000$.</p>
+
+<p>The £60 difference arises because sequential application compounds: the +2% is applied to the already-reduced £97,000 rather than the original £100,000. With larger percentages or more fragments, this compounding effect grows. Independent application keeps each fragment's impact interpretable — "FX cost us £3k, inflation gained us £2k" — without cross-contamination.</p>
+
+<h3>The compounding error grows with scale</h3>
+
+<p>With three fragments — FX -5%, inflation +3%, volume +4% — the sequential result is:</p>
+
+<div class="display-math">$$B \times 0.95 \times 1.03 \times 1.04 = B \times 1.01764$$</div>
+
+<p>The independent result is:</p>
+
+<div class="display-math">$$B + B(-0.05) + B(0.03) + B(0.04) = B(1 + 0.02) = B \times 1.02$$</div>
+
+<p>For $B = \text{£}500{,}000$: sequential gives £508,820, independent gives £510,000. The £1,180 gap is the accumulated cross-terms. With 5 fragments at ±10% each, the gap can reach thousands of pounds per week — significant over a 260-week forecast.</p>
+
+<p>More importantly, the independent method lets you produce an <strong>attribution table</strong>: "FX cost us £25,000, inflation added £15,000, volume added £20,000." The total is exactly the sum of the parts. Sequential application destroys this property — the "FX impact" depends on whether you applied inflation first.</p>
+
+<h2>3. Replacement Fragments</h2>
+
+<p>Some fragments are not percentage-based but <strong>replacement</strong> values (analogous to overrides from the previous page). A replacement fragment sets the value directly, ignoring all percentage fragments. When both types exist:</p>
+
+<div class="display-math">$$\text{adjusted} = \begin{cases} \text{replacement value} & \text{if a replacement fragment exists} \\ B + \sum_i \delta_i & \text{otherwise} \end{cases}$$</div>
+
+<p>If multiple replacement fragments conflict, the same resolution rule applies: latest start_week wins.</p>
+
+<h3>Fragment priority hierarchy</h3>
+
+<p>When both percentage and replacement fragments target the same driver at the same week, the resolution is:</p>
+<ol>
+  <li>If a replacement fragment exists, it takes absolute precedence. All percentage fragments are ignored for that driver/week combination.</li>
+  <li>If no replacement exists, all percentage fragments are applied independently from the baseline.</li>
+  <li>The result then passes through the adjustment algebra (Phase 6, p1): multipliers, deltas, and overrides from the scenario layer can further modify the fragment-adjusted value.</li>
+</ol>
+
+<p>This creates a clean separation: fragments model <strong>macro conditions</strong> (FX, inflation, interest rates), whilst the adjustment algebra models <strong>business decisions</strong> (pricing changes, new contracts, cost cuts). The two layers compose without interference because fragments modify the baseline <em>before</em> the adjustment algebra runs.</p>
+
+<h2>4. The Balance Cascade</h2>
+
+<p>Modifying a single week's cash flows has consequences that ripple forward through every subsequent week's balance.</p>
+
+<div class="theorem-box">
+  <div class="label">Theorem — Balance Cascade Invariant</div>
+  <p>For any week $w$ in the forecast, the following invariants must hold:</p>
+  <div class="display-math">$$\text{opening}(w) = \text{closing}(w - 1)$$</div>
+  <div class="display-math">$$\text{closing}(w) = \text{opening}(w) + \text{net}(w)$$</div>
+  <p>where $\text{net}(w) = \text{receipts}(w) - \text{disbursements}(w)$. These define a <strong>cumulative sum</strong>. If any week $k$'s net flow changes by $\Delta$, then $\text{closing}(w)$ changes by $\Delta$ for all $w \geq k$.</p>
+</div>
+
+<div class="proof-box" id="proof-cascade-propagation">
+  <div class="label">Proof — Cascade Propagation</div>
+  <p>Let $\text{net}'(k) = \text{net}(k) + \Delta$ for some modification at week $k$. Then:</p>
+  <div class="display-math">$$\text{closing}'(k) = \text{opening}(k) + \text{net}'(k) = \text{closing}(k) + \Delta$$</div>
+  <p>For week $k+1$: $\text{opening}'(k+1) = \text{closing}'(k) = \text{closing}(k) + \Delta$. Since $\text{net}(k+1)$ is unchanged:</p>
+  <div class="display-math">$$\text{closing}'(k+1) = \text{opening}'(k+1) + \text{net}(k+1) = \text{closing}(k+1) + \Delta$$</div>
+  <p>By induction, $\text{closing}'(w) = \text{closing}(w) + \Delta$ for all $w \geq k$. ∎</p>
+</div>
+
+<p><strong>Algorithm:</strong> after modifying week $k$, recompute closing balances by iterating from $w = k$ to the last forecast week, applying the invariant at each step. The computational cost is $O(W - k)$ where $W$ is the total number of forecast weeks.</p>
+
+<h3>Cascade example</h3>
+
+<p>A 6-week forecast with opening cash £100,000 and the following net flows:</p>
+
+<table>
+  <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr>
+  <tr><td>Net flow</td><td>£5,000</td><td>£8,000</td><td>-£3,000</td><td>£12,000</td><td>£6,000</td><td>£4,000</td></tr>
+  <tr><td>Closing</td><td>£105,000</td><td>£113,000</td><td>£110,000</td><td>£122,000</td><td>£128,000</td><td>£132,000</td></tr>
+</table>
+
+<p>Now suppose a scenario reduces week 3's net flow by £7,000 (from -£3,000 to -£10,000). The cascade:</p>
+
+<table>
+  <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr>
+  <tr><td>Net flow</td><td>£5,000</td><td>£8,000</td><td><strong>-£10,000</strong></td><td>£12,000</td><td>£6,000</td><td>£4,000</td></tr>
+  <tr><td>Closing</td><td>£105,000</td><td>£113,000</td><td><strong>£103,000</strong></td><td><strong>£115,000</strong></td><td><strong>£121,000</strong></td><td><strong>£125,000</strong></td></tr>
+</table>
+
+<p>Every closing balance from week 3 onwards drops by exactly £7,000. Weeks 1-2 are unaffected. This is the cascade in action: a single modification propagates as a constant shift through all subsequent balances.</p>
+
+<h2>5. Macro Impact Formulas</h2>
+
+<p>Three macro variables that commonly generate fragments:</p>
+
+<h3>Foreign exchange</h3>
+<div class="display-math">$$\text{FX impact} = \text{exposed\_revenue} \times \frac{\text{current\_rate} - \text{baseline\_rate}}{\text{baseline\_rate}} \times (-1)$$</div>
+<p>The $(-1)$ factor reflects that GBP strengthening (rate increase for GBP/foreign) <em>reduces</em> foreign revenue when converted to sterling.</p>
+
+<h3>Interest rate</h3>
+<div class="display-math">$$\text{Interest impact} = \text{debt\_service} \times 0.70 \times \left(\frac{\text{current\_rate}}{\text{baseline\_rate}} - 1\right)$$</div>
+<p>The 0.70 factor estimates the interest portion of total debt service (the remainder being principal repayment).</p>
+
+<h3>Employer National Insurance</h3>
+<div class="display-math">$$\text{NI impact} = \text{payroll} \times 0.60 \times \frac{\text{current\_rate} - \text{baseline\_rate}}{100}$$</div>
+<p>The 0.60 factor estimates the NI-liable portion of total payroll (excluding pension contributions, benefits in kind, etc.).</p>
+
+<h3>Deriving the FX formula</h3>
+
+<p>Suppose a UK company earns €500,000/month from European clients. At the baseline rate of £1 = €1.15, this converts to £500,000 / 1.15 = £434,783. If sterling strengthens to £1 = €1.20:</p>
+
+<div class="display-math">$$\text{new GBP revenue} = \frac{500{,}000}{1.20} = \text{£}416{,}667$$</div>
+
+<p>The impact is £416,667 - £434,783 = -£18,116. Using the formula:</p>
+
+<div class="display-math">$$\text{impact} = 434{,}783 \times \frac{1.20 - 1.15}{1.15} \times (-1) = 434{,}783 \times 0.04348 \times (-1) = -\text{£}18{,}904$$</div>
+
+<p>The formula is an approximation (linear in the rate change), accurate for small movements. The exact impact requires dividing by the new rate, but the linear formula is sufficient for scenario analysis where the rate change is typically a few percent.</p>
+
+<h2>6. Worked Example</h2>
+
+<p>A 4-week revenue forecast for a company with 40% export exposure. Opening cash balance: £200,000.</p>
+
+<table>
+  <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+  <tr><td>Revenue (baseline)</td><td>£100,000</td><td>£105,000</td><td>£98,000</td><td>£110,000</td></tr>
+  <tr><td>Costs (baseline)</td><td>£80,000</td><td>£82,000</td><td>£79,000</td><td>£85,000</td></tr>
+</table>
+
+<p><strong>Fragments:</strong> FX strengthens 5% ($p_1 = -5$, applied to 40% of revenue, so intensity $\iota_1 = 0.40$). Inflation +2% ($p_2 = +2$, intensity $\iota_2 = 1.0$ on revenue).</p>
+
+<p><strong>Week 1 revenue deltas:</strong></p>
+<div class="display-math">$$\delta_{\text{FX}} = 100{,}000 \times \frac{-5}{100} \times 0.40 = -\text{£}2{,}000$$</div>
+<div class="display-math">$$\delta_{\text{inf}} = 100{,}000 \times \frac{+2}{100} \times 1.0 = +\text{£}2{,}000$$</div>
+<div class="display-math">$$\text{Adjusted revenue (W1)} = 100{,}000 - 2{,}000 + 2{,}000 = \text{£}100{,}000$$</div>
+
+<p><strong>All weeks (same fragment percentages):</strong></p>
+<table>
+  <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+  <tr><td>$\delta_{\text{FX}}$</td><td>-£2,000</td><td>-£2,100</td><td>-£1,960</td><td>-£2,200</td></tr>
+  <tr><td>$\delta_{\text{inf}}$</td><td>+£2,000</td><td>+£2,100</td><td>+£1,960</td><td>+£2,200</td></tr>
+  <tr><td>Adjusted revenue</td><td>£100,000</td><td>£105,000</td><td>£98,000</td><td>£110,000</td></tr>
+</table>
+
+<p>In this case, the two fragments happen to cancel perfectly. Now suppose FX strengthens 5% but inflation is only +1%:</p>
+
+<table>
+  <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+  <tr><td>$\delta_{\text{FX}}$</td><td>-£2,000</td><td>-£2,100</td><td>-£1,960</td><td>-£2,200</td></tr>
+  <tr><td>$\delta_{\text{inf}}$</td><td>+£1,000</td><td>+£1,050</td><td>+£980</td><td>+£1,100</td></tr>
+  <tr><td>Adjusted revenue</td><td>£99,000</td><td>£103,950</td><td>£97,020</td><td>£108,900</td></tr>
+</table>
+
+<p><strong>Balance cascade:</strong> net flow per week = adjusted revenue - costs.</p>
+
+<table>
+  <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+  <tr><td>Net flow</td><td>£19,000</td><td>£21,950</td><td>£18,020</td><td>£23,900</td></tr>
+  <tr><td>Opening</td><td>£200,000</td><td>£219,000</td><td>£240,950</td><td>£258,970</td></tr>
+  <tr><td>Closing</td><td>£219,000</td><td>£240,950</td><td>£258,970</td><td>£282,870</td></tr>
+</table>
+
+<p><strong>Compare with sequential application</strong> (FX then inflation): sequential would compute $99{,}000 \times 1.01 = \text{£}99{,}990$ for week 1 (applying FX first, then inflation to the FX-adjusted value). Independent gives £99,000. The difference is £990 in week 1 alone. Over 260 weeks, these small differences accumulate and — more critically — they make it impossible to produce a clean attribution table.</p>
+
+<p>With independent application, the attribution is unambiguous: FX reduced revenue by £2,400/week and inflation added £1,200/week, for a net impact of -£1,200/week. This decomposition is exact — the parts sum to the whole. With sequential application, the "inflation impact" depends on whether FX was applied first, making attribution inherently order-dependent and therefore arbitrary.</p>
+
+<div class="history-box">
+  <div class="label">Historical note</div>
+  <p><strong>Scenario planning</strong> was pioneered at <strong>Royal Dutch Shell</strong> in the early 1970s by Pierre Wack. Shell's scenarios famously anticipated the 1973 oil crisis, enabling the company to respond faster than competitors. <strong>Stress testing</strong> became a regulatory requirement after the 2008 financial crisis, formalised in the <strong>Basel II/III</strong> banking accords. Today, UK banks must submit annual stress test results to the Bank of England's Prudential Regulation Authority.</p>
+</div>
+
+<div class="break-box">
+  <div class="label">What breaks</div>
+  <p><strong>Without independent application:</strong> sequential application introduces order dependence. Two analysts applying the same fragments in different orders get different results. Worse, each fragment's marginal impact becomes impossible to isolate — you cannot say "FX cost us exactly £X" because the FX delta depends on whether inflation was applied first.</p>
+  <p><strong>Without the balance cascade:</strong> opening balances no longer match prior closing balances. The cash position in week 10 would still reflect the old week 9 closing, creating a discontinuity. The balance sheet would not balance, and the accounting identity $A = L + E$ would be violated.</p>
+</div>
+
+<h2>7. Exercises</h2>
+
+<div class="exercise">
+  <span class="exercise-label">Exercise 1 (Academic)</span>
+  <p>Prove that independent fragment application is commutative for any number of fragments $n$.</p>
+  <details>
+    <summary>Solution</summary>
+    <div>
+      <p>Let fragments have deltas $\delta_1, \delta_2, \ldots, \delta_n$ where $\delta_i = B \cdot (p_i / 100) \cdot \iota_i$. Each $\delta_i$ depends only on the baseline $B$ (a constant) and the fragment's own parameters. The adjusted value is:</p>
+      <div class="display-math">$$\text{adjusted} = B + \sum_{i=1}^{n} \delta_i$$</div>
+      <p>Let $\sigma$ be any permutation of $\{1, 2, \ldots, n\}$. Then:</p>
+      <div class="display-math">$$B + \sum_{i=1}^{n} \delta_{\sigma(i)} = B + \sum_{i=1}^{n} \delta_i$$</div>
+      <p>because finite sums of real numbers are invariant under permutation (commutativity and associativity of addition). The result is identical for any ordering. ∎</p>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <span class="exercise-label">Exercise 2 (Applied)</span>
+  <p>A company has baseline weekly revenue of £120,000 (60% domestic, 40% export), weekly costs of £95,000 (including £15,000 debt service and £40,000 payroll), and opening cash of £150,000. Apply FX -5% and inflation +2% independently over 4 weeks, then cascade the balances.</p>
+  <details>
+    <summary>Solution</summary>
+    <div>
+      <p><strong>Revenue fragments (applied to £120,000 baseline each week):</strong></p>
+      <p>$\delta_{\text{FX}} = 120{,}000 \times (-5/100) \times 0.40 = -\text{£}2{,}400$</p>
+      <p>$\delta_{\text{inf}} = 120{,}000 \times (2/100) \times 1.0 = +\text{£}2{,}400$</p>
+      <p>Adjusted revenue = £120,000 - £2,400 + £2,400 = £120,000 each week (fragments cancel).</p>
+      <p>If inflation were only +1%: $\delta_{\text{inf}} = +\text{£}1{,}200$. Adjusted revenue = £120,000 - £2,400 + £1,200 = £118,800.</p>
+      <p>Using the +1% inflation scenario for a more interesting cascade:</p>
+      <p><strong>Net flow per week:</strong> £118,800 - £95,000 = £23,800.</p>
+      <table>
+        <tr><th>Week</th><th>1</th><th>2</th><th>3</th><th>4</th></tr>
+        <tr><td>Opening</td><td>£150,000</td><td>£173,800</td><td>£197,600</td><td>£221,400</td></tr>
+        <tr><td>Net</td><td>£23,800</td><td>£23,800</td><td>£23,800</td><td>£23,800</td></tr>
+        <tr><td>Closing</td><td>£173,800</td><td>£197,600</td><td>£221,400</td><td>£245,200</td></tr>
+      </table>
+      <p>Each week's opening equals the prior week's closing. The cascade is consistent.</p>
+    </div>
+  </details>
+</div>
+
+<hr>
+
+<div class="exercise">
+  <span class="exercise-label">Exercise 3 (Applied)</span>
+  <p>A company has £15,000 weekly debt service. The baseline interest rate is 5.25%. If the Bank of England raises rates to 5.75%, compute the weekly interest impact using the macro formula. Then apply it as a fragment alongside an employer NI increase from 13.8% to 15.0% on a £40,000 weekly payroll. Show the independent application.</p>
+  <details>
+    <summary>Solution</summary>
+    <div>
+      <p><strong>Interest impact:</strong></p>
+      <div class="display-math">$$\text{impact} = 15{,}000 \times 0.70 \times \left(\frac{5.75}{5.25} - 1\right) = 10{,}500 \times 0.09524 = +\text{£}1{,}000/\text{week}$$</div>
+      <p>(Costs increase — the company pays more interest.)</p>
+      <p><strong>NI impact:</strong></p>
+      <div class="display-math">$$\text{impact} = 40{,}000 \times 0.60 \times \frac{15.0 - 13.8}{100} = 24{,}000 \times 0.012 = +\text{£}288/\text{week}$$</div>
+      <p><strong>Independent application on costs baseline of £95,000/week:</strong></p>
+      <p>$\delta_{\text{interest}} = +\text{£}1{,}000$. $\delta_{\text{NI}} = +\text{£}288$. Adjusted costs = £95,000 + £1,000 + £288 = £96,288/week.</p>
+      <p>Each fragment's impact is separately attributable: "rate rise costs us £1,000/week; NI rise costs us £288/week."</p>
+    </div>
+  </details>
+</div>
+
+<div class="oneliner">Fragments operate independently from the baseline — never from each other — and every modified flow cascades forward through every subsequent balance.</div>
+
+<div class="nav">
+  <a href="01-adjustment-algebra.html">&larr; The Adjustment Algebra</a>
+  <a href="../phase7/01-ledger-to-assumptions.html">Next: From Ledger to Assumptions &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body>
+</html>

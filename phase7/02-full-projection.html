@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The 260-Week Projection — Phase 7</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>The 260-Week Projection</h1>
+<p class="subtitle">Phase 7 — The Full Model Walkthrough, Page 2</p>
+
+<div class="problem-box">
+  <div class="label">The problem</div>
+  <p>You have the complete assumptions page from the previous walkthrough. Now produce 260 weeks (5 years) of three-way forecast — profit and loss, balance sheet, and cash flow — with every line tying together. This is the capstone: every formula references the phase where it was derived.</p>
+</div>
+
+<h2>1. The Engine Loop</h2>
+
+<div class="theorem-box">
+  <div class="label">Theorem — The Weekly Projection Engine</div>
+  <p>For each week $w = 1$ to $260$, compute the following in order. Let $R_0$ be base weekly revenue, $g$ the annual growth rate, $S(m)$ the seasonal index for the month containing week $w$, and $D(y)$ the growth drag for year $y$.</p>
+  <div class="display-math">$$\text{Revenue}(w) = R_0 \times (1 + g)^{(w-1)/52} \times S(\text{month}(w)) \times D(\text{year}(w))$$</div>
+  <p>This combines compound growth (Phase 1, p1), seasonal decomposition (Phase 2, p1-3), and growth drag (Phase 1, p2).</p>
+</div>
+
+<p>The exponent $(w-1)/52$ converts the week index to a fraction of a year, so that $(1+g)^{(w-1)/52}$ gives the compounded growth from the start of the forecast. At $w = 1$ (the first week), the exponent is 0 and the growth factor is 1 (no growth yet). At $w = 53$ (one year in), the exponent is 1 and the growth factor is $(1+g)$ — exactly one year of growth.</p>
+
+<p>The drag factor $D(\text{year}(w))$ dampens growth in later years to prevent unrealistic hockey-stick projections. A common formulation (Phase 1, p2): $D(y) = 1 - 0.05 \times (y - 1)$, reducing growth by 5 percentage points per year. By year 5, the drag is 0.80, so effective growth is $g \times 0.80$.</p>
+
+<p>The remaining lines follow sequentially:</p>
+
+<h3>Cost of goods sold</h3>
+<div class="display-math">$$\text{COGS}(w) = \text{Revenue}(w) \times (1 - \text{margin})$$</div>
+<p>Derived from the gross margin assumption (Phase 7, p1, step 5).</p>
+
+<h3>Fixed costs</h3>
+<div class="display-math">$$\text{Fixed}(w) = \sum_j \text{stream}_j^{\text{weekly}} \times (1 + \pi)^{(w-1)/52}$$</div>
+<p>Each fixed recurring stream grows at the inflation rate $\pi$ (Phase 1, p3 — inflation escalation).</p>
+
+<h3>Variable costs</h3>
+<div class="display-math">$$\text{Variable}(w) = \sum_k \text{stream}_k^{\text{weekly}} \times (1 + g)^{(w-1)/52}$$</div>
+<p>Variable streams grow at the revenue growth rate (Phase 1, p3 — CVP classification).</p>
+
+<h3>Residual costs</h3>
+<div class="display-math">$$\text{Residual}(w) = r_0 \times (1 + g_b)^{(w-1)/52} \times S_d(\text{month}(w))$$</div>
+<p>where $g_b$ is the blended growth rate and $S_d$ is a dampened seasonal index (Phase 2, p3).</p>
+
+<h3>Depreciation</h3>
+<div class="display-math">$$\text{Depreciation}(w) = \sum_a \frac{\text{cost}_a}{\text{life}_a \times 52}$$</div>
+<p>Straight-line over asset life in weeks (Phase 3, p1 — non-cash P&amp;L charge).</p>
+
+<h3>Interest</h3>
+<div class="display-math">$$\text{Interest}(w) = \sum_l \text{balance}_l(w) \times \frac{\text{rate}_l + \text{spread}}{52}$$</div>
+<p>Weekly interest on each loan's outstanding balance (Phase 1, p1 — compound interest fundamentals).</p>
+
+<h3>Profit before tax</h3>
+<div class="display-math">$$\text{PBT}(w) = \text{Revenue} - \text{COGS} - \text{Fixed} - \text{Variable} - \text{Residual} - \text{Depreciation} - \text{Interest}$$</div>
+
+<h3>Tax and net profit</h3>
+<div class="display-math">$$\text{Tax}(w) = \max(0, \text{PBT}(w) \times \tau)$$</div>
+<div class="display-math">$$\text{Net Profit}(w) = \text{PBT}(w) - \text{Tax}(w)$$</div>
+<p>Tax is only charged on positive PBT (losses carry forward but are not refunded weekly). In the UK, corporation tax is currently 25% for profits above £250,000 and 19% for profits below £50,000, with marginal relief between. For simplicity we use a flat rate $\tau$, but the engine can accommodate a step function.</p>
+
+<h3>Why this order matters</h3>
+
+<p>Each line depends on the ones above it. Revenue must be computed before COGS (which is a function of revenue). Fixed and variable costs are independent of revenue but must be computed before PBT. Interest depends on the loan balance, which is a balance sheet item from the <em>prior</em> week — creating a one-week lag that avoids circular references.</p>
+
+<p>The engine processes all 260 weeks in a single forward pass. There are no iterative solves or circular references. Each week's computations depend only on prior weeks' results and the current week's assumptions. This is by design: circularity in financial models is a common source of instability and auditability failures.</p>
+
+<h2>2. Balance Sheet Roll-Forward</h2>
+
+<p>The P&amp;L feeds the balance sheet. Each week, update the following (Phase 3, p1 — double-entry conservation; Phase 4, p1-2 — receivables and payables):</p>
+
+<div class="display-math">$$\text{AR}(w) = \text{AR}(w-1) + \text{Revenue}(w) - \text{Collections}(w)$$</div>
+<div class="display-math">$$\text{AP}(w) = \text{AP}(w-1) + \text{COGS}(w) - \text{Payments}(w)$$</div>
+
+<p>where collections lag revenue by DSO weeks and payments lag COGS by DPO weeks (Phase 4, p1):</p>
+
+<div class="display-math">$$\text{Collections}(w) = \text{Revenue}(w - \text{DSO})$$</div>
+<div class="display-math">$$\text{Payments}(w) = \text{COGS}(w - \text{DPO})$$</div>
+
+<p>For $w \leq \text{DSO}$, collections come from pre-forecast opening AR (run off uniformly). Similarly for AP.</p>
+
+<h3>Other balance sheet items</h3>
+<div class="display-math">$$\text{PPE}(w) = \text{PPE}(w-1) + \text{Capex}(w) - \text{Depreciation}(w)$$</div>
+<div class="display-math">$$\text{Tax accrual}(w) = \text{Tax accrual}(w-1) + \text{Tax}(w) - \text{Tax paid}(w)$$</div>
+<div class="display-math">$$\text{Retained earnings}(w) = \text{RE}(w-1) + \text{Net Profit}(w) - \text{Dividends}(w)$$</div>
+<div class="display-math">$$\text{Loan balance}(w) = \text{Loan}(w-1) - \text{Principal repayment}(w)$$</div>
+
+<p><strong>Cash is the plug:</strong> $\text{Cash}(w) = \text{Total Assets}(w) - \text{Non-cash assets}(w)$, or equivalently derived from the cash flow statement. The term "plug" means cash is the residual variable that forces $A = L + E$ to hold. Every other balance sheet item is computed from its own roll-forward formula; cash absorbs whatever is left. If the model is correct, the cash derived from the accounting identity equals the cash derived from the cash flow statement. If they differ, the model has an error.</p>
+
+<h3>Opening balance initialisation</h3>
+
+<p>The opening balance sheet (week 0) comes from the latest management accounts or trial balance. Key opening items:</p>
+<ul>
+  <li><strong>AR</strong> = DSO × weekly revenue (Phase 4, p1). This ensures the run-off schedule aligns with the projection.</li>
+  <li><strong>AP</strong> = DPO × weekly COGS. Same logic.</li>
+  <li><strong>PPE</strong> = from fixed asset register or trial balance.</li>
+  <li><strong>Loan balances</strong> = from loan schedules.</li>
+  <li><strong>RE</strong> = from trial balance (retained earnings to date).</li>
+  <li><strong>Cash</strong> = from bank statements (verified against trial balance).</li>
+</ul>
+
+<h2>3. Cash Flow Derivation</h2>
+
+<p>The cash flow statement is derived from balance sheet deltas (Phase 3, p2 — the indirect method):</p>
+
+<div class="display-math">$$\text{CF}_{\text{ops}} = \text{Net Profit} + \text{Depreciation} - \Delta\text{AR} + \Delta\text{AP} + \Delta\text{Tax accrual}$$</div>
+<div class="display-math">$$\text{CF}_{\text{inv}} = -\text{Capex}$$</div>
+<div class="display-math">$$\text{CF}_{\text{fin}} = -\text{Principal repayment} - \text{Dividends}$$</div>
+<div class="display-math">$$\text{Net CF}(w) = \text{CF}_{\text{ops}} + \text{CF}_{\text{inv}} + \text{CF}_{\text{fin}}$$</div>
+
+<h2>4. Verification Checks</h2>
+
+<p>Two checks must pass every week (Phase 3, p1):</p>
+
+<div class="display-math">$$\text{Check 1: } A(w) = L(w) + E(w) \quad \text{(accounting identity)}$$</div>
+<div class="display-math">$$\text{Check 2: } \text{Cash}_{\text{BS}}(w) = \text{Cash}_{\text{BS}}(w-1) + \text{Net CF}(w) \quad \text{(CF ties to BS)}$$</div>
+
+<p>If either fails, the model has an error. Trace the discrepancy by checking which delta is wrong.</p>
+
+<h2>5. Uncertainty Bands</h2>
+
+<p>Attach a growing uncertainty envelope (Phase 5, p1-3):</p>
+
+<div class="display-math">$$\sigma(w) = \sigma_0 \times \sqrt{w}$$</div>
+
+<p>where $\sigma_0$ is the base weekly standard deviation of actuals vs. forecast. The 95% confidence band at week $w$ is $\pm 1.96 \times \sigma(w)$.</p>
+
+<p>The $\sqrt{w}$ growth follows from the assumption that forecast errors are independent and identically distributed across weeks (Phase 5, p2). After 52 weeks, the uncertainty band is $\sqrt{52} \approx 7.2$ times the weekly standard deviation. After 260 weeks, it is $\sqrt{260} \approx 16.1$ times. This widening fan chart is a visual reminder that long-range forecasts are inherently less precise than short-range ones.</p>
+
+<p>For revenue with $\sigma_0 = \text{£}2{,}000$: the 95% band at week 1 is $\pm \text{£}3{,}920$. At week 52 it is $\pm \text{£}28{,}300$. At week 260 it is $\pm \text{£}63{,}300$. These bands apply to the <em>cumulative</em> cash position, not individual weekly flows — the cash balance integrates all prior errors.</p>
+
+<h2>6. Week-to-Month Aggregation</h2>
+
+<p><strong>Flows</strong> (revenue, costs, cash flows) <strong>sum</strong> across weeks within a month. <strong>Stocks</strong> (balances — AR, AP, cash, loans) use the <strong>last week's value</strong> in the month. Summing stocks is meaningless — a balance is a point-in-time snapshot, not a cumulative quantity.</p>
+
+<p>This distinction is fundamental. Revenue is a flow: "we earned £150,000 this month" means the total across all weeks. Cash is a stock: "we have £200,000" means the balance at a specific point in time. If you sum four weekly cash balances of £200,000, you get £800,000 — a number that has no real-world meaning. The company never had £800,000; it had £200,000 at four different points.</p>
+
+<p>Month boundaries rarely align with week boundaries. A common convention: a week belongs to the month containing its Thursday (ISO 8601 standard). Some months will contain 4 weeks, others 5. Revenue for a 5-week month will be higher than for a 4-week month — this is not seasonality, it is simply more trading days. When presenting monthly figures, flag which months have 5 weeks to avoid misinterpretation.</p>
+
+<h2>7. Full 4-Week Worked Example</h2>
+
+<p>Assumptions (from Phase 7, p1): $R_0 = \text{£}34{,}642$/week, $g = 10.7\%$, margin = 40%, DSO = 5 weeks, DPO = 4 weeks, fixed streams = £2,310/week, residual = £208/week, depreciation = £500/week, loan = £500,000 at 6.5%, inflation = 2%. Opening: cash £80,000, AR £173,210, AP £83,141, PPE £250,000, loan £500,000, RE £0, share capital £(balance).</p>
+
+<p>For weeks 1-4, growth and seasonal effects are negligible ($(1.107)^{0/52} \approx 1.000$, assume $S = 1.00$).</p>
+
+<h3>P&amp;L (weekly, £)</h3>
+<table>
+  <tr><th></th><th>W1</th><th>W2</th><th>W3</th><th>W4</th></tr>
+  <tr><td>Revenue</td><td>34,642</td><td>34,642</td><td>34,642</td><td>34,642</td></tr>
+  <tr><td>COGS (60%)</td><td>-20,785</td><td>-20,785</td><td>-20,785</td><td>-20,785</td></tr>
+  <tr><td><strong>Gross profit</strong></td><td>13,857</td><td>13,857</td><td>13,857</td><td>13,857</td></tr>
+  <tr><td>Fixed costs</td><td>-2,310</td><td>-2,310</td><td>-2,310</td><td>-2,310</td></tr>
+  <tr><td>Residual</td><td>-208</td><td>-208</td><td>-208</td><td>-208</td></tr>
+  <tr><td>Depreciation</td><td>-500</td><td>-500</td><td>-500</td><td>-500</td></tr>
+  <tr><td>Interest</td><td>-625</td><td>-625</td><td>-625</td><td>-625</td></tr>
+  <tr><td><strong>PBT</strong></td><td>10,214</td><td>10,214</td><td>10,214</td><td>10,214</td></tr>
+  <tr><td>Tax (25%)</td><td>-2,554</td><td>-2,554</td><td>-2,554</td><td>-2,554</td></tr>
+  <tr><td><strong>Net profit</strong></td><td>7,661</td><td>7,661</td><td>7,661</td><td>7,661</td></tr>
+</table>
+
+<p>Interest: £500,000 × 6.5% / 52 = £625/week.</p>
+
+<h3>Balance Sheet (£)</h3>
+
+<p>DSO = 5 weeks, so no collections from new revenue in weeks 1-4. Collections come from opening AR run-off: £173,210 / 5 = £34,642/week. Similarly DPO = 4 weeks: opening AP run-off = £83,141 / 4 = £20,785/week.</p>
+
+<table>
+  <tr><th></th><th>Opening</th><th>W1</th><th>W2</th><th>W3</th><th>W4</th></tr>
+  <tr><td>Cash</td><td>80,000</td><td>88,598</td><td>97,196</td><td>105,794</td><td>114,392</td></tr>
+  <tr><td>AR</td><td>173,210</td><td>173,210</td><td>173,210</td><td>173,210</td><td>173,210</td></tr>
+  <tr><td>PPE</td><td>250,000</td><td>249,500</td><td>249,000</td><td>248,500</td><td>248,000</td></tr>
+  <tr><td><strong>Total assets</strong></td><td>503,210</td><td>511,308</td><td>519,406</td><td>527,504</td><td>535,602</td></tr>
+  <tr><td>AP</td><td>83,141</td><td>83,141</td><td>83,141</td><td>83,141</td><td>83,141</td></tr>
+  <tr><td>Tax accrual</td><td>0</td><td>2,554</td><td>5,108</td><td>7,662</td><td>10,216</td></tr>
+  <tr><td>Loan</td><td>500,000</td><td>497,883</td><td>495,766</td><td>493,649</td><td>491,532</td></tr>
+  <tr><td><strong>Total liabilities</strong></td><td>583,141</td><td>583,578</td><td>584,015</td><td>584,452</td><td>584,889</td></tr>
+  <tr><td>Share capital</td><td>-79,931</td><td>-79,931</td><td>-79,931</td><td>-79,931</td><td>-79,931</td></tr>
+  <tr><td>Retained earnings</td><td>0</td><td>7,661</td><td>15,322</td><td>22,983</td><td>30,644</td></tr>
+  <tr><td><strong>Total equity</strong></td><td>-79,931</td><td>-72,270</td><td>-64,609</td><td>-56,948</td><td>-49,287</td></tr>
+  <tr><td><strong>L + E</strong></td><td>503,210</td><td>511,308</td><td>519,406</td><td>527,504</td><td>535,602</td></tr>
+</table>
+
+<p>AR stays flat because new revenue (£34,642) exactly equals opening AR run-off (£34,642) — by construction of the opening AR = DSO × weekly revenue. AP stays flat because opening AP = DPO × weekly COGS = 4 × £20,785 = £83,141, so run-off (£20,785/week) exactly equals new COGS. Loan principal repayment uses the standard amortisation schedule: monthly payment of £500,000 over 48 months at 6.5% ≈ £11,872, of which £625 × 4.33 = £2,708 is interest, leaving £9,164/month principal = £2,117/week.</p>
+
+<h3>Cash Flow (£, weekly)</h3>
+<table>
+  <tr><th></th><th>W1</th><th>W2</th><th>W3</th><th>W4</th></tr>
+  <tr><td>Net profit</td><td>7,661</td><td>7,661</td><td>7,661</td><td>7,661</td></tr>
+  <tr><td>+ Depreciation</td><td>500</td><td>500</td><td>500</td><td>500</td></tr>
+  <tr><td>- ΔAR</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+  <tr><td>+ ΔAP</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+  <tr><td>+ ΔTax accrual</td><td>2,554</td><td>2,554</td><td>2,554</td><td>2,554</td></tr>
+  <tr><td><strong>CF ops</strong></td><td>10,715</td><td>10,715</td><td>10,715</td><td>10,715</td></tr>
+  <tr><td>Capex</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+  <tr><td><strong>CF inv</strong></td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+  <tr><td>Principal repayment</td><td>-2,117</td><td>-2,117</td><td>-2,117</td><td>-2,117</td></tr>
+  <tr><td>Dividends</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+  <tr><td><strong>CF fin</strong></td><td>-2,117</td><td>-2,117</td><td>-2,117</td><td>-2,117</td></tr>
+  <tr><td><strong>Net CF</strong></td><td>8,598</td><td>8,598</td><td>8,598</td><td>8,598</td></tr>
+</table>
+
+<p><strong>Check 2:</strong> Cash W1 = £80,000 + £8,598 = £88,598. This equals the BS cash figure. Cash W4 = £80,000 + 4 × £8,598 = £114,392, matching the BS. Both checks pass every week.</p>
+
+<div class="history-box">
+  <div class="label">Historical note</div>
+  <p>The <strong>three-statement financial model</strong> became the standard tool of investment banking in the 1980s and 1990s, driven by the rise of leveraged buyouts (LBOs) and discounted cash flow (DCF) valuation. <strong>Lotus 1-2-3</strong> and later <strong>Microsoft Excel</strong> made it practical to link P&amp;L, balance sheet, and cash flow in a single workbook. The discipline of ensuring all three statements tie together — "the model balances" — remains the gold standard of financial modelling competence.</p>
+</div>
+
+<div class="break-box">
+  <div class="label">What breaks</div>
+  <p><strong>If CF closing ≠ BS cash:</strong> there is a model error. The most common causes: a balance sheet delta was omitted from the cash flow derivation, or a flow was double-counted. Debug by checking each ΔBS line against its CF counterpart — the discrepancy will isolate the error.</p>
+  <p><strong>Without week-to-month aggregation rules:</strong> if you sum stock values (e.g., cash balances) across weeks, you get a meaningless number. A company with £100k cash every week for 4 weeks does not have £400k cash that month. Stocks must use the last-week snapshot; only flows sum.</p>
+</div>
+
+<h2>8. Exercises</h2>
+
+<div class="exercise">
+  <span class="exercise-label">Exercise (Capstone)</span>
+  <p>Build a 12-week three-way forecast entirely by hand from the following assumptions. Verify that P&amp;L net profit flows into retained earnings, the balance sheet balances every week, and cash flow ties to the balance sheet cash movement.</p>
+  <p><strong>Assumptions:</strong> $R_0 = \text{£}25{,}000$/week. Growth = 0% (flat). Margin = 45%. Fixed costs = £3,000/week. Residual = £500/week. Depreciation = £400/week. Loan: £200,000 at 8%, 36 months remaining (monthly payment ≈ £6,265; interest ≈ £1,333/month initially; principal ≈ £4,932/month). Tax rate = 25%. DSO = 4 weeks. DPO = 3 weeks. No capex, no dividends. Opening: cash £50,000, AR £100,000, PPE £120,000, AP £41,250, loan £200,000, tax accrual £0, share capital £28,750, RE £0.</p>
+  <details>
+    <summary>Solution</summary>
+    <div>
+      <p><strong>Weekly P&amp;L (constant each week):</strong></p>
+      <p>Revenue: £25,000. COGS: £25,000 × 0.55 = £13,750. Gross profit: £11,250.</p>
+      <p>Fixed: £3,000. Residual: £500. Depreciation: £400. Interest: £200,000 × 8% / 52 = £308.</p>
+      <p>PBT: £11,250 - £3,000 - £500 - £400 - £308 = £7,042. Tax: £7,042 × 25% = £1,760. Net profit: £5,282.</p>
+      <p><strong>Balance sheet mechanics:</strong></p>
+      <p>DSO = 4: collections(w) = revenue(w-4). For w ≤ 4, collections from opening AR: £100,000/4 = £25,000/week.</p>
+      <p>DPO = 3: payments(w) = COGS(w-3). For w ≤ 3, payments from opening AP: £41,250/3 = £13,750/week.</p>
+      <p>AR stays flat at £100,000 (new revenue = run-off = £25,000/week).</p>
+      <p>AP stays flat at £41,250 (new COGS = run-off = £13,750/week).</p>
+      <p>PPE: decreases by £400/week. W12: £120,000 - 12×400 = £115,200.</p>
+      <p>Loan principal: £4,932/month / 4.33 = £1,139/week. W12 loan: £200,000 - 12×1,139 = £186,332.</p>
+      <p>RE: increases by £5,282/week. W12: 12 × £5,282 = £63,384.</p>
+      <p>Tax accrual: increases by £1,760/week (assuming quarterly payment). W12: £21,120.</p>
+      <p><strong>Cash flow (weekly):</strong></p>
+      <p>CF ops: £5,282 + £400 - 0 + 0 + £1,760 = £7,442. (ΔAR = 0, ΔAP = 0, tax accrual increases.)</p>
+      <p>CF inv: £0. CF fin: -£1,139 (principal). Net CF: £7,442 - £1,139 = £6,303/week.</p>
+      <p>W12 cash: £50,000 + 12 × £6,303 = £125,636.</p>
+      <p><strong>W12 balance sheet check:</strong></p>
+      <p>Assets: cash £125,636 + AR £100,000 + PPE £115,200 = £340,836.</p>
+      <p>Liabilities: AP £41,250 + tax £21,120 + loan £186,332 = £248,702.</p>
+      <p>Equity: share capital £28,750 + RE £63,384 = £92,134.</p>
+      <p>L + E = £248,702 + £92,134 = £340,836. Balance sheet balances exactly.</p>
+    </div>
+  </details>
+</div>
+
+<hr>
+
+<div class="oneliner">The three-statement model is a single machine — P&amp;L feeds retained earnings, balance sheet deltas drive cash flow, and every week must balance.</div>
+
+<div class="nav">
+  <a href="01-ledger-to-assumptions.html">&larr; From Ledger to Assumptions</a>
+  <a href="03-direct-method.html">Next: The 13-Week Direct Method &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body>
+</html>

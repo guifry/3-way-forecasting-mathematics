@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luca Pacioli — Mathematicians</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head><body>
+
+<h1>Luca Pacioli (1447&ndash;1517)</h1>
+<p class="subtitle">The friar who codified double-entry bookkeeping &mdash; and gave us the conservation law that makes three-way forecasting possible.</p>
+
+<h2>The Contribution</h2>
+
+<p>In 1494, Pacioli published the <em>Summa de Arithmetica, Geometria, Proportioni et
+Proportionalita</em> &mdash; an encyclopaedia of the mathematical knowledge of his time,
+written in vernacular Italian rather than Latin so that merchants and tradesmen could
+actually read it. The book covered algebra, commercial arithmetic, geometry, and much
+else. But the section that changed the world was a 27-page treatise on bookkeeping:
+<em>De Computis et Scripturis</em> (Of Reckonings and Writings).</p>
+
+<p>Pacioli did not invent double-entry bookkeeping. Venetian and Florentine merchants
+had been using it for at least two centuries before his book appeared. The Datini
+ledgers from the 1380s &mdash; preserved in remarkable completeness in Prato &mdash;
+already show debits and credits in balance. Genoese commune records from 1340 use
+the system. Some historians trace elements even further back, to the banking houses
+of twelfth-century Italy.</p>
+
+<p>What Pacioli did was <strong>systematise</strong> it. He described, clearly and completely,
+how to maintain a <em>memoriale</em> (daybook), a <em>giornale</em> (journal), and a
+<em>quaderno</em> (ledger). He explained the rules for posting entries, the process of
+closing the books at the end of a period, and the trial balance &mdash; the check that
+confirms everything adds up. Most importantly, he explained <em>why</em> every transaction
+must be recorded twice: once as a debit and once as a credit.</p>
+
+<p>The mathematical content is deceptively simple. At its core, double-entry bookkeeping
+enforces a single equation:</p>
+
+$$\text{Assets} = \text{Liabilities} + \text{Equity}$$
+
+<p>This is a <strong>conservation law</strong>, as fundamental in its domain as the conservation
+of energy is in physics. Every transaction preserves it. If a company borrows
+&pound;1,000 from a bank, its assets (cash) increase by &pound;1,000 and its liabilities
+(bank loan) increase by &pound;1,000. The equation holds. If it buys inventory for
+&pound;500 in cash, one asset (inventory) goes up by &pound;500 and another asset (cash)
+goes down by &pound;500. The equation still holds. If it earns &pound;200 of revenue,
+assets increase and equity increases by the same amount (via retained earnings). No
+transaction, no matter how baroque, can break the balance &mdash; because every entry
+has an equal and opposite counterpart.</p>
+
+<p>This is not merely an accounting convention or a stylistic choice. It is a mathematical
+constraint with real and powerful consequences. It means that if you know any two of the
+three quantities (assets, liabilities, equity), you can compute the third. It means that
+errors are detectable: if your books don't balance, something is wrong, and you can hunt
+for it systematically. And it means &mdash; crucially for this course &mdash; that a
+forecast of two financial statements automatically determines the third.</p>
+
+<h2>The Context</h2>
+
+<p>Pacioli was a Franciscan friar and a professor of mathematics. Born in the small
+Tuscan town of Borgo Sansepolcro, he studied under the painter and mathematician Piero
+della Francesca before taking holy orders. He taught at universities across Italy &mdash;
+Perugia, Rome, Naples, Milan, Venice, Florence, Bologna &mdash; and moved in the most
+rarefied intellectual circles of the Italian Renaissance.</p>
+
+<p>His closest friend was Leonardo da Vinci. The two met in Milan in the 1490s, at the
+court of Ludovico Sforza. Leonardo illustrated Pacioli's later book <em>De Divina
+Proportione</em> (1509), contributing exquisite drawings of polyhedra. A famous painting,
+sometimes attributed to Jacopo de' Barbari, shows Pacioli in his Franciscan robes,
+demonstrating a geometric theorem with a crystal model, while a young man &mdash;
+possibly Leonardo &mdash; watches.</p>
+
+<p>Fifteenth-century Venice was the commercial capital of Europe. Its merchants traded
+with Constantinople, Alexandria, and the Levant. They dealt in spices, silk, glass,
+and credit instruments of increasing sophistication &mdash; bills of exchange, letters
+of credit, partnership agreements with complex profit-sharing rules. Managing these
+enterprises required precise accounting, not just to track profits but to settle
+partnerships, satisfy creditors, pay taxes, and comply with the regulatory requirements
+of the Venetian state.</p>
+
+<p>The genius of double-entry was that it turned bookkeeping from a narrative (&ldquo;I
+sold cloth to Marco for 50 ducats&rdquo;) into a <strong>system</strong> &mdash; one with
+internal checks, automatic error detection, and a clear summary of financial position
+at any point in time. Pacioli's contribution was to write it all down in a form that
+could be taught, replicated, and standardised across the trading world. Within decades
+of the <em>Summa</em>'s publication, his method had spread throughout Europe.</p>
+
+<h2>The Legacy</h2>
+
+<p>The accounting identity $A = L + E$ is the backbone of <strong>Phase 3</strong> in this
+course. The three-way forecast &mdash; the income statement, the balance sheet, and the
+cash flow statement, all tied together &mdash; works precisely because of Pacioli's
+conservation law.</p>
+
+<p>Here is why. If you forecast the income statement (revenue, costs, profit) and the
+balance sheet (what the company owns and owes at each future date), you have determined
+two apparently independent pictures of the business. But they are not truly independent:
+they are linked by the accounting identity. Profit flows into retained earnings, which
+is part of equity. Working capital changes link the income statement to current assets
+and current liabilities. The cash flow statement is what reconciles everything. Cash is
+the <strong>plug</strong> &mdash; the quantity that must take whatever value is needed to keep
+$A = L + E$ in balance at every point in the forecast.</p>
+
+<p>This is not a mere technicality. It is the reason the three-way forecast is internally
+consistent, and it is the reason we can check our work: if the balance sheet doesn't
+balance, the forecast has an error somewhere, and we must find it. Pacioli's system,
+five centuries old, is still the foundation. Every spreadsheet model in corporate
+finance, every ERP system, every audit &mdash; all of them rest on the 27 pages a
+Franciscan friar wrote in the year Columbus was exploring the Caribbean.</p>
+
+<div class="nav">
+  <a href="galton.html">&larr; Previous: Galton</a>
+  <a href="brown-wiener.html">Next: Brown &amp; Wiener &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body></html>

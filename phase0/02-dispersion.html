@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dispersion — Variance, Standard Deviation, CV — Phase 0</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Dispersion — Variance, Standard Deviation, CV</h1>
+<p class="subtitle">Phase 0 — The Statistical Toolkit, Page 2</p>
+
+<!-- ─── 1. THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>Two suppliers both average 30 days to pay their invoices. Supplier A pays at 29, 30, 31, 30, 30 days. Supplier B pays at 5, 55, 10, 60, 20 days. Their means are identical — but one is rock-steady and the other is wildly erratic. How do you tell them apart with a single number?</p>
+</div>
+
+<!-- ─── 2. MEASURING SPREAD ─────────────────────────────── -->
+
+<h2>1. Measuring spread from first principles</h2>
+
+<p>The mean (Phase 0, page 1) tells you where the centre is. But it says nothing about how tightly the data clusters around that centre. We need a measure of <strong>dispersion</strong>.</p>
+
+<p>The most natural idea: look at how far each value is from the mean. The <strong>deviation</strong> of $x_i$ from $\bar{x}$ is $x_i - \bar{x}$. Can we just average these deviations?</p>
+
+<div class="display-math">$$\frac{1}{n}\sum_{i=1}^{n}(x_i - \bar{x}) = \frac{1}{n}\left(\sum_{i=1}^{n} x_i - n\bar{x}\right) = \frac{1}{n}(n\bar{x} - n\bar{x}) = 0$$</div>
+
+<p>The positive and negative deviations always cancel out exactly. The average deviation is <em>always</em> zero regardless of how spread out the data is. Completely useless.</p>
+
+<p><strong>Why not use absolute values?</strong> You could compute $\frac{1}{n}\sum |x_i - \bar{x}|$, and this is called the <strong>mean absolute deviation</strong> (MAD). It works, and it's robust. But $|x|$ is not differentiable at zero, which makes it analytically awkward. It also doesn't decompose nicely under addition of independent variables. The standard approach — and the one used throughout probability and statistics — is to <em>square</em> the deviations instead.</p>
+
+<p>Squaring has three advantages: it's smooth (differentiable everywhere), it penalises large deviations more than small ones, and — crucially — the variance of a sum of independent variables equals the sum of variances. None of these three properties hold for absolute deviations.</p>
+
+<p>Let's define variance formally, then justify the choice of denominator.</p>
+
+<!-- ─── 3. VARIANCE ─────────────────────────────── -->
+
+<h2>2. Variance</h2>
+
+<div class="theorem-box">
+<div class="label">Definition — Population Variance</div>
+<p>For a complete population $x_1, \ldots, x_N$, the <strong>population variance</strong> is</p>
+<div class="display-math">$$\sigma^2 = \frac{1}{N}\sum_{i=1}^{N}(x_i - \bar{x})^2$$</div>
+</div>
+
+<p>But in practice, you almost never have the full population. You have a <em>sample</em> of $n$ values drawn from a larger set. If you divide by $n$, you systematically <em>underestimate</em> the true variance. This is where <strong>Bessel's correction</strong> comes in.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Sample Variance</div>
+<p>For a sample $x_1, \ldots, x_n$, the <strong>sample variance</strong> is</p>
+<div class="display-math">$$s^2 = \frac{1}{n-1}\sum_{i=1}^{n}(x_i - \bar{x})^2$$</div>
+</div>
+
+<!-- ─── 4. BESSEL'S CORRECTION ─────────────────────────────── -->
+
+<h2>3. Why $n - 1$? Degrees of freedom</h2>
+
+<p>The $n$ deviations $d_i = x_i - \bar{x}$ are not independent. They satisfy a constraint:</p>
+
+<div class="display-math">$$\sum_{i=1}^{n} d_i = \sum_{i=1}^{n}(x_i - \bar{x}) = 0$$</div>
+
+<p>If you know $n - 1$ of the deviations, the last one is determined — it must be whatever makes the sum zero. So there are only $n - 1$ independent pieces of information — $n - 1$ <strong>degrees of freedom</strong>. Dividing the sum of squared deviations by the number of free pieces gives an <strong>unbiased</strong> estimate of the population variance.</p>
+
+<p>Let's prove this properly.</p>
+
+<div class="proof-box" id="proof-bessel">
+<div class="label">Proof — Bessel's correction gives an unbiased estimator</div>
+<p><strong>Step 1.</strong> We want to show that $\mathbb{E}[s^2] = \sigma^2$ when we divide by $n-1$. Start by expanding the sum of squared deviations. We use the identity:</p>
+<div class="display-math">$$\sum_{i=1}^{n}(x_i - \bar{x})^2 = \sum_{i=1}^{n} x_i^2 - 2\bar{x}\sum_{i=1}^n x_i + n\bar{x}^2 = \sum_{i=1}^{n} x_i^2 - 2n\bar{x}^2 + n\bar{x}^2 = \sum_{i=1}^{n} x_i^2 - n\bar{x}^2$$</div>
+
+<p><strong>Step 2.</strong> Take expectations. Let $\mu$ and $\sigma^2$ be the population mean and variance. For each $x_i$ drawn from the population:</p>
+<div class="display-math">$$\mathbb{E}[x_i^2] = \text{Var}(x_i) + (\mathbb{E}[x_i])^2 = \sigma^2 + \mu^2$$</div>
+<p>For the sample mean $\bar{x} = \frac{1}{n}\sum x_i$:</p>
+<div class="display-math">$$\mathbb{E}[\bar{x}^2] = \text{Var}(\bar{x}) + (\mathbb{E}[\bar{x}])^2 = \frac{\sigma^2}{n} + \mu^2$$</div>
+
+<p><strong>Step 3.</strong> Substitute into the expanded form:</p>
+<div class="display-math">$$\mathbb{E}\left[\sum_{i=1}^{n} x_i^2 - n\bar{x}^2\right] = n(\sigma^2 + \mu^2) - n\left(\frac{\sigma^2}{n} + \mu^2\right) = n\sigma^2 + n\mu^2 - \sigma^2 - n\mu^2 = (n-1)\sigma^2$$</div>
+
+<p><strong>Step 4.</strong> Therefore:</p>
+<div class="display-math">$$\mathbb{E}\left[\frac{1}{n-1}\sum_{i=1}^n(x_i - \bar{x})^2\right] = \frac{(n-1)\sigma^2}{n-1} = \sigma^2$$</div>
+<p>Dividing by $n-1$ gives an unbiased estimator. Dividing by $n$ would give $\frac{n-1}{n}\sigma^2$, which is always less than $\sigma^2$ — a systematic underestimate.</p>
+<div class="qed">∎</div>
+</div>
+
+<!-- ─── 5. STANDARD DEVIATION ─────────────────────────────── -->
+
+<h2>4. Standard deviation</h2>
+
+<p>Variance is in <em>squared</em> units. If payment delays are in days, variance is in days$^2$ — a quantity with no physical meaning. To get back to the same units as the data, take the square root.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Standard Deviation</div>
+<p>The <strong>sample standard deviation</strong> is $s = \sqrt{s^2}$, i.e.</p>
+<div class="display-math">$$s = \sqrt{\frac{1}{n-1}\sum_{i=1}^{n}(x_i - \bar{x})^2}$$</div>
+<p>It has the same units as the data and can be interpreted as "the typical distance of a data point from the mean."</p>
+</div>
+
+<p>Note: $s$ is <em>not</em> an unbiased estimator of $\sigma$ (the population standard deviation), even though $s^2$ is unbiased for $\sigma^2$. This is because the square root is a concave function, and by Jensen's inequality, $\mathbb{E}[\sqrt{s^2}] \le \sqrt{\mathbb{E}[s^2]} = \sigma$. The bias is small for large $n$ and is universally ignored in practice.</p>
+
+<p>The interpretation of $s$ is intuitive: it tells you, roughly, how far a "typical" data point sits from the mean. For a bell-shaped (normal) distribution, about 68% of data falls within $[\bar{x} - s, \bar{x} + s]$ and about 95% falls within $[\bar{x} - 2s, \bar{x} + 2s]$. These percentages don't hold exactly for non-normal data, but the rule of thumb is useful as a quick sense-check.</p>
+
+<!-- ─── 6. COEFFICIENT OF VARIATION ─────────────────────────────── -->
+
+<h2>5. Coefficient of variation</h2>
+
+<p>Standard deviation alone doesn't tell you whether the spread is "large" or "small" relative to the data. A standard deviation of 5 days means something very different if the mean is 10 days (half the mean!) versus 200 days (negligible).</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Coefficient of Variation</div>
+<p>The <strong>coefficient of variation</strong> is the ratio of standard deviation to mean:</p>
+<div class="display-math">$$\text{CV} = \frac{s}{\bar{x}}$$</div>
+<p>It is <strong>dimensionless</strong> — it has no units. It expresses spread as a <em>fraction</em> of the centre.</p>
+</div>
+
+<p>In the forecasting engine, we use the threshold $\text{CV} > 0.35$ to flag a data stream as <strong>too irregular to predict reliably</strong>. Below 0.35, the pattern is regular enough that extrapolation makes sense. Above it, the noise dominates the signal and any forecast is unreliable. This threshold reappears on Phase 0, page 5, where it's used to classify recurring transactions.</p>
+
+<p>Why 0.35 specifically? It's empirical. At $\text{CV} = 0.35$, the standard deviation is about a third of the mean. For approximately normal data, that means about 5% of observations would deviate from the mean by more than 70% — enough randomness that trend extrapolation becomes unreliable.</p>
+
+<!-- ─── 7. WORKED EXAMPLE ─────────────────────────────── -->
+
+<h2>6. Worked example: two suppliers</h2>
+
+<p><strong>Supplier A:</strong> delays = $29, 30, 31, 30, 30$. Mean $\bar{x}_A = \frac{150}{5} = 30$.</p>
+
+<p>Deviations: $29-30=-1$, $30-30=0$, $31-30=1$, $30-30=0$, $30-30=0$.</p>
+
+<div class="display-math">$$s_A^2 = \frac{(-1)^2 + 0^2 + 1^2 + 0^2 + 0^2}{4} = \frac{1+0+1+0+0}{4} = 0.5$$</div>
+<div class="display-math">$$s_A = \sqrt{0.5} = 0.71 \text{ days}, \quad \text{CV}_A = \frac{0.71}{30} = 0.024$$</div>
+
+<p><strong>Supplier B:</strong> delays = $5, 55, 10, 60, 20$. Mean $\bar{x}_B = \frac{150}{5} = 30$.</p>
+
+<p>Deviations: $5-30=-25$, $55-30=25$, $10-30=-20$, $60-30=30$, $20-30=-10$.</p>
+
+<div class="display-math">$$s_B^2 = \frac{(-25)^2 + 25^2 + (-20)^2 + 30^2 + (-10)^2}{4} = \frac{625 + 625 + 400 + 900 + 100}{4} = \frac{2650}{4} = 662.5$$</div>
+<div class="display-math">$$s_B = \sqrt{662.5} = 25.7 \text{ days}, \quad \text{CV}_B = \frac{25.7}{30} = 0.86$$</div>
+
+<p>Supplier A has $\text{CV} = 0.024$ — extremely regular. You could forecast its next payment to within a day. Supplier B has $\text{CV} = 0.86$ — wildly unpredictable, well above the 0.35 threshold. Same mean, completely different stories. The mean alone was blind to this difference; the CV reveals it instantly.</p>
+
+<!-- ─── 8. COMPUTATIONAL SHORTCUT ─────────────────────────────── -->
+
+<h2>7. A useful computational identity</h2>
+
+<p>Computing deviations from the mean is tedious by hand. There's a shortcut. We showed in the proof above that:</p>
+
+<div class="display-math">$$\sum_{i=1}^n (x_i - \bar{x})^2 = \sum_{i=1}^n x_i^2 - n\bar{x}^2$$</div>
+
+<p>The right side only requires $\sum x_i^2$ (the sum of squares) and $\bar{x}$ (the mean). You don't need to compute each deviation individually. For Supplier B:</p>
+
+<div class="display-math">$$\sum x_i^2 = 25 + 3025 + 100 + 3600 + 400 = 7150$$</div>
+<div class="display-math">$$\sum(x_i - \bar{x})^2 = 7150 - 5 \times 30^2 = 7150 - 4500 = 2650$$</div>
+
+<p>Same result, fewer steps. This identity is especially valuable when you have many data points.</p>
+
+<!-- ─── 9. VARIANCE OF SUMS ─────────────────────────────── -->
+
+<h2>8. Why variance is special: additivity</h2>
+
+<p>Here is the property that makes variance — rather than, say, mean absolute deviation — the default measure of spread in all of probability and statistics.</p>
+
+<p>If $X$ and $Y$ are <strong>independent</strong> random variables, then:</p>
+
+<div class="display-math">$$\text{Var}(X + Y) = \text{Var}(X) + \text{Var}(Y)$$</div>
+
+<p>The variance of the sum equals the sum of the variances. This does <em>not</em> hold for standard deviation ($\sigma_{X+Y} \ne \sigma_X + \sigma_Y$ in general) or for mean absolute deviation. It's a direct consequence of the linearity of expectation and the definition of variance as $\mathbb{E}[(X - \mu)^2]$.</p>
+
+<p>Why does this matter for forecasting? When you project total monthly costs as the sum of 20 independent expense lines, the total variance is just the sum of the 20 individual variances. This lets you propagate uncertainty through the forecast cleanly. Without additivity, you'd need to compute the joint distribution of all 20 lines — a much harder problem.</p>
+
+<p>We'll formalise this in Phase 12 (Probability), but the intuition is worth absorbing now: <em>variance decomposes under addition</em>, and that's why it's the universal measure of spread.</p>
+
+<p>As a concrete example: if Expense A has variance $\sigma_A^2 = 100$ (in £$^2$) and Expense B has variance $\sigma_B^2 = 225$ (in £$^2$), and they're independent, then the total expense $A + B$ has variance $100 + 225 = 325$, giving $\sigma_{A+B} = \sqrt{325} \approx 18.0$. Note that this is <em>less</em> than $\sigma_A + \sigma_B = 10 + 15 = 25$ — diversification reduces the total standard deviation, a fact that matters enormously in portfolio theory and risk management.</p>
+
+<!-- ─── 10. WHEN CV MISLEADS ─────────────────────────────── -->
+
+<h2>9. When CV misleads</h2>
+
+<p>The coefficient of variation assumes the mean is a meaningful reference point. When the mean is near zero, CV blows up even if the data is tightly clustered. For example, daily profit/loss figures centred around zero (some positive, some negative) might have a mean of £2 and a standard deviation of £500, giving $\text{CV} = 250$. That number is meaningless — the issue is that the mean is a poor reference for signed data.</p>
+
+<p>Rule of thumb: only use CV for <strong>non-negative</strong> data where the mean is well above zero. Payment delays, invoice amounts, and time intervals all qualify. Profit/loss figures do not.</p>
+
+<!-- ─── 11. EXERCISES ─────────────────────────────── -->
+
+<h2>10. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — Compute by hand</div>
+<p>Given $\{8, 12, 10, 14, 6\}$, compute the sample variance, standard deviation, and CV.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Step 1.</strong> Mean: $\bar{x} = \frac{8+12+10+14+6}{5} = \frac{50}{5} = 10$.</p>
+<p><strong>Step 2.</strong> Deviations: $-2, 2, 0, 4, -4$. Check: sum $= 0$.</p>
+<p><strong>Step 3.</strong> Squared deviations: $4, 4, 0, 16, 16$. Sum $= 40$.</p>
+<p><strong>Step 4.</strong> $s^2 = \frac{40}{4} = 10$. $s = \sqrt{10} = 3.16$. $\text{CV} = \frac{3.16}{10} = 0.316$.</p>
+<p>Just below the 0.35 threshold — borderline regular.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — CV is scale-invariant</div>
+<p>Prove that if you multiply every data point by a constant $c > 0$, the CV does not change.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Step 1.</strong> Let $y_i = c \cdot x_i$. Then $\bar{y} = \frac{1}{n}\sum c \cdot x_i = c \cdot \frac{1}{n}\sum x_i = c\bar{x}$.</p>
+<p><strong>Step 2.</strong> Sample variance of $y$:</p>
+<div class="display-math">$$s_y^2 = \frac{1}{n-1}\sum_{i=1}^n(y_i - \bar{y})^2 = \frac{1}{n-1}\sum_{i=1}^n(cx_i - c\bar{x})^2 = \frac{c^2}{n-1}\sum_{i=1}^n(x_i - \bar{x})^2 = c^2 s_x^2$$</div>
+<p><strong>Step 3.</strong> $s_y = |c| \cdot s_x = c \cdot s_x$ (since $c > 0$).</p>
+<p><strong>Step 4.</strong> $\text{CV}_y = \frac{s_y}{\bar{y}} = \frac{c \cdot s_x}{c \cdot \bar{x}} = \frac{s_x}{\bar{x}} = \text{CV}_x$.</p>
+<p>The $c$ cancels. This is why CV is useful for comparing datasets measured in different units — pounds vs dollars, days vs weeks, litres vs gallons. The scale doesn't matter.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 3 — Use the shortcut formula</div>
+<p>Given $\{15, 20, 25, 30, 35\}$, compute the sample variance using the identity $\sum(x_i - \bar{x})^2 = \sum x_i^2 - n\bar{x}^2$.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Step 1.</strong> $\bar{x} = \frac{125}{5} = 25$.</p>
+<p><strong>Step 2.</strong> $\sum x_i^2 = 225 + 400 + 625 + 900 + 1225 = 3375$.</p>
+<p><strong>Step 3.</strong> $\sum(x_i - \bar{x})^2 = 3375 - 5 \times 25^2 = 3375 - 3125 = 250$.</p>
+<p><strong>Step 4.</strong> $s^2 = \frac{250}{4} = 62.5$. $s = \sqrt{62.5} = 7.91$.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 4 — Applied: forecasting suitability</div>
+<p>Supplier X has payment delays (days): $28, 31, 27, 33, 29, 30, 32, 28$. Supplier Y has: $15, 45, 8, 52, 30, 42, 12, 36$. Compute CV for each and decide which is regular enough to forecast.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Supplier X:</strong> $\bar{x} = \frac{238}{8} = 29.75$. Using the shortcut: $\sum x_i^2 = 784 + 961 + 729 + 1089 + 841 + 900 + 1024 + 784 = 7112$. $\sum(x_i - \bar{x})^2 = 7112 - 8 \times 29.75^2 = 7112 - 7080.5 = 31.5$.</p>
+<p>$s^2 = \frac{31.5}{7} = 4.5$. $s = 2.12$. $\text{CV} = \frac{2.12}{29.75} = 0.071$.</p>
+<p><strong>Supplier Y:</strong> $\bar{y} = \frac{240}{8} = 30$. $\sum y_i^2 = 225 + 2025 + 64 + 2704 + 900 + 1764 + 144 + 1296 = 9122$. $\sum(y_i - \bar{y})^2 = 9122 - 8 \times 900 = 9122 - 7200 = 1922$.</p>
+<p>$s^2 = \frac{1922}{7} = 274.6$. $s = 16.57$. $\text{CV} = \frac{16.57}{30} = 0.552$.</p>
+<p>Supplier X: $\text{CV} = 0.071 < 0.35$ — highly regular, safe to forecast. Supplier Y: $\text{CV} = 0.552 > 0.35$ — too erratic, flag as unpredictable.</p>
+</div>
+</details>
+</div>
+
+<!-- ─── 10. HISTORY ─────────────────────────────── -->
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p><a href="../mathematicians/pearson.html">Karl Pearson</a> coined the term "standard deviation" in 1893, replacing the older and clumsier "mean error" and "root mean square error" used by astronomers. He also introduced the coefficient of variation in the same period, recognising the need for a scale-free measure of variability when comparing different populations.</p>
+<p>Before Pearson, <a href="../mathematicians/gauss.html">Gauss</a> had used variance extensively in his work on least squares and astronomical observation errors (see Phase 0, page 4), but without the modern terminology. Gauss called it the "mean square error" — Pearson gave it a name that stuck.</p>
+</div>
+
+<!-- ─── 11. WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>If you use population variance ($\div\, n$) on a sample:</strong> you systematically underestimate the true variance. With small samples (say $n = 5$), dividing by $n$ instead of $n-1$ gives a variance that's $\frac{n-1}{n} = \frac{4}{5} = 80\%$ of the true value — 20% too low. Your confidence intervals will be too narrow, and you'll be overconfident in your forecasts.</p>
+<p><strong>If you ignore CV and only look at standard deviation:</strong> a standard deviation of £500 looks alarming for a business invoicing £1,000/month ($\text{CV} = 0.5$) but is negligible for one invoicing £500,000/month ($\text{CV} = 0.001$). Without the ratio, you cannot compare across scales, and you'll flag the wrong businesses.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">Variance measures spread; standard deviation puts it in the right units; CV makes it comparable across scales.</div>
+
+<div class="nav">
+<a href="01-mean-and-median.html">← Mean and Median</a>
+<a href="03-percentiles.html">Next: Percentiles →</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Percentiles and Distribution Shape — Phase 0</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Percentiles and Distribution Shape</h1>
+<p class="subtitle">Phase 0 — The Statistical Toolkit, Page 3</p>
+
+<!-- ─── 1. THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>An investor evaluating a business asks: "What's the typical invoice size, and how spread out are they?" You could give the mean and standard deviation — but those are sensitive to outliers (Phase 0, page 1) and don't convey the <em>shape</em> of the distribution. Is it symmetric? Skewed right by a few huge invoices? Are 90% of invoices below £500, or below £5,000? Percentiles answer all of these questions with a handful of numbers.</p>
+</div>
+
+<!-- ─── 2. ORDER STATISTICS REVISITED ─────────────────────────────── -->
+
+<h2>1. Order statistics revisited</h2>
+
+<p>Recall from Phase 0, page 1: given $n$ values, the <strong>order statistics</strong> $x_{(1)} \le x_{(2)} \le \cdots \le x_{(n)}$ are the sorted values. The minimum is $x_{(1)}$, the maximum is $x_{(n)}$, and the median is the middle order statistic.</p>
+
+<p>Percentiles generalise this idea. Instead of just asking "what's in the middle?", we ask "what value sits at the $p$-th percent of the sorted list?" This gives us a full picture of how the data is distributed — not just the centre, but the tails and the shape.</p>
+
+<!-- ─── 3. PERCENTILE DEFINITION ─────────────────────────────── -->
+
+<h2>2. Defining percentiles</h2>
+
+<p>There are several methods for computing percentiles — they differ in how they handle the fact that the $p$-th percent of $n$ values may not land exactly on a data point. The method used by NumPy's default (and by the forecast engine) is <strong>linear interpolation</strong>.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Percentile (linear interpolation method)</div>
+<p>The $p$-th percentile ($0 < p < 100$) of a dataset with $n$ values is computed as follows:</p>
+<p><strong>Step 1.</strong> Compute the rank: $r = \frac{p}{100}(n - 1) + 1$.</p>
+<p><strong>Step 2.</strong> Write $r = k + d$ where $k = \lfloor r \rfloor$ is the integer part and $d = r - k$ is the fractional part.</p>
+<p><strong>Step 3.</strong> The $p$-th percentile is</p>
+<div class="display-math">$$P_p = x_{(k)} + d \cdot (x_{(k+1)} - x_{(k)})$$</div>
+<p>When $d = 0$, the percentile falls exactly on a data point. When $d > 0$, we <strong>interpolate</strong> linearly between adjacent order statistics.</p>
+</div>
+
+<p>The intuition: we're treating the $n$ data points as evenly spaced markers along the 0-to-100 percentile axis, with $x_{(1)}$ at 0% and $x_{(n)}$ at 100%. The $p$-th percentile falls between whichever two markers straddle $p$, and we interpolate.</p>
+
+<!-- ─── 4. KEY PERCENTILES ─────────────────────────────── -->
+
+<h2>3. The key percentiles</h2>
+
+<p>Five percentiles carry most of the information you need:</p>
+
+<ul>
+<li><strong>P10</strong> — 10% of values fall below this. The "best reasonable case" or "low end."</li>
+<li><strong>P25</strong> (first quartile, Q1) — 25% of values fall below this.</li>
+<li><strong>P50</strong> (median, Q2) — the midpoint. Identical to the median from Phase 0, page 1.</li>
+<li><strong>P75</strong> (third quartile, Q3) — 75% of values fall below this.</li>
+<li><strong>P90</strong> — 90% of values fall below this. Useful for "worst reasonable case" estimates.</li>
+</ul>
+
+<p>Together, P10 through P90 describe the full shape of the distribution without being distorted by extreme outliers.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Interquartile Range</div>
+<p>The <strong>interquartile range</strong> (IQR) is</p>
+<div class="display-math">$$\text{IQR} = P_{75} - P_{25}$$</div>
+<p>It measures the spread of the middle 50% of the data. Unlike standard deviation (Phase 0, page 2), IQR is <strong>robust</strong> to outliers — extreme values cannot affect it unless they comprise more than 25% of the dataset.</p>
+</div>
+
+<!-- ─── 5. DETECTING SKEWNESS ─────────────────────────────── -->
+
+<h2>4. Detecting skewness from quartiles</h2>
+
+<p>Percentiles reveal the <strong>shape</strong> of a distribution, not just its centre and spread. The key diagnostic: compare the distances from the median to each quartile.</p>
+
+<ul>
+<li>If $P_{75} - P_{50} \approx P_{50} - P_{25}$, the distribution is roughly <strong>symmetric</strong> around the median.</li>
+<li>If $P_{75} - P_{50} \gg P_{50} - P_{25}$, the distribution is <strong>right-skewed</strong> — a long tail of high values.</li>
+<li>If $P_{75} - P_{50} \ll P_{50} - P_{25}$, the distribution is <strong>left-skewed</strong> — a long tail of low values.</li>
+</ul>
+
+<p>Invoice amounts are almost always right-skewed: most invoices are moderate, but a few large projects or bulk orders create a long right tail. Knowing this matters for forecasting — the mean will overstate the "typical" invoice, and P90 gives a better sense of how large invoices can realistically get.</p>
+
+<!-- ─── 6. WORKED EXAMPLE ─────────────────────────────── -->
+
+<h2>5. Worked example: 12 invoices</h2>
+
+<p>A business has 12 invoices (amounts in £), sorted:</p>
+<div class="display-math">$$150,\; 220,\; 310,\; 350,\; 400,\; 420,\; 450,\; 480,\; 520,\; 600,\; 750,\; 3200$$</div>
+
+<p>That £3,200 at the end is an outlier — perhaps a one-off project. Let's compute the key percentiles.</p>
+
+<p><strong>P25:</strong> $r = \frac{25}{100}(12 - 1) + 1 = 2.75 + 1 = 3.75$. So $k = 3$, $d = 0.75$.</p>
+<div class="display-math">$$P_{25} = x_{(3)} + 0.75(x_{(4)} - x_{(3)}) = 310 + 0.75(350 - 310) = 310 + 30 = £340$$</div>
+
+<p><strong>P50:</strong> $r = \frac{50}{100}(11) + 1 = 5.5 + 1 = 6.5$. So $k = 6$, $d = 0.5$.</p>
+<div class="display-math">$$P_{50} = x_{(6)} + 0.5(x_{(7)} - x_{(6)}) = 420 + 0.5(450 - 420) = 420 + 15 = £435$$</div>
+
+<p><strong>Check:</strong> the standard median for $n = 12$ is $\frac{x_{(6)} + x_{(7)}}{2} = \frac{420 + 450}{2} = £435$. They agree, as they must.</p>
+
+<p><strong>P75:</strong> $r = \frac{75}{100}(11) + 1 = 8.25 + 1 = 9.25$. So $k = 9$, $d = 0.25$.</p>
+<div class="display-math">$$P_{75} = x_{(9)} + 0.25(x_{(10)} - x_{(9)}) = 520 + 0.25(600 - 520) = 520 + 20 = £540$$</div>
+
+<p><strong>IQR:</strong> $540 - 340 = £200$.</p>
+
+<p><strong>Skewness check:</strong> $P_{75} - P_{50} = 540 - 435 = 105$ and $P_{50} - P_{25} = 435 - 340 = 95$. These are roughly balanced, so the core of the distribution is fairly symmetric. The skew lives in the extreme right tail (the £3,200 outlier), which the quartiles successfully ignore.</p>
+
+<p>For comparison: the mean is $\frac{7850}{12} = £654$, pulled up by that £3,200. The standard deviation is £818. These are both distorted by the outlier. The percentile summary — median £435, IQR £200 — paints a much more accurate picture.</p>
+
+<!-- ─── 7. P90 ─────────────────────────────── -->
+
+<h2>6. P90: the "worst reasonable case"</h2>
+
+<p>Let's compute P90 for our dataset. $r = \frac{90}{100}(11) + 1 = 9.9 + 1 = 10.9$. So $k = 10$, $d = 0.9$.</p>
+
+<div class="display-math">$$P_{90} = x_{(10)} + 0.9(x_{(11)} - x_{(10)}) = 600 + 0.9(750 - 600) = 600 + 135 = £735$$</div>
+
+<p>So 90% of invoices are at or below £735. The £3,200 outlier is beyond P90 — it's in the extreme tail. The percentile framework lets you acknowledge its existence without letting it distort the summary.</p>
+
+<p>P90 is especially useful for risk assessment. A lender might ask: "What's the largest invoice we should reasonably expect?" P90 answers that question without being skewed by one-off monsters.</p>
+
+<!-- ─── 8. WHY THE FORECAST ENGINE USES PERCENTILES ─────────────────────────────── -->
+
+<h2>7. Why the forecast engine uses percentiles</h2>
+
+<p>When the engine analyses invoice amounts for a business, it reports P25, P50, P75, and P90. This tells an investor four things at a glance:</p>
+
+<ol>
+<li><strong>Typical size</strong> — the median (P50).</li>
+<li><strong>Core range</strong> — the IQR shows where the middle half of invoices land.</li>
+<li><strong>Tail risk</strong> — P90 shows what a "large" invoice looks like, without being distorted by one-off outliers.</li>
+<li><strong>Skewness</strong> — comparing $P_{75} - P_{50}$ with $P_{50} - P_{25}$ reveals whether the distribution has a long right tail.</li>
+</ol>
+
+<p>This is strictly more informative than "mean ± standard deviation" and more robust to the outliers that pervade real financial data.</p>
+
+<!-- ─── 9. OUTLIER DETECTION WITH IQR ─────────────────────────────── -->
+
+<h2>8. Outlier detection using the IQR</h2>
+
+<p>Percentiles give us a principled way to flag outliers. The standard method, due to <a href="../mathematicians/tukey.html">John Tukey</a>, uses the IQR to define "fences":</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Tukey Fences</div>
+<p>A data point $x$ is a <strong>mild outlier</strong> if it falls outside the interval</p>
+<div class="display-math">$$[P_{25} - 1.5 \cdot \text{IQR},\; P_{75} + 1.5 \cdot \text{IQR}]$$</div>
+<p>and an <strong>extreme outlier</strong> if it falls outside</p>
+<div class="display-math">$$[P_{25} - 3 \cdot \text{IQR},\; P_{75} + 3 \cdot \text{IQR}]$$</div>
+</div>
+
+<p>For our 12-invoice example: $\text{IQR} = 200$, so the upper fence is $540 + 1.5 \times 200 = 840$. The £3,200 invoice is well above £840 — it's flagged as an outlier. The lower fence is $340 - 300 = 40$, and no invoices fall below that.</p>
+
+<p>This method is more robust than flagging anything beyond "2 standard deviations from the mean," because the IQR itself is resistant to the very outliers you're trying to detect. The mean-based method can mask outliers: a single extreme value inflates both the mean and the standard deviation, potentially making the outlier seem less extreme than it really is.</p>
+
+<!-- ─── 10. FIVE-NUMBER SUMMARY ─────────────────────────────── -->
+
+<h2>9. The five-number summary</h2>
+
+<p>A complete quick summary of any dataset consists of five values:</p>
+
+<div class="display-math">$$(\text{min},\; P_{25},\; P_{50},\; P_{75},\; \text{max})$$</div>
+
+<p>For our 12 invoices: $(£150,\; £340,\; £435,\; £540,\; £3{,}200)$.</p>
+
+<p>This tells you everything at a glance: the range (min to max), the typical value (median), the core spread (IQR = £200), and the asymmetry (max is much further from P75 than min is from P25). It's the foundation of the <strong>box plot</strong>, a standard visualisation in statistics.</p>
+
+<p>In the forecast engine, the five-number summary is computed for every invoice stream and every supplier's payment history. It gives a complete snapshot without being distorted by outliers, and it's the basis of the distribution reports presented to investors. When combined with the CV from Phase 0, page 2, it provides everything you need to decide whether a data stream is regular enough to forecast.</p>
+
+<!-- ─── 12. PERCENTILES VS MEAN-STDEV ─────────────────────────────── -->
+
+<h2>10. Percentiles vs mean ± standard deviation</h2>
+
+<p>A common but misleading summary format is "mean ± 1 standard deviation." This assumes the data is roughly symmetric and bell-shaped. For a normal distribution, about 68% of data falls within $[\bar{x} - s, \bar{x} + s]$. But for skewed financial data, this interval is wrong in both directions:</p>
+
+<ul>
+<li>The lower bound $\bar{x} - s$ might be negative when no actual data point is negative.</li>
+<li>The upper bound $\bar{x} + s$ might exclude far more than 16% of the data in the right tail.</li>
+</ul>
+
+<p>Percentiles avoid this entirely. $[P_{25}, P_{75}]$ contains exactly 50% of the data by construction, regardless of the shape. No normality assumption required. For financial data, always prefer percentiles over mean ± stdev for describing spread.</p>
+
+<!-- ─── 13. EXERCISES ─────────────────────────────── -->
+
+<h2>11. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — Compute percentiles by hand</div>
+<p>Given the dataset $\{5, 8, 12, 15, 18, 20, 25, 30\}$ ($n = 8$), compute P25, P50, P75, and IQR.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>P25:</strong> $r = \frac{25}{100}(7) + 1 = 1.75 + 1 = 2.75$. $k=2$, $d=0.75$. $P_{25} = 8 + 0.75(12-8) = 8 + 3 = 11$.</p>
+<p><strong>P50:</strong> $r = \frac{50}{100}(7) + 1 = 3.5 + 1 = 4.5$. $k=4$, $d=0.5$. $P_{50} = 15 + 0.5(18-15) = 15 + 1.5 = 16.5$.</p>
+<p><strong>Check:</strong> standard median $= \frac{x_{(4)}+x_{(5)}}{2} = \frac{15+18}{2} = 16.5$. Confirmed.</p>
+<p><strong>P75:</strong> $r = \frac{75}{100}(7) + 1 = 5.25 + 1 = 6.25$. $k=6$, $d=0.25$. $P_{75} = 20 + 0.25(25-20) = 20 + 1.25 = 21.25$.</p>
+<p><strong>IQR:</strong> $21.25 - 11 = 10.25$.</p>
+<p><strong>Skewness:</strong> $P_{75} - P_{50} = 4.75$ and $P_{50} - P_{25} = 5.5$. Slightly left-heavy, but roughly symmetric.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — Verify P50 equals median</div>
+<p>For a dataset with $n = 7$ values $\{3, 7, 9, 11, 15, 20, 22\}$, compute P50 using the percentile formula and verify it equals the median.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>P50 via formula:</strong> $r = \frac{50}{100}(6) + 1 = 3 + 1 = 4$. $k=4$, $d=0$. $P_{50} = x_{(4)} = 11$.</p>
+<p><strong>Median:</strong> $n = 7$ (odd), position $\frac{7+1}{2} = 4$. Median $= x_{(4)} = 11$.</p>
+<p>They agree, as they must. For any dataset, the linear interpolation percentile formula at $p = 50$ produces the same result as the median definition from Phase 0, page 1.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 3 — Detect skewness</div>
+<p>A dataset of 9 values (sorted): $2, 3, 4, 5, 6, 10, 15, 25, 50$. Compute P25, P50, P75. Is the distribution symmetric, left-skewed, or right-skewed?</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>P25:</strong> $r = \frac{25}{100}(8) + 1 = 2 + 1 = 3$. $k=3$, $d=0$. $P_{25} = x_{(3)} = 4$.</p>
+<p><strong>P50:</strong> $r = \frac{50}{100}(8) + 1 = 4 + 1 = 5$. $k=5$, $d=0$. $P_{50} = x_{(5)} = 6$.</p>
+<p><strong>P75:</strong> $r = \frac{75}{100}(8) + 1 = 6 + 1 = 7$. $k=7$, $d=0$. $P_{75} = x_{(7)} = 15$.</p>
+<p><strong>Skewness:</strong> $P_{75} - P_{50} = 15 - 6 = 9$ and $P_{50} - P_{25} = 6 - 4 = 2$. The upper distance is 4.5 times the lower distance. This distribution is heavily <strong>right-skewed</strong> — a long tail of large values.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 4 — Applied: investor summary</div>
+<p>A business has 50 invoices. Here are the sorted amounts (in £): 80, 95, 110, 120, 130, 140, 145, 150, 155, 160, 170, 175, 180, 190, 195, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 310, 320, 340, 350, 360, 380, 400, 420, 440, 460, 480, 500, 520, 550, 580, 620, 680, 750, 800, 900, 1100, 1500, 2000, 4500. Produce the distribution summary an investor would see: P25, P50, P75, P90, IQR. Comment on the shape.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p>With $n = 50$:</p>
+<p><strong>P25:</strong> $r = \frac{25}{100}(49) + 1 = 12.25 + 1 = 13.25$. $k=13$, $d=0.25$. $P_{25} = 180 + 0.25(190-180) = 180 + 2.5 = £182.50$.</p>
+<p><strong>P50:</strong> $r = \frac{50}{100}(49) + 1 = 24.5 + 1 = 25.5$. $k=25$, $d=0.5$. $P_{50} = 290 + 0.5(300-290) = 290 + 5 = £295$.</p>
+<p><strong>P75:</strong> $r = \frac{75}{100}(49) + 1 = 36.75 + 1 = 37.75$. $k=37$, $d=0.75$. $P_{75} = 480 + 0.75(500-480) = 480 + 15 = £495$.</p>
+<p><strong>P90:</strong> $r = \frac{90}{100}(49) + 1 = 44.1 + 1 = 45.1$. $k=45$, $d=0.1$. $P_{90} = 800 + 0.1(900-800) = 800 + 10 = £810$.</p>
+<p><strong>IQR:</strong> $495 - 182.50 = £312.50$.</p>
+<p><strong>Shape:</strong> $P_{75} - P_{50} = 200$ vs $P_{50} - P_{25} = 112.50$. The upper half of the IQR is nearly twice the lower half — right-skewed. And the tail beyond P90 is extreme: from £810 to £4,500, with several jumps. This is typical of invoice data: mostly moderate amounts with a few very large ones.</p>
+<p><strong>Summary for investor:</strong> typical invoice £295; middle 50% fall between £183 and £495; 90% are below £810. The distribution is right-skewed with a long tail.</p>
+</div>
+</details>
+</div>
+
+<!-- ─── 10. HISTORY ─────────────────────────────── -->
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p><a href="../mathematicians/galton.html">Francis Galton</a> introduced quartiles and percentiles in the 1880s as part of his work on human variation. He was frustrated that the mean alone couldn't capture the diversity of traits like height and intelligence, and developed the percentile system to describe entire distributions. The idea of "ranking" observations and asking where a particular value falls in the ranking was, for Galton, the foundation of meaningful comparison.</p>
+<p>The interquartile range emerged naturally as a robust alternative to the standard deviation — a measure of spread that ignored the extremes Galton found so misleading in small samples. Today, the "five-number summary" (min, P25, P50, P75, max) named after <a href="../mathematicians/tukey.html">John Tukey</a> remains one of the most widely used descriptive tools in statistics.</p>
+</div>
+
+<!-- ─── 11. WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>Small sample sizes:</strong> with $n = 5$, the "25th percentile" is interpolating between the 1st and 2nd data points — it's barely meaningful. Percentiles become reliable at roughly $n \ge 20$, and P90 really needs $n \ge 30$ to be stable. With fewer data points, report the raw order statistics instead of interpolated percentiles, and be honest about the uncertainty.</p>
+<p><strong>Discrete data:</strong> if invoices only come in multiples of £100, percentile interpolation can produce values (like £182.50) that no actual invoice could take. This isn't wrong mathematically, but it can be confusing when presenting to non-technical audiences. Consider rounding to the nearest actual value in such cases.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">Percentiles describe the full shape of your data — not just the centre but the spread, the skew, and the tails.</div>
+
+<div class="nav">
+<a href="02-dispersion.html">← Dispersion</a>
+<a href="04-linear-regression.html">Next: Linear Regression →</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

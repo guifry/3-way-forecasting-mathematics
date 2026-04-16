@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seasonal Index Floor and Redistribution — Phase 2</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Seasonal Index Floor and Redistribution</h1>
+<p class="subtitle">Phase 2 — Seasonal Decomposition, Page 3</p>
+
+<!-- ─── THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>A holiday rental business in Cornwall does zero revenue from November through February — the property is simply closed. The decomposition from Page 2 produces seasonal indices of 0.0 for those four months.</p>
+<p>Now project forward: trend × seasonal index = trend × 0.0 = £0. Every November, December, January, and February, <strong>forever</strong>. Even if the owner starts offering winter lets next year. Even if the trend doubles. Multiply anything by zero and you get zero.</p>
+<p>A zero index is a mathematical death sentence for the forecast. You need a floor.</p>
+</div>
+
+<!-- ─── 1. THE FLOOR ─────────────────────────────── -->
+
+<h2>1. The floor</h2>
+
+<p>The fix is conceptually simple: <strong>clamp every seasonal index to a minimum of 0.20</strong>. No month is allowed to fall below 20% of the average monthly level, regardless of what the historical data shows.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Seasonal Index Floor</div>
+<p>Given seasonal indices $S_1, \ldots, S_{12}$, the <strong>floored indices</strong> are</p>
+<div class="display-math">$$S_m^{\text{floored}} = \max(S_m, \; 0.20)$$</div>
+<p>The floor value $f = 0.20$ is a model parameter.</p>
+</div>
+
+<p><strong>Why 0.20?</strong> It's a pragmatic engineering choice, not a mathematical derivation. The reasoning: even in the quietest month, a business typically retains some baseline activity — recurring contracts, walk-in trade, maintenance revenue, subscription income. Setting the floor at 20% of the average monthly level is conservative enough to avoid projecting impossibly high figures for quiet months, but high enough to prevent the forecast from locking into zero.</p>
+
+<p>There's also a downstream numerical reason. Many forecast calculations involve <strong>dividing by the seasonal index</strong> — for example, when deseasonalising actual revenue to update the trend estimate: $T_{\text{est}}(t) = x(t) / S_m$. If $S_m = 0$, this division is undefined. The model crashes or produces infinity. A floor of 0.20 keeps all arithmetic well-behaved.</p>
+
+<p>If a month truly has zero historical revenue, projecting 20% of trend is a statement about <strong>uncertainty</strong>, not a claim about reality. It says: "we don't know what this month will look like going forward, so we'll assume at least a fifth of normal rather than nothing at all." If the month remains dead, the next year's actuals will pull the index back down (but never below the floor). If the business starts operating in that month, the model adapts naturally.</p>
+
+<!-- ─── 2. THE INVARIANT ─────────────────────────────── -->
+
+<h2>2. The invariant is broken</h2>
+
+<p>Flooring increases some indices without decreasing others. Consider what happens to the sum. Before flooring, $\sum S_m = 12$ (by construction from Page 2). After flooring, every month that was below 0.20 gets bumped up. The sum rises above 12.</p>
+
+<p>Why does this matter? Recall from Page 2: if $\sum S_m \neq 12$, the model projects the wrong annual total. A sum of 12.6 means the model generates 5% more annual revenue than the trend justifies. Over a 3-year forecast, that's 15% cumulative phantom revenue. Cash-flow projections will show money that doesn't exist, and the business might make spending decisions based on fiction.</p>
+
+<p>So after flooring, we must <strong>redistribute</strong> the excess — shrinking the other months just enough to restore the sum to exactly 12. The redistribution must be done carefully: we can't just subtract a flat amount from each free month (that could make some negative), and we can't ignore the constraint (that breaks the annual total). Proportional scaling is the answer.</p>
+
+<!-- ─── 3. THE REDISTRIBUTION ALGORITHM ─────────────────────────────── -->
+
+<h2>3. The redistribution algorithm</h2>
+
+<p>Split the months into two groups:</p>
+<ul>
+<li><strong>Floored months:</strong> those where the original $S_m$ was below 0.20 and has been clamped up. These are now locked at 0.20 and cannot be reduced further.</li>
+<li><strong>Free months:</strong> those already above the floor, still adjustable.</li>
+</ul>
+
+<p>The total <strong>deficit</strong> introduced by flooring is the amount we pushed upward:</p>
+<div class="display-math">$$\Delta = \sum_{\text{floored}} (0.20 - S_m^{\text{original}})$$</div>
+
+<p>This deficit must be absorbed by the free months. We shrink them <strong>proportionally</strong> — each free month contributes to the reduction in proportion to its current value. Large months absorb more than small ones, preserving the relative shape of the seasonal pattern among the free months.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Proportional Redistribution</div>
+<p>Let $F = \sum_{\text{free}} S_m$ be the total of all free (unfloored) indices. After flooring introduces a deficit $\Delta$, update each free index:</p>
+<div class="display-math">$$S_m^{\text{new}} = S_m \times \frac{F - \Delta}{F}$$</div>
+<p>This scales all free months by the same factor, reducing their total by exactly $\Delta$.</p>
+</div>
+
+<div class="proof-box" id="proof-redistribution">
+<div class="label">Proof — redistribution restores the sum to 12</div>
+<p><strong>Before flooring:</strong> $\sum S_m = 12$ by the normalisation from Page 2.</p>
+<p><strong>After flooring, before redistribution:</strong> the floored months now contribute $\sum_{\text{floored}} 0.20$ instead of their original values. The free months are unchanged at total $F$. The new sum is:</p>
+<div class="display-math">$$\sum_{\text{floored}} 0.20 + F = \sum_{\text{floored}} 0.20 + F$$</div>
+<p>Since the original sum was 12: $\sum_{\text{floored}} S_m^{\text{original}} + F = 12$, so $F = 12 - \sum_{\text{floored}} S_m^{\text{original}}$.</p>
+<p>The new sum is $\sum_{\text{floored}} 0.20 + F = \sum_{\text{floored}} 0.20 + 12 - \sum_{\text{floored}} S_m^{\text{original}} = 12 + \Delta$.</p>
+<p><strong>After redistribution:</strong> each free month is scaled by $\frac{F - \Delta}{F}$. The new free total is:</p>
+<div class="display-math">$$F \times \frac{F - \Delta}{F} = F - \Delta$$</div>
+<p>Grand total:</p>
+<div class="display-math">$$\sum_{\text{floored}} 0.20 + (F - \Delta) = (12 + \Delta) - \Delta = 12$$</div>
+<div class="qed">∎</div>
+</div>
+
+<!-- ─── 4. CASCADING ─────────────────────────────── -->
+
+<h2>4. Cascading floors</h2>
+
+<p>There's a subtlety that makes this harder than it first appears. Redistribution <em>shrinks</em> free months. If a free month was already close to the floor — say $S_m = 0.22$ — the proportional reduction might push it below 0.20. Now that month needs flooring too, creating a new deficit, requiring another round of redistribution.</p>
+
+<p>This can cascade: the second redistribution might push yet another borderline month below the floor, triggering a third round, and so on.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Iterative Floor-and-Redistribute Algorithm</div>
+<p>Input: indices $S_1, \ldots, S_{12}$ summing to 12, floor $f = 0.20$.</p>
+<ol>
+<li>Set $\text{iteration} = 0$.</li>
+<li>Identify all months with $S_m < f$. If none exist, <strong>stop</strong> — the indices are valid.</li>
+<li>For each such month, set $S_m = f$. Compute the deficit $\Delta = \sum_{\text{newly floored}} (f - S_m^{\text{old}})$.</li>
+<li>Let $F = \sum_{\text{free}} S_m$. For each free month: $S_m \leftarrow S_m \times (F - \Delta) / F$.</li>
+<li>Increment iteration. If $\text{iteration} \geq 5$, <strong>stop</strong> (safety cap).</li>
+<li>Go to step 2.</li>
+</ol>
+</div>
+
+<div class="proof-box" id="proof-convergence">
+<div class="label">Proof — the algorithm terminates</div>
+<p>At each iteration, one of two things happens:</p>
+<ul>
+<li><strong>No month is below the floor</strong> — the algorithm stops at step 2.</li>
+<li><strong>At least one new month is floored</strong> — the set of free months shrinks by at least 1.</li>
+</ul>
+<p>There are 12 months in total. Each iteration that doesn't terminate must floor at least one new month, reducing the free set. After at most 12 iterations (in practice far fewer), either all months are floored or none remain below the threshold.</p>
+<p>The safety cap of 5 iterations is conservative. For the algorithm to need 5 cascading rounds, you'd need 5 separate months hovering just above 0.20 that each get pushed below by successive redistributions — this requires a peculiar index distribution where many months cluster near the floor. With realistic seasonal patterns (a few low months, several middling, a few high), 1–2 iterations suffice.</p>
+<p>At termination: every floored month is at exactly $f$; every free month is above $f$; the sum is 12 (by the redistribution proof above, applied at each iteration).</p>
+<div class="qed">∎</div>
+</div>
+
+<h2>5. Worked example of cascading</h2>
+
+<p>To see cascading in action, consider this pathological set of indices (summing to 12):</p>
+
+<table>
+<tr><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th></tr>
+<tr><td>0.05</td><td>0.10</td><td>0.21</td><td>0.60</td><td>1.00</td><td>1.40</td><td>1.80</td><td>1.84</td><td>1.50</td><td>1.20</td><td>0.80</td><td>1.50</td></tr>
+</table>
+
+<p><strong>Iteration 1:</strong> Jan (0.05) and Feb (0.10) are below 0.20. Set to 0.20. Deficit: $0.15 + 0.10 = 0.25$. Free total: $F = 0.21 + 0.60 + \ldots + 1.50 = 11.85$. Scale: $\frac{11.85 - 0.25}{11.85} = 0.97890$. After scaling, Mar becomes $0.21 \times 0.979 = 0.2056$, which is above 0.20 — no cascade this time.</p>
+
+<p>But suppose Mar had started at 0.205 instead of 0.21. After scaling: $0.205 \times 0.979 = 0.2007$. Still above 0.20, barely. Now suppose it was 0.203: after scaling $0.203 \times 0.979 = 0.1987$ — below the floor! A second iteration would be triggered to clamp Mar to 0.20 and redistribute the new deficit of $0.20 - 0.1987 = 0.0013$ across the remaining free months.</p>
+
+<p>In practice, cascading beyond 2 iterations is rare. It requires multiple months clustered just above 0.20 — a distribution pattern that's unusual in real business data, where seasonal patterns tend to have a few deep troughs and broad peaks rather than many months hovering near the floor.</p>
+
+<p><strong>A note on the scaling factor.</strong> The factor $\frac{F - \Delta}{F}$ is guaranteed to be positive as long as $\Delta < F$. Since $\Delta$ is the total deficit from floored months and $F$ is the total of the free months, $\Delta < F$ holds whenever the free months sum to more than the deficit. If this fails, it means the total of all free months is insufficient to absorb the floor increases — a situation that only arises if the floor is set too high relative to the data. With $f = 0.20$ and indices summing to 12, this would require more than 10 months to be floored simultaneously, which is pathological.</p>
+
+<!-- ─── 6. EXERCISES ─────────────────────────────── -->
+
+<h2>6. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — Pathological indices: three months below floor</div>
+<p>Suppose the decomposition produces these seasonal indices (already normalised to sum to 12):</p>
+<table>
+<tr><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th></tr>
+<tr><td>0.05</td><td>0.10</td><td>0.15</td><td>0.60</td><td>1.00</td><td>1.40</td><td>1.80</td><td>1.90</td><td>1.50</td><td>1.20</td><td>0.80</td><td>1.50</td></tr>
+</table>
+<p>Apply the floor-and-redistribute algorithm with $f = 0.20$. Show every step. Verify the final sum is 12.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Verify initial sum:</strong> $0.05 + 0.10 + 0.15 + 0.60 + 1.00 + 1.40 + 1.80 + 1.90 + 1.50 + 1.20 + 0.80 + 1.50 = 12.00$. ✓</p>
+
+<p><strong>Iteration 1.</strong></p>
+<p>Step 2: months below 0.20 are Jan (0.05), Feb (0.10), Mar (0.15). Three months flagged.</p>
+<p>Step 3: set Jan = Feb = Mar = 0.20. Compute deficit:</p>
+<div class="display-math">$$\Delta = (0.20 - 0.05) + (0.20 - 0.10) + (0.20 - 0.15) = 0.15 + 0.10 + 0.05 = 0.30$$</div>
+<p>Step 4: free months are Apr–Dec. Their total:</p>
+<div class="display-math">$$F = 0.60 + 1.00 + 1.40 + 1.80 + 1.90 + 1.50 + 1.20 + 0.80 + 1.50 = 11.70$$</div>
+<p>Scaling factor: $\frac{F - \Delta}{F} = \frac{11.70 - 0.30}{11.70} = \frac{11.40}{11.70} = 0.97436$.</p>
+<p>Apply to each free month:</p>
+<table>
+<tr><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th></tr>
+<tr><td>$0.60 \times 0.974 = 0.585$</td><td>$1.00 \times 0.974 = 0.974$</td><td>$1.40 \times 0.974 = 1.364$</td><td>$1.80 \times 0.974 = 1.754$</td><td>$1.90 \times 0.974 = 1.851$</td><td>$1.50 \times 0.974 = 1.462$</td><td>$1.20 \times 0.974 = 1.169$</td><td>$0.80 \times 0.974 = 0.779$</td><td>$1.50 \times 0.974 = 1.462$</td></tr>
+</table>
+
+<p><strong>Iteration 2.</strong></p>
+<p>Step 2: check free months. Smallest is Apr at 0.585. All free months are above 0.20. <strong>Stop.</strong></p>
+
+<p><strong>Final indices:</strong></p>
+<table>
+<tr><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th></tr>
+<tr><td>0.200</td><td>0.200</td><td>0.200</td><td>0.585</td><td>0.974</td><td>1.364</td><td>1.754</td><td>1.851</td><td>1.462</td><td>1.169</td><td>0.779</td><td>1.462</td></tr>
+</table>
+
+<p><strong>Verify sum:</strong> $3(0.200) + 0.585 + 0.974 + 1.364 + 1.754 + 1.851 + 1.462 + 1.169 + 0.779 + 1.462$</p>
+<p>$= 0.600 + 11.400 = 12.000$. ✓</p>
+
+<p>Only one iteration was needed — the free months were all well above the floor, so no cascading occurred.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — Applied: holiday rental</div>
+<p>A Cornwall holiday rental has historical seasonal indices (after decomposition and normalisation):</p>
+<table>
+<tr><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th></tr>
+<tr><td>0.00</td><td>0.00</td><td>0.25</td><td>0.70</td><td>1.20</td><td>1.60</td><td>2.10</td><td>2.30</td><td>1.40</td><td>0.80</td><td>0.00</td><td>1.65</td></tr>
+</table>
+<p>The owner says: "We're closed November through February, but we're thinking about offering winter lets next year." Apply the floor-and-redistribute algorithm. Then explain to the owner what the floored indices mean for their revenue projections.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Verify initial sum:</strong> $0 + 0 + 0.25 + 0.70 + 1.20 + 1.60 + 2.10 + 2.30 + 1.40 + 0.80 + 0 + 1.65 = 12.00$. ✓</p>
+
+<p><strong>Iteration 1.</strong></p>
+<p>Months below 0.20: Jan (0.00), Feb (0.00), Nov (0.00). Three months.</p>
+<p>Set all three to 0.20. Deficit: $(0.20 - 0) \times 3 = 0.60$.</p>
+<p>Free months: Mar (0.25), Apr (0.70), May (1.20), Jun (1.60), Jul (2.10), Aug (2.30), Sep (1.40), Oct (0.80), Dec (1.65).</p>
+<div class="display-math">$$F = 0.25 + 0.70 + 1.20 + 1.60 + 2.10 + 2.30 + 1.40 + 0.80 + 1.65 = 12.00$$</div>
+<p>Scaling factor: $\frac{12.00 - 0.60}{12.00} = \frac{11.40}{12.00} = 0.950$.</p>
+<p>New free indices:</p>
+<table>
+<tr><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Dec</th></tr>
+<tr><td>$0.25 \times 0.95 = 0.238$</td><td>$0.70 \times 0.95 = 0.665$</td><td>$1.20 \times 0.95 = 1.140$</td><td>$1.60 \times 0.95 = 1.520$</td><td>$2.10 \times 0.95 = 1.995$</td><td>$2.30 \times 0.95 = 2.185$</td><td>$1.40 \times 0.95 = 1.330$</td><td>$0.80 \times 0.95 = 0.760$</td><td>$1.65 \times 0.95 = 1.568$</td></tr>
+</table>
+
+<p><strong>Iteration 2.</strong></p>
+<p>Check free months: smallest is Mar at 0.238 > 0.20. All clear. <strong>Stop.</strong></p>
+
+<p><strong>Final indices:</strong></p>
+<table>
+<tr><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th></tr>
+<tr><td>0.200</td><td>0.200</td><td>0.238</td><td>0.665</td><td>1.140</td><td>1.520</td><td>1.995</td><td>2.185</td><td>1.330</td><td>0.760</td><td>0.200</td><td>1.568</td></tr>
+</table>
+<p>Sum: $0.200 + 0.200 + 0.238 + 0.665 + 1.140 + 1.520 + 1.995 + 2.185 + 1.330 + 0.760 + 0.200 + 1.568 = 12.001 \approx 12$. ✓ (Rounding.)</p>
+
+<p>Note that the peak months dropped slightly: Aug went from 2.30 to 2.185 (a 5% reduction), Jul from 2.10 to 1.995. The floor redistributed the cost of protecting the zero months proportionally across all active months.</p>
+
+<p><strong>For the owner:</strong> "The model now projects that even in your currently closed months — January, February, and November — you'd earn at least 20% of your average monthly revenue. If your monthly trend is £8,000, that's roughly £1,600 in each winter month. This isn't a prediction that you <em>will</em> earn £1,600 — it's a safeguard so the model doesn't lock you into zero forever. If you do start winter lets and earn more, the model will update next year. If the months remain closed, the actual vs. forecast variance will flag it for review. Meanwhile, the summer peak months (July and August) are slightly reduced — from 2.30 to 2.19 for August — to keep the annual total consistent. You're not losing projected summer revenue in absolute terms; the trend still drives total growth."</p>
+</div>
+</details>
+</div>
+
+<!-- ─── HISTORY ─────────────────────────────── -->
+
+<h2>7. Choosing the floor value</h2>
+
+<p>We've used $f = 0.20$ throughout, but this is a configurable parameter. Here's the reasoning for different choices:</p>
+
+<ul>
+<li><strong>$f = 0.10$ (aggressive floor):</strong> allows months to be projected at just 10% of average. Suitable for businesses with genuine near-zero months where you want the model to reflect the extreme seasonality but still avoid literal zero. A ski resort might use this — January is genuinely 10× August.</li>
+<li><strong>$f = 0.20$ (default):</strong> the standard choice. Conservative enough for most small businesses where you don't have enough data to be confident that a zero-revenue month is truly structural rather than circumstantial.</li>
+<li><strong>$f = 0.50$ (conservative floor):</strong> forces every month to at least half the average. This flattens the seasonal pattern significantly. Appropriate when you actively distrust the seasonal indices — perhaps the business underwent a structural change partway through the historical period.</li>
+</ul>
+
+<p>There is no universally "correct" floor — it depends on the business context and the forecaster's confidence in the historical data.</p>
+
+<p>The floor value interacts with the redistribution step: a higher floor forces more redistribution, which compresses the range of all indices. Setting $f = 1.0$ would force all indices to exactly 1.0 — no seasonality at all.
+The floor is, in effect, a <strong>regularisation parameter</strong>: it controls how extreme the seasonal indices are allowed to be, trading off between fitting the historical pattern and hedging against overfitting to limited data.</p>
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p>Index flooring doesn't appear in the academic seasonal-adjustment literature. X-13ARIMA-SEATS, TRAMO-SEATS, and STL decomposition don't include any such mechanism — they operate on long time series (5–10+ years) where zero-revenue months are exceptional and are handled as outliers rather than structural features.</p>
+<p>The technique comes from the world of practical engineering and operational modelling. In actuarial reserving, the Bornhuetter-Ferguson method imposes floors on loss development factors to prevent reserve estimates from collapsing to zero. In management accounting, budget models routinely clamp cost allocations and departmental charges to minimum percentages. The floor-and-redistribute pattern is a standard trick in any domain where a model must produce nonzero outputs for downstream calculations — the alternative is division-by-zero errors and cascading model failure.</p>
+</div>
+
+<!-- ─── WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>Without the floor:</strong> a seasonal index of 0 means the model projects exactly £0 for that month, every year, forever. Any downstream calculation that divides by the seasonal index — for instance, deseasonalising actual revenue to update the trend estimate — hits a division-by-zero error. The model crashes, or silently produces infinity. Worse: if the business <em>does</em> earn revenue in that month (e.g., the owner starts winter lets), the model has no mechanism to incorporate it. The projection and reality diverge permanently.</p>
+<p><strong>Without redistribution:</strong> after flooring, the indices sum to more than 12. If the sum is 12.6, the model projects 5% more annual revenue than the trend justifies. Over a 3-year cash-flow forecast, that's 15% cumulative phantom revenue. The business might take on debt, hire staff, or sign a lease based on projections that are systematically inflated. The floor is necessary, but it's not free — the cost must be distributed, not ignored.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">Floor at 0.20, redistribute the deficit, repeat until stable. No month gets projected to zero.</div>
+
+<div class="nav">
+<a href="02-multiplicative-decomposition.html">← Prev: Multiplicative Decomposition</a>
+<a href="04-dampened-seasonality.html">Next: Dampened Seasonality →</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

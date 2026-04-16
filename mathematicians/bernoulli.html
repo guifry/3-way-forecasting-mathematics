@@ -1,0 +1,92 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jacob Bernoulli — Mathematicians</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head><body>
+
+<h1>Jacob Bernoulli (1655&ndash;1705)</h1>
+<p class="subtitle">The man who found infinity hiding inside a bank account.</p>
+
+<h2>The Contribution</h2>
+
+<p>In 1683, Jacob Bernoulli posed a simple question about compound interest. If a bank
+pays 100% annual interest, you double your money in a year: invest &pound;1 and receive
+&pound;2. But what if the bank compounds more frequently? Semi-annually, you get
+$(1 + \tfrac{1}{2})^2 = 2.25$. Quarterly, $(1 + \tfrac{1}{4})^4 \approx 2.441$.
+Monthly, $(1 + \tfrac{1}{12})^{12} \approx 2.613$. What happens as you compound
+more and more often &mdash; daily, hourly, every second?</p>
+
+<p>Bernoulli showed that the sequence has a finite limit. No matter how frequently you
+compound, the result never exceeds a particular number. That number is the constant
+$e$:</p>
+
+$$e = \lim_{n \to \infty} \left(1 + \frac{1}{n}\right)^n \approx 2.71828$$
+
+<p>This was a remarkable discovery. The process of compounding <em>feels</em> like it should
+grow without bound &mdash; after all, you are adding interest to interest to interest,
+faster and faster. Yet it converges. The limit exists, and it is irrational,
+transcendental, and one of the most important constants in all of mathematics.</p>
+
+<p>Bernoulli did not call it $e$ (that notation came from Euler, decades later), and he
+did not compute it to many decimal places. But he identified the limit, proved it was
+finite, and understood its connection to compound interest. The discovery emerged
+directly from a financial question.</p>
+
+<h2>The Context</h2>
+
+<p>Jacob Bernoulli was the eldest of the mathematically gifted Bernoulli family of Basel,
+Switzerland. He and his brother Johann were among the leading mathematicians of the late
+seventeenth century, working at the frontier of the new calculus that Leibniz and Newton
+had recently developed. The brothers were also fierce rivals, and their disputes &mdash;
+over the brachistochrone problem, over priority, over everything &mdash; are legendary
+in the history of mathematics.</p>
+
+<p>Bernoulli&rsquo;s other great contribution was the <strong>law of large numbers</strong>,
+which he proved in his posthumous masterwork <em>Ars Conjectandi</em> (1713). The
+theorem says that as you increase the number of independent trials of a random
+experiment, the sample proportion converges to the true probability. Flip a fair coin
+a million times and the fraction of heads will be very close to one half.</p>
+
+<p>This was the first rigorous limit theorem in probability theory. It gave mathematical
+substance to the intuition that averages stabilise as sample sizes grow &mdash; an
+intuition that underlies every use of historical data to calibrate a forecast.</p>
+
+<p><em>Ars Conjectandi</em> was published eight years after Bernoulli&rsquo;s death,
+edited by his nephew Nikolaus. It is one of the founding documents of probability
+theory, alongside the earlier correspondence of Pascal and Fermat and the later
+work of Laplace.</p>
+
+<h2>The Legacy</h2>
+
+<p>In this course, Bernoulli&rsquo;s discovery appears in <strong>Phase 1, page 1</strong>,
+where we derive the compound interest formula. The progression from annual to
+semi-annual to continuous compounding leads directly to the exponential function
+$e^{rt}$, which is the continuous-time limit of $(1 + r/n)^{nt}$ as $n \to \infty$.
+This is exactly the limit Bernoulli studied in 1683, generalised to an arbitrary
+rate $r$ and time $t$.</p>
+
+<p>The law of large numbers, meanwhile, is the reason we can trust historical averages
+at all. When we compute a mean growth rate from five years of monthly data, we are
+relying on the principle that sixty observations give a more stable estimate than six.
+Bernoulli was the first to prove this rigorously.</p>
+
+<p>It is fitting that both contributions &mdash; the constant $e$ and the law of large
+numbers &mdash; emerged from the same mind. One gives us the mathematics of growth;
+the other gives us the mathematics of estimation. Together they underpin most of
+what follows in this course.</p>
+
+<div class="nav">
+  <a href="../index.html">&larr; Back to index</a>
+  <a href="fibonacci.html">Next: Fibonacci &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body></html>

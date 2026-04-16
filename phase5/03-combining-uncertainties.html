@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Combining Independent Uncertainties — Phase 5</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Combining Independent Uncertainties</h1>
+<p class="subtitle">Phase 5 — Uncertainty Quantification, Page 3</p>
+
+<!-- ─── 1. THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>Your base forecast has uncertainty $\sigma_1 = 0.12$. Now a what-if scenario — say, a key client delays payment by 30 days — introduces additional uncertainty $\sigma_2 = 0.08$. What's the total uncertainty? Is it $0.12 + 0.08 = 0.20$? Something else?</p>
+<p>The answer is less than 0.20, and the reason involves one of the most useful results in all of statistics: <strong>variance addition</strong> for independent variables.</p>
+</div>
+
+<!-- ─── 2. VARIANCE ADDITION ─────────────────────────────── -->
+
+<h2>1. Variance addition for independent variables</h2>
+
+<div class="theorem-box">
+<div class="label">Theorem — Variance of a sum</div>
+<p>If $X$ and $Y$ are independent random variables, then</p>
+<div class="display-math">$$\text{Var}(X + Y) = \text{Var}(X) + \text{Var}(Y)$$</div>
+</div>
+
+<div class="proof-box" id="proof-variance-sum">
+<div class="label">Proof</div>
+<p>Let $\mu_X = E[X]$ and $\mu_Y = E[Y]$. By definition of variance:</p>
+<div class="display-math">$$\text{Var}(X + Y) = E\!\left[(X + Y - \mu_X - \mu_Y)^2\right]$$</div>
+
+<p><strong>Step 1.</strong> Rewrite the inside as a sum of centred variables. Let $\tilde{X} = X - \mu_X$ and $\tilde{Y} = Y - \mu_Y$. Then:</p>
+<div class="display-math">$$\text{Var}(X + Y) = E\!\left[(\tilde{X} + \tilde{Y})^2\right]$$</div>
+
+<p><strong>Step 2.</strong> Expand the square:</p>
+<div class="display-math">$$(\tilde{X} + \tilde{Y})^2 = \tilde{X}^2 + 2\tilde{X}\tilde{Y} + \tilde{Y}^2$$</div>
+
+<p><strong>Step 3.</strong> Take expectations:</p>
+<div class="display-math">$$E\!\left[(\tilde{X} + \tilde{Y})^2\right] = E[\tilde{X}^2] + 2E[\tilde{X}\tilde{Y}] + E[\tilde{Y}^2]$$</div>
+
+<p>Now, $E[\tilde{X}^2] = \text{Var}(X)$ and $E[\tilde{Y}^2] = \text{Var}(Y)$ by definition.</p>
+
+<p><strong>Step 4.</strong> Handle the cross term. Since $X$ and $Y$ are independent, $\tilde{X} = X - \mu_X$ and $\tilde{Y} = Y - \mu_Y$ are also independent. For independent variables:</p>
+<div class="display-math">$$E[\tilde{X}\tilde{Y}] = E[\tilde{X}] \cdot E[\tilde{Y}] = 0 \cdot 0 = 0$$</div>
+
+<p>The cross term vanishes. We're left with:</p>
+<div class="display-math">$$\text{Var}(X + Y) = \text{Var}(X) + \text{Var}(Y)$$</div>
+<div class="qed">∎</div>
+</div>
+
+<p>The key step is that independence kills the cross term. If $X$ and $Y$ were correlated, we'd get the more general formula $\text{Var}(X + Y) = \text{Var}(X) + \text{Var}(Y) + 2\text{Cov}(X, Y)$, and the covariance term could be positive or negative.</p>
+
+<p>We proved this same result for $n$ variables in <a href="01-random-walks.html">the random walks page</a>, where we needed $n$ independent steps. Here we're applying it to just two sources of uncertainty — the base forecast error and the scenario error. The mathematics is identical; only the interpretation differs.</p>
+
+<p>Note that the proof requires <em>nothing</em> about the distributions of $X$ and $Y$. They can be normal, uniform, skewed — anything. Independence and finite variance are sufficient. This generality is what makes the result so powerful.</p>
+
+<!-- ─── 3. QUADRATURE COMBINATION ─────────────────────────────── -->
+
+<h2>2. Quadrature combination of standard deviations</h2>
+
+<p>From variance addition, taking square roots:</p>
+
+<div class="display-math">$$\sigma_{\text{total}} = \sqrt{\sigma_1^2 + \sigma_2^2}$$</div>
+
+<p>This is called <strong>combination in quadrature</strong>. The name comes from the Latin <em>quadratura</em> — squaring — because you square each uncertainty, add, then take the root. The procedure is: square, sum, root.</p>
+
+<p>With numbers: if $\sigma_1 = 0.12$ and $\sigma_2 = 0.08$, then $\sigma_{\text{total}} = \sqrt{0.0144 + 0.0064} = \sqrt{0.0208} = 0.1442$. That's less than $0.12 + 0.08 = 0.20$ — the combined uncertainty is 28% smaller than naive addition would suggest. The gap between quadrature and addition grows as the number of sources increases.</p>
+
+<h3>Geometric interpretation</h3>
+
+<p>This is <strong>Pythagoras's theorem</strong>. Think of $\sigma_1$ and $\sigma_2$ as the two legs of a right triangle. The combined uncertainty $\sigma_{\text{total}}$ is the hypotenuse.</p>
+
+<p>The hypotenuse of a right triangle is always shorter than the sum of the legs. This is the triangle inequality at work — and it has a profound consequence for combining uncertainties.</p>
+
+<div class="theorem-box">
+<div class="label">Theorem — Quadrature is always less than simple addition</div>
+<p>For any positive $\sigma_1, \sigma_2$:</p>
+<div class="display-math">$$\sqrt{\sigma_1^2 + \sigma_2^2} < \sigma_1 + \sigma_2$$</div>
+</div>
+
+<div class="proof-box" id="proof-quadrature-less">
+<div class="label">Proof</div>
+<p>Both sides are positive, so we can square both without changing the inequality direction:</p>
+<div class="display-math">$$\sigma_1^2 + \sigma_2^2 \;\stackrel{?}{<}\; (\sigma_1 + \sigma_2)^2 = \sigma_1^2 + 2\sigma_1\sigma_2 + \sigma_2^2$$</div>
+<p>Subtracting $\sigma_1^2 + \sigma_2^2$ from both sides:</p>
+<div class="display-math">$$0 < 2\sigma_1\sigma_2$$</div>
+<p>Since $\sigma_1 > 0$ and $\sigma_2 > 0$, this is true. Therefore $\sqrt{\sigma_1^2 + \sigma_2^2} < \sigma_1 + \sigma_2$.</p>
+<div class="qed">∎</div>
+</div>
+
+<p><strong>Why not simply add?</strong> Adding $\sigma_1 + \sigma_2$ assumes the worst cases of both sources always align — when the base forecast overshoots, the scenario also overshoots, in the same direction, by the maximum amount. That's the absolute worst case, and it overestimates the combined uncertainty. In reality, independent errors sometimes cancel: when one pushes high, the other might push low. Quadrature captures this partial cancellation.</p>
+
+<p><strong>Why not multiply?</strong> Uncertainties are additive in <em>variance</em>, not in standard deviation or in any multiplicative sense. Multiplying $\sigma_1 \times \sigma_2$ gives units of $\sigma^2$ — it's dimensionally wrong and has no probabilistic interpretation.</p>
+
+<p><strong>A concrete example.</strong> Suppose you're forecasting cash and two things are uncertain: (1) revenue timing ($\sigma_1 = 0.12$), and (2) a potential client delay ($\sigma_2 = 0.08$). If both worst cases hit simultaneously — revenue is 12% below forecast <em>and</em> the client delay costs another 8% — the total damage is 20%. But that requires both bad outcomes to coincide perfectly. More typically, one might be bad while the other is fine, or both might be mildly bad. The quadrature combination $\sqrt{0.12^2 + 0.08^2} = 0.144$ captures this averaging effect.</p>
+
+<p>The formula extends naturally to $n$ independent sources:</p>
+
+<div class="display-math">$$\sigma_{\text{total}} = \sqrt{\sigma_1^2 + \sigma_2^2 + \cdots + \sigma_n^2}$$</div>
+
+<p>This follows by applying the two-variable result inductively. Group the first $n-1$ sources into a combined variable $Z = X_1 + \cdots + X_{n-1}$, which is independent of $X_n$ (since all the $X_i$ are mutually independent). Then apply variance addition to $Z + X_n$: $\text{Var}(Z + X_n) = \text{Var}(Z) + \text{Var}(X_n)$. By induction, $\text{Var}(Z) = \sigma_1^2 + \cdots + \sigma_{n-1}^2$, giving the result.</p>
+
+<p>A useful practical consequence: if one uncertainty source dominates, the others barely matter. If $\sigma_1 = 0.20$ and $\sigma_2 = 0.03$, then $\sigma_{\text{total}} = \sqrt{0.04 + 0.0009} = \sqrt{0.0409} = 0.2022$. Adding a 3% uncertainty source to a 20% one increases the total by only 0.2 percentage points. Focus your modelling effort on the largest sources of uncertainty — the small ones are rounding errors.</p>
+
+<!-- ─── 4. CONFIDENCE INTERVALS ─────────────────────────────── -->
+
+<h2>3. Confidence intervals via z-scores</h2>
+
+<p>An uncertainty rate $\sigma$ tells you the standard deviation of the forecast error as a fraction of the estimate. To build a confidence interval at a specific probability level, you multiply by a <strong>z-score</strong>.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Confidence interval half-width</div>
+<p>The half-width of a confidence interval at level $\alpha$ is</p>
+<div class="display-math">$$\text{half\_width} = z_\alpha \times \sigma \times |\text{estimate}|$$</div>
+<p>where $z_\alpha$ is the z-score corresponding to confidence level $\alpha$:</p>
+<table>
+<tr><th>Confidence level</th><th>$z_\alpha$</th><th>Meaning</th></tr>
+<tr><td>90%</td><td>1.645</td><td>5% in each tail</td></tr>
+<tr><td>95%</td><td>1.960</td><td>2.5% in each tail</td></tr>
+<tr><td>99%</td><td>2.576</td><td>0.5% in each tail</td></tr>
+</table>
+</div>
+
+<p><strong>Where do these numbers come from?</strong> They are quantiles of the standard normal distribution $N(0, 1)$. For 95% confidence, you want 95% of the probability between $-z$ and $+z$, leaving 2.5% in each tail. The value $z = 1.96$ satisfies $P(-1.96 < Z < 1.96) = 0.95$ for $Z \sim N(0,1)$.</p>
+
+<p><strong>Why normal?</strong> The <strong>Central Limit Theorem</strong> justifies this. The forecast error is the sum of many small independent contributions — weekly revenue deviations, cost fluctuations, timing errors. By the CLT, such a sum is approximately normally distributed regardless of the distribution of individual terms. We proved the variance addition property in <a href="01-random-walks.html">the previous page</a>; the CLT adds that the <em>shape</em> of the distribution converges to a bell curve.</p>
+
+<p>The z-scores increase non-linearly as confidence rises. Going from 90% to 95% adds only 0.315 to $z$ (from 1.645 to 1.960). But going from 95% to 99% adds 0.616 (from 1.960 to 2.576). Each additional percentage of confidence becomes progressively more expensive in terms of band width. This is a direct consequence of the bell shape: most of the probability mass is near the centre, so capturing the last few percent in the tails requires disproportionately wide bands.</p>
+
+<p>In practice, 90% confidence is often the right choice for operational forecasting. It says: "we expect the actual outcome to fall within this band 9 times out of 10." The 1-in-10 miss rate is acceptable for planning purposes, and the bands are narrow enough to be useful. 99% bands are relevant for stress testing — "what's the worst that could plausibly happen?" — but they're too wide for day-to-day decisions.</p>
+
+<p>It's worth noting the relationship between the z-scores and the uncertainty model from the <a href="02-uncertainty-model.html">previous page</a>. The fan chart spread $|B(w)| \times \sigma(w)$ is a one-sigma band. To convert it to a 95% confidence band, multiply by 1.96. To convert to 90%, multiply by 1.645. The uncertainty model gives you the base rate; the z-score scales it to your desired confidence level.</p>
+
+<!-- ─── 5. FULL WORKED EXAMPLE ─────────────────────────────── -->
+
+<h2>4. Full worked example</h2>
+
+<p>A business has a base forecast with uncertainty $\sigma_1 = 0.12$ and a what-if scenario adding uncertainty $\sigma_2 = 0.08$. The forecast balance is £200,000.</p>
+
+<p><strong>Step 1: Combine uncertainties.</strong></p>
+<div class="display-math">$$\sigma_{\text{total}} = \sqrt{0.12^2 + 0.08^2} = \sqrt{0.0144 + 0.0064} = \sqrt{0.0208} = 0.1442$$</div>
+
+<p>Compare: simple addition would give $0.12 + 0.08 = 0.20$. Quadrature gives 0.144 — about 28% less. The partial cancellation of independent errors saves you from overestimating uncertainty.</p>
+
+<p><strong>Step 2: Confidence bands.</strong></p>
+
+<p><em>Using combined $\sigma_{\text{total}} = 0.1442$ on £200,000:</em></p>
+
+<table>
+<tr><th>Level</th><th>$z$</th><th>Half-width</th><th>Lower</th><th>Upper</th></tr>
+<tr><td>90%</td><td>1.645</td><td>$1.645 \times 0.1442 \times £200{,}000 = £47{,}441$</td><td>£152,559</td><td>£247,441</td></tr>
+<tr><td>95%</td><td>1.960</td><td>$1.960 \times 0.1442 \times £200{,}000 = £56{,}526$</td><td>£143,474</td><td>£256,526</td></tr>
+<tr><td>99%</td><td>2.576</td><td>$2.576 \times 0.1442 \times £200{,}000 = £74{,}307$</td><td>£125,693</td><td>£274,307</td></tr>
+</table>
+
+<p><em>If we'd naively added $\sigma_1 + \sigma_2 = 0.20$:</em></p>
+
+<table>
+<tr><th>Level</th><th>Half-width (naive)</th><th>Half-width (quadrature)</th><th>Overestimate</th></tr>
+<tr><td>90%</td><td>£65,800</td><td>£47,441</td><td>39%</td></tr>
+<tr><td>95%</td><td>£78,400</td><td>£56,526</td><td>39%</td></tr>
+<tr><td>99%</td><td>£103,040</td><td>£74,307</td><td>39%</td></tr>
+</table>
+
+<p>Simple addition overestimates the confidence bands by 39% in every case. That's the cost of ignoring the independence structure: you waste nearly 40% of your risk budget on phantom uncertainty.</p>
+
+<h3>Why this matters for decision-making</h3>
+
+<p>The difference between quadrature and simple addition isn't academic. Consider a business deciding whether it needs an overdraft facility. With quadrature-combined 95% bands, the lower bound at £200k is £143,474 — comfortably positive. With naive addition, the lower bound drops to £121,600. The naive estimate might trigger an unnecessary £50k overdraft facility, costing real money in arrangement fees and interest.</p>
+
+<p>Conversely, if the uncertainties are <em>not</em> independent (perhaps the scenario is correlated with the base forecast errors), quadrature <em>underestimates</em> the true risk. The general formula includes the covariance term:</p>
+
+<div class="display-math">$$\sigma_{\text{total}} = \sqrt{\sigma_1^2 + \sigma_2^2 + 2\rho\,\sigma_1\sigma_2}$$</div>
+
+<p>where $\rho$ is the correlation coefficient between the two error sources. For independent errors, $\rho = 0$ and the covariance term vanishes. For positively correlated errors ($\rho > 0$), the total is higher. For perfectly correlated errors ($\rho = 1$), we recover simple addition: $\sigma_{\text{total}} = \sigma_1 + \sigma_2$.</p>
+
+<p>In our forecasting context, we assume scenario uncertainties are independent of the base forecast error. This is reasonable when the scenario represents a genuinely separate risk (e.g., a client default that has nothing to do with ordinary forecast noise). It's less reasonable when the scenario is correlated with the base — for instance, if a recession both increases forecast error <em>and</em> triggers the scenario. In those cases, the quadrature formula underestimates the true risk.</p>
+
+<p>When in doubt, treat the quadrature result as a <em>lower bound</em> on combined uncertainty. The true value lies between quadrature ($\rho = 0$) and simple addition ($\rho = 1$). If you suspect moderate positive correlation ($\rho \approx 0.5$), a pragmatic approach is to use the midpoint between quadrature and addition as your estimate.</p>
+
+<!-- ─── 6. HISTORY ─────────────────────────────── -->
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p><strong>Error propagation in quadrature</strong> traces back to <strong>Carl Friedrich Gauss</strong> (1777–1855), who derived the rules for combining measurement uncertainties in his work on astronomical observations. The formula $\sigma_{\text{total}} = \sqrt{\sigma_1^2 + \sigma_2^2}$ is sometimes called the <em>Gaussian error propagation formula</em>. The same mathematics appears in <strong>metrology</strong> (the science of measurement), where the GUM — Guide to the Expression of Uncertainty in Measurement — prescribes quadrature combination as the standard method. In <strong>particle physics</strong>, systematic and statistical uncertainties are combined in quadrature before reporting results. In <strong>portfolio theory</strong>, Harry Markowitz's 1952 insight that portfolio risk is less than the sum of individual risks is exactly this formula applied to asset returns — diversification is quadrature by another name.</p>
+</div>
+
+<!-- ─── 7. WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>If errors are correlated:</strong> the full formula is $\text{Var}(X + Y) = \text{Var}(X) + \text{Var}(Y) + 2\text{Cov}(X, Y)$. If the covariance is positive (errors tend to move together), combined uncertainty is <em>higher</em> than quadrature predicts. In the extreme of perfect positive correlation ($\rho = 1$), $\sigma_{\text{total}} = \sigma_1 + \sigma_2$ — simple addition is correct. If correlation is negative (errors tend to cancel), combined uncertainty is even <em>lower</em> than quadrature. The quadrature formula is only exact when $\text{Cov}(X, Y) = 0$.</p>
+<p><strong>If the distribution isn't normal:</strong> the z-scores are wrong. $z = 1.96$ gives 95% coverage only for a normal distribution. If the error distribution has fat tails (common in finance), the true 95% coverage requires a larger multiplier — perhaps $z = 2.5$ or more. For heavily skewed distributions, symmetric bands are inappropriate entirely. In these cases, you'd need <strong>bootstrapping</strong> or other non-parametric methods to construct valid confidence intervals.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">Independent uncertainties combine in quadrature — always less than simple addition, always more than zero. Pythagoras saves you from overestimating risk.</div>
+
+<!-- ─── 8. EXERCISES ─────────────────────────────── -->
+
+<h2>5. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — Prove quadrature is less than addition (geometric)</div>
+<p>Using Pythagoras's theorem, prove that $\sqrt{\sigma_1^2 + \sigma_2^2} < \sigma_1 + \sigma_2$ for all positive $\sigma_1, \sigma_2$. Give both an algebraic proof (squaring both sides) and a geometric argument (why the hypotenuse is shorter than the sum of legs).</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Algebraic proof.</strong></p>
+<p>We want to show $\sqrt{\sigma_1^2 + \sigma_2^2} < \sigma_1 + \sigma_2$. Both sides are positive (since $\sigma_1, \sigma_2 > 0$), so squaring preserves the inequality:</p>
+<div class="display-math">$$\sigma_1^2 + \sigma_2^2 \;\stackrel{?}{<}\; \sigma_1^2 + 2\sigma_1\sigma_2 + \sigma_2^2$$</div>
+<p>Cancel $\sigma_1^2 + \sigma_2^2$ from both sides:</p>
+<div class="display-math">$$0 < 2\sigma_1\sigma_2$$</div>
+<p>True, since $\sigma_1 > 0$ and $\sigma_2 > 0$. The strict inequality holds; equality would require one of them to be zero.</p>
+
+<p><strong>Geometric argument.</strong></p>
+<p>Draw a right triangle with legs $\sigma_1$ and $\sigma_2$. The hypotenuse has length $\sqrt{\sigma_1^2 + \sigma_2^2}$. Now consider walking from one end of the hypotenuse to the other by going along the two legs instead: you'd travel $\sigma_1 + \sigma_2$. But the shortest path between two points is a straight line (the hypotenuse), so the two-leg path must be strictly longer. Therefore $\sqrt{\sigma_1^2 + \sigma_2^2} < \sigma_1 + \sigma_2$.</p>
+<p>This is a special case of the <strong>triangle inequality</strong>: in any triangle, each side is strictly less than the sum of the other two. For a right triangle, the hypotenuse is the longest side, and it's still shorter than the sum of the legs.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — Combined uncertainty and confidence bands</div>
+<p>A base forecast has $\sigma_1 = 0.12$ and a scenario adds $\sigma_2 = 0.08$. The forecast balance is £200,000.</p>
+<ol>
+<li>Compute $\sigma_{\text{total}}$ by quadrature.</li>
+<li>Compute the 90% and 95% confidence bands.</li>
+<li>Compare with naive addition: by what percentage does naive addition overestimate each band?</li>
+<li>Suppose a third independent source of uncertainty $\sigma_3 = 0.05$ is added. Compute the new $\sigma_{\text{total}}$ and the 95% band.</li>
+</ol>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Part 1: Quadrature.</strong></p>
+<div class="display-math">$$\sigma_{\text{total}} = \sqrt{0.12^2 + 0.08^2} = \sqrt{0.0144 + 0.0064} = \sqrt{0.0208} = 0.1442$$</div>
+
+<p><strong>Part 2: Confidence bands.</strong></p>
+<p>90% band: half-width $= 1.645 \times 0.1442 \times £200{,}000 = £47{,}441$.</p>
+<div class="display-math">$$\text{90\% band: } [£152{,}559,\; £247{,}441]$$</div>
+<p>95% band: half-width $= 1.960 \times 0.1442 \times £200{,}000 = £56{,}526$.</p>
+<div class="display-math">$$\text{95\% band: } [£143{,}474,\; £256{,}526]$$</div>
+
+<p><strong>Part 3: Naive addition comparison.</strong></p>
+<p>Naive $\sigma = 0.12 + 0.08 = 0.20$. Ratio: $0.20 / 0.1442 = 1.387$.</p>
+<p>Naive addition overestimates each band by $38.7\%$. This is constant across confidence levels because the z-score multiplies both the quadrature and naive $\sigma$ equally.</p>
+
+<p><strong>Part 4: Three sources.</strong></p>
+<p>Quadrature extends naturally: $\sigma_{\text{total}} = \sqrt{\sigma_1^2 + \sigma_2^2 + \sigma_3^2}$.</p>
+<div class="display-math">$$\sigma_{\text{total}} = \sqrt{0.0144 + 0.0064 + 0.0025} = \sqrt{0.0233} = 0.1527$$</div>
+<p>Adding $\sigma_3 = 0.05$ increased $\sigma_{\text{total}}$ from 0.1442 to 0.1527 — an increase of only 0.0085. A 5% uncertainty source barely moves the needle when 12% and 8% sources are already present. This is the quadrature effect: small additional uncertainties are dwarfed by larger ones.</p>
+<p>95% band: half-width $= 1.960 \times 0.1527 \times £200{,}000 = £59{,}858$.</p>
+<div class="display-math">$$\text{95\% band: } [£140{,}142,\; £259{,}858]$$</div>
+<p>Compare with naive addition ($0.12 + 0.08 + 0.05 = 0.25$): half-width would be £98,000. Naive overestimates by $0.25/0.1527 = 1.637$, or 64%. With three sources, the overestimation from naive addition gets <em>worse</em>, not better.</p>
+</div>
+</details>
+</div>
+
+<div class="nav">
+<a href="02-uncertainty-model.html">&larr; The Uncertainty Model</a>
+<a href="../phase6/01-adjustment-algebra.html">Next: Adjustment Algebra &rarr;</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

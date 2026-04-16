@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Balance Sheet — Rolling Forward Stocks — Phase 3</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>The Balance Sheet — Rolling Forward Stocks</h1>
+<p class="subtitle">Phase 3 — The Accounting Identity, Page 3</p>
+
+<div class="problem-box">
+  <div class="label">The problem</div>
+  <p>You have this week's P&L (from <a href="02-projected-pl.html">Page 2</a>) and last week's balance sheet. How do you compute this week's balance sheet? Each line item must roll forward according to its own logic, yet the result must satisfy $A = L + E$ exactly. One item — cash — will be computed as a <strong>plug</strong> to guarantee this.</p>
+</div>
+
+<h2>1. The Roll-Forward Principle</h2>
+
+<p>A balance sheet is a snapshot of stocks at a point in time. To get from one week to the next, we update each item based on what happened during the week:</p>
+
+<div class="display-math">$$\text{BS}(w) = \text{BS}(w-1) + \Delta\text{P\&L}(w) + \Delta\text{timing}(w)$$</div>
+
+<p>The P&L tells us what value was created or consumed. The timing adjustments account for the fact that P&L items don't always move cash immediately — invoices create receivables, purchases create payables, tax charges create accruals. Each item has its own dynamics, which we now derive one by one.</p>
+
+<h2>2. Trade Receivables</h2>
+
+<p>When you invoice a customer, you recognise revenue in the P&L but don't receive cash yet. The outstanding amount sits as a <strong>trade receivable</strong> — an asset representing money owed to you. The key parameter is <strong>Days Sales Outstanding (DSO)</strong>: the average number of days customers take to pay. (IOU: DSO is formally defined and estimated in <a href="../phase4/01-dso-dpo.html">Phase 4, Page 1</a>.)</p>
+
+<p>In steady state — when revenue is roughly constant week to week — the receivables balance equals the revenue generated over the DSO period:</p>
+
+<div class="display-math">$$\text{AR}(w) = \text{revenue}(w) \times \frac{\text{effective\_DSO}}{7}$$</div>
+
+<p>Why divide by 7? DSO is measured in days; revenue(w) is a weekly figure. If DSO is 28 days, then $28/7 = 4$ weeks of revenue are outstanding at any moment. The balance is always four weeks' worth of unpaid invoices.</p>
+
+<p>For example, with weekly revenue of £10,200 and DSO of 28 days:</p>
+<div class="display-math">$$\text{AR} = 10{,}200 \times \frac{28}{7} = 10{,}200 \times 4 = \text{£}40{,}800$$</div>
+
+<p>When revenue changes — due to growth or seasonality — AR changes with it. A jump from £10,200/week in January to £14,400/week in December means AR rises from £40,800 to £57,600. That £16,800 increase in receivables is <em>cash that hasn't arrived yet</em>. Revenue went up, but the cash is delayed. This is why growing businesses often face cash pressure even when profitable.</p>
+
+<p>The steady-state formula is an approximation. In reality, receivables are a weighted sum of recent weeks' revenue (each weighted by the probability it's still unpaid). But for a 5-year projection where revenue changes gradually from week to week, the steady-state formula is accurate enough. The exact invoice-by-invoice model is built in <a href="../phase7/03-direct-cash-flow.html">Phase 7</a> for the 13-week direct cash flow.</p>
+
+<h2>3. Trade Payables</h2>
+
+<p>Symmetrically, when you receive goods from a supplier, you recognise the cost in the P&L but don't pay immediately. The outstanding amount is a <strong>trade payable</strong> — a liability representing money you owe. The parameter is <strong>Days Payable Outstanding (DPO)</strong>:</p>
+
+<div class="display-math">$$\text{AP}(w) = \text{COGS}(w) \times \frac{\text{effective\_DPO}}{7}$$</div>
+
+<p>If COGS is £3,570/week and DPO is 21 days: $\text{AP} = 3{,}570 \times 21/7 = 3{,}570 \times 3 = \text{£}10{,}710$.</p>
+
+<p>Notice the asymmetry with receivables: AR is computed from revenue (what customers owe you) while AP is computed from COGS (what you owe suppliers for goods). This makes sense — you pay suppliers for the goods you buy, not for the revenue you generate. In a business with 65% gross margin, AP is always smaller than AR for the same number of days outstanding.</p>
+
+<p>Payables work in your favour: the longer you take to pay suppliers, the more cash you retain. But there are limits — suppliers won't wait forever, and late payment damages relationships. DPO is a negotiated parameter, not a free variable.</p>
+
+<h2>4. Tax Accruals</h2>
+
+<p>Tax charges appear in the P&L every week, but payments happen on fixed schedules. Between payment dates, the unpaid tax accumulates as a <strong>current liability</strong> on the balance sheet. Each tax type has its own rhythm, and modelling these correctly is essential — miss a drain event and your cash forecast will be dangerously optimistic.</p>
+
+<h3>VAT (Value Added Tax)</h3>
+
+<p>Output VAT is charged on your sales. Input VAT is reclaimable on your purchases. The net amount is what you owe to HMRC:</p>
+
+<div class="display-math">$$\text{VAT\_output}(w) = \text{revenue}(w) \times r_{\text{VAT}}$$</div>
+<div class="display-math">$$\text{VAT\_input}(w) = \text{VAT-able purchases}(w) \times r_{\text{VAT}}$$</div>
+<div class="display-math">$$\text{net\_VAT}(w) = \text{VAT\_output}(w) - \text{VAT\_input}(w)$$</div>
+
+<p>VAT-able purchases include COGS and most operating costs, but <em>not</em> wages (no VAT on salaries) and <em>not</em> financial services. The standard UK rate is $r_{\text{VAT}} = 20\%$.</p>
+
+<p>The net VAT accumulates weekly. On the first week of each VAT quarter, the entire accumulated balance <strong>drains</strong>: the liability goes to zero and cash decreases by the drained amount.</p>
+
+<div class="display-math">$$\text{VAT\_accrual}(w) = \begin{cases} \text{net\_VAT}(w) & \text{if week } w \text{ is a drain week} \\ \text{VAT\_accrual}(w-1) + \text{net\_VAT}(w) & \text{otherwise} \end{cases}$$</div>
+
+<p>For a business with £10,200 weekly revenue and £5,450 in VAT-able costs (COGS + some opex), the weekly net VAT is $(10{,}200 - 5{,}450) \times 0.20 = \text{£}950$. Over a 13-week quarter, this accumulates to £12,350. When the drain hits, that is a single £12,350 cash outflow.</p>
+
+<h3>PAYE and Employee National Insurance</h3>
+
+<p>The employer withholds income tax (PAYE) and employee NI from staff salaries, then remits to HMRC. The combined effective rate is approximately 25% of gross staff costs:</p>
+
+<div class="display-math">$$\text{PAYE\_charge}(w) = \text{staff\_costs}(w) \times 0.25$$</div>
+
+<p>This accumulates weekly and drains every 4th week (monthly payment to HMRC). With £3,000/week staff costs, that is £750/week accumulating to £3,000 per monthly drain.</p>
+
+<h3>Employer National Insurance</h3>
+
+<p>In addition to the employee's NI (withheld from their pay), the employer pays its own NI contribution:</p>
+
+<div class="display-math">$$\text{ER\_NI}(w) = \max\bigl(0,\; \text{salary}(w) - \text{threshold\_weekly}\bigr) \times r_{\text{NI}}$$</div>
+
+<p>where $r_{\text{NI}} = 13.8\%$ (employer NI rate) and the secondary threshold is £175/week. This follows the same monthly drain schedule as PAYE.</p>
+
+<h3>Pension</h3>
+
+<p>Under auto-enrolment, the employer must contribute a minimum of 3% of qualifying earnings to employee pensions:</p>
+
+<div class="display-math">$$\text{pension}(w) = \text{qualifying\_earnings}(w) \times r_{\text{pension}}$$</div>
+
+<p>This drains monthly alongside PAYE and employer NI — all three are typically remitted together.</p>
+
+<h3>Corporation Tax</h3>
+
+<div class="display-math">$$\text{CT\_charge}(w) = \max(0,\; \text{PBT}(w) \times \tau)$$</div>
+
+<p>Corporation tax accumulates throughout the accounting year. For most companies, the accumulated balance drains once annually — 9 months and 1 day after the year end. This means the accrual can build for up to 21 months before the first payment. A company earning £2,000/week PBT at 25% tax accumulates £26,000 in the first year alone. When the drain finally hits, it is a very large cash outflow.</p>
+
+<h3>Why timing matters</h3>
+
+<p>These are real cash outflows at predictable but infrequent intervals. A business can be profitable every single week yet face a genuine cash crisis when the quarterly VAT bill and the monthly PAYE bill land in the same week. The balance sheet must track each accrual separately so the cash flow statement captures every drain event at the correct time.</p>
+
+<h2>5. Fixed Assets</h2>
+
+<p>Property, plant, and equipment (PPE) decreases each week by the depreciation charge from the P&L:</p>
+
+<div class="display-math">$$\text{PPE}(w) = \text{PPE}(w-1) - \text{weekly\_depreciation}$$</div>
+
+<p>The asset's net book value falls steadily towards zero (or a residual value, if one is assumed). If new capital expenditure occurs in a given week, PPE increases by the purchase amount:</p>
+
+<div class="display-math">$$\text{PPE}(w) = \text{PPE}(w-1) - \text{dep}(w) + \text{capex}(w)$$</div>
+
+<p>Capex is a cash outflow captured in CFI (cash from investing), not in the P&L. This is the mirror image of depreciation: the cash left when the asset was bought; the P&L cost is spread over the useful life.</p>
+
+<h2>6. Retained Earnings</h2>
+
+<p>Retained earnings accumulate all net profits not distributed as dividends:</p>
+
+<div class="display-math">$$\text{RE}(w) = \text{RE}(w-1) + \text{net\_profit}(w) - \text{dividends}(w)$$</div>
+
+<p>Net profit comes directly from the P&L. Dividends are cash distributions to shareholders — they reduce both retained earnings (equity) and cash (asset). If no dividends are declared, retained earnings grow by net profit each week.</p>
+
+<p>Dividends are typically declared quarterly or annually. In the model, you specify the dividend amount and the week it is paid. On that week, RE drops and the cash plug absorbs the outflow. Between dividend dates, RE accumulates steadily.</p>
+
+<p>Note that retained earnings can be negative — this happens when cumulative losses exceed cumulative profits plus initial share capital. A negative RE is not illegal, but it means the business has destroyed shareholder value. In extreme cases, total equity becomes negative ($E < 0$), meaning liabilities exceed assets. This is technically insolvent and requires immediate attention.</p>
+
+<h2>7. Cash as Plug</h2>
+
+<p>Here is the key architectural decision of the model. Rather than projecting cash independently (which would require tracking every individual cash receipt and payment), we <strong>derive cash</strong> from the accounting identity.</p>
+
+<p>We know $A = L + E$. We know every item on both sides <em>except</em> cash. So we solve for it:</p>
+
+<div class="theorem-box">
+  <div class="label">Theorem — Cash as Plug</div>
+  <p>Let $A'$ denote total non-cash assets: $A' = \text{AR} + \text{PPE} + \text{other}$. Then:</p>
+  <div class="display-math">$$\text{cash}(w) = \bigl(L(w) + E(w)\bigr) - A'(w)$$</div>
+  <p>This preserves $A = L + E$ by construction, since $A = \text{cash} + A' = (L + E - A') + A' = L + E$.</p>
+</div>
+
+<div class="proof-box" id="proof-cash-plug">
+  <div class="label">Proof — Cash as plug preserves A = L + E</div>
+  <p>We want $A(w) = L(w) + E(w)$. Decompose assets into cash and everything else:</p>
+  <div class="display-math">$$A(w) = \text{cash}(w) + A'(w)$$</div>
+  <p>Define $\text{cash}(w) \equiv (L(w) + E(w)) - A'(w)$.</p>
+  <p>Substituting:</p>
+  <div class="display-math">$$A(w) = \bigl((L(w) + E(w)) - A'(w)\bigr) + A'(w) = L(w) + E(w)$$</div>
+  <p>The identity holds algebraically, by construction. No numerical verification is needed — it is guaranteed.</p>
+  <div class="qed">∎</div>
+</div>
+
+<p>This is powerful for three reasons. First, if every non-cash item is projected correctly, cash falls out automatically — you don't need a separate cash model. Second, if cash goes negative, that is a genuine signal: the business needs external funding. A negative plug means liabilities and equity are insufficient to cover non-cash assets, so cash must be borrowed. Third, because cash is derived rather than independently projected, the balance sheet is <em>guaranteed</em> to balance at every single week of the 260-week projection. There is no drift, no accumulation of rounding errors, no possibility of an unbalanced sheet.</p>
+
+<p>The danger of the plug is its mirror image: because cash absorbs all errors, a mistake in any other line item will produce a wrong cash figure while the balance sheet still appears to balance. The cash flow statement on <a href="04-cash-flow-statement.html">Page 4</a> provides the independent check that catches these hidden errors.</p>
+
+<h2>8. Worked Example: 4-Week Balance Sheet</h2>
+
+<p>Opening BS (week 0): Cash £25,000 | AR £40,800 | PPE £52,000. AP £10,710 | VAT accrual £0 | PAYE accrual £0 | CT accrual £0 | Loan £40,000 | Share capital £20,000 | RE £47,090.</p>
+
+<p>Check: A = £25,000 + £40,800 + £52,000 = £117,800. L+E = £10,710 + £0 + £0 + £0 + £40,000 + £20,000 + £47,090 = £117,800. Balanced.</p>
+
+<p>Weekly P&L from <a href="02-projected-pl.html">Page 2</a>: revenue £10,200, COGS £3,570, opex (cash) £4,880, depreciation £200, interest £56, net profit £1,121. DSO = 28 days, DPO = 21 days. Weekly net VAT = £306. Weekly PAYE = £750. Weekly CT = £374. No drains in weeks 1–3; PAYE drain in week 4.</p>
+
+<table>
+  <tr><th>Item</th><th>W0</th><th>W1</th><th>W2</th><th>W3</th><th>W4</th></tr>
+  <tr><td colspan="6"><strong>Assets</strong></td></tr>
+  <tr><td>AR</td><td>£40,800</td><td>£40,800</td><td>£40,800</td><td>£40,800</td><td>£40,800</td></tr>
+  <tr><td>PPE</td><td>£52,000</td><td>£51,800</td><td>£51,600</td><td>£51,400</td><td>£51,200</td></tr>
+  <tr><td>Cash (plug)</td><td>£25,000</td><td>£27,751</td><td>£30,502</td><td>£33,253</td><td>£33,004</td></tr>
+  <tr><td><strong>Total A</strong></td><td><strong>£117,800</strong></td><td><strong>£120,351</strong></td><td><strong>£122,902</strong></td><td><strong>£125,453</strong></td><td><strong>£125,004</strong></td></tr>
+  <tr><td colspan="6"><strong>Liabilities</strong></td></tr>
+  <tr><td>AP</td><td>£10,710</td><td>£10,710</td><td>£10,710</td><td>£10,710</td><td>£10,710</td></tr>
+  <tr><td>VAT</td><td>£0</td><td>£306</td><td>£612</td><td>£918</td><td>£1,224</td></tr>
+  <tr><td>PAYE</td><td>£0</td><td>£750</td><td>£1,500</td><td>£2,250</td><td>£0</td></tr>
+  <tr><td>CT</td><td>£0</td><td>£374</td><td>£748</td><td>£1,122</td><td>£1,496</td></tr>
+  <tr><td>Loan</td><td>£40,000</td><td>£40,000</td><td>£40,000</td><td>£40,000</td><td>£40,000</td></tr>
+  <tr><td colspan="6"><strong>Equity</strong></td></tr>
+  <tr><td>Share cap</td><td>£20,000</td><td>£20,000</td><td>£20,000</td><td>£20,000</td><td>£20,000</td></tr>
+  <tr><td>RE</td><td>£47,090</td><td>£48,211</td><td>£49,332</td><td>£50,453</td><td>£51,574</td></tr>
+  <tr><td><strong>Total L+E</strong></td><td><strong>£117,800</strong></td><td><strong>£120,351</strong></td><td><strong>£122,902</strong></td><td><strong>£125,453</strong></td><td><strong>£125,004</strong></td></tr>
+</table>
+
+<p>At week 1, the cash plug is $120{,}351 - 92{,}600 = \text{£}27{,}751$. The balance sheet balances: total assets of £120,351 equal equity and liabilities of £120,351. Each subsequent week follows the same logic — accruals build steadily until the drain event in week 4, when PAYE drops from £3,000 to £0 and cash absorbs the hit.</p>
+
+<h2>9. The Drain Sawtooth</h2>
+
+<p>The worked example reveals the characteristic <strong>sawtooth pattern</strong> in cash. Between drain events, cash grows steadily as weekly profits accumulate. Then a drain hits — PAYE monthly (£3,000), VAT quarterly (£4,000+), corporation tax annually (£20,000+) — and cash drops sharply.</p>
+
+<p>Over a full year, the sawtooth looks like gentle upward slopes punctuated by sudden drops. The largest drop is the annual corporation tax payment. A business with £2,000/week PBT pays roughly £26,000 in one hit. If the owner didn't anticipate this, the bank account goes into overdraft — despite the business being profitable every single week.</p>
+
+<p>This is why the balance sheet model must track each tax accrual separately, with the correct drain frequency. Aggregating all taxes into a single monthly average loses the timing information, and timing is everything for cash.</p>
+
+<div class="history-box">
+  <div class="label">Historical note</div>
+  <p>The balance sheet format used in the UK is prescribed by the Companies Act 2006, Schedule 1, which distinguishes between current and non-current assets, and between current and long-term liabilities. The concept of a "true and fair view" — that financial statements must not be misleading — dates to the Companies Act 1947. Before that, companies had remarkable latitude in what they disclosed, and many concealed liabilities or inflated assets. The balance sheet equation $A = L + E$ predates all legislation; it is a mathematical tautology, inherent in double-entry bookkeeping, that has been used by merchants since at least the 13th century.</p>
+</div>
+
+<div class="break-box">
+  <div class="label">What breaks</div>
+  <ul>
+    <li><strong>No cash plug.</strong> If you project cash independently — say, as "last week's cash plus net profit" — the balance sheet will not balance. The error drifts over time because net profit is not the same as cash movement (depreciation, working capital changes, tax timing). You lose the built-in consistency check, and errors in other line items go completely undetected.</li>
+    <li><strong>Forgetting tax drains.</strong> Corporation tax for a profitable SME can easily be £30,000-£50,000. If the model doesn't drain this from cash at the right time, the cash projection is overstated by that entire amount — a potentially fatal error for a business with thin margins. The VAT drain, hitting quarterly, is similarly large. These are not rounding errors; they are five-figure cash outflows that must be modelled explicitly.</li>
+  </ul>
+</div>
+
+<h2>10. Exercises</h2>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 1 — Cash-as-plug proof (academic)</div>
+  <p>Prove two properties of the cash plug: (a) if all non-cash items are correctly projected, then $A = L + E$ holds with cash as the plug. (b) If a non-cash asset item has an error $\epsilon$ (i.e., its true value is $A'_{\text{true}} = A' + \epsilon$ but we computed $A'$), show that the error is absorbed into cash — the identity still holds, but cash is wrong by $\epsilon$.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p><strong>(a)</strong> Define $A = \text{cash} + A'$. Set $\text{cash} = (L + E) - A'$. Then $A = (L + E) - A' + A' = L + E$. The identity holds.</p>
+      <p><strong>(b)</strong> True non-cash assets: $A'_{\text{true}} = A' + \epsilon$. We compute $\text{cash} = (L + E) - A'$. True cash should be $(L + E) - A'_{\text{true}} = (L + E) - A' - \epsilon$. So our computed cash is $\epsilon$ too high.</p>
+      <p>The identity $A = L + E$ still holds: $A = \text{cash} + A' = ((L+E) - A') + A' = L + E$. But the balance sheet is internally consistent while being <em>wrong</em> — cash absorbed the error from the miscomputed asset.</p>
+      <p>This is the plug's double-edged nature. It guarantees balance, but it can hide errors. This is precisely why the cash flow statement (<a href="04-cash-flow-statement.html">Page 4</a>) exists: it provides an independent derivation of $\Delta\text{Cash}$ that can be compared to the plug's implied change. If they disagree, there's a bug.</p>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 2 — Roll forward with drains (applied)</div>
+  <p>Opening BS: Cash £30,000 | AR £20,000 | PPE £40,000. AP £8,000 | VAT accrual £4,000 | PAYE accrual £0 | CT accrual £10,000 | Loan £30,000 | Share cap £15,000 | RE £23,000. Verify it balances.</p>
+  <p>Weekly: revenue £8,000, COGS £2,800, net profit £1,394, depreciation £100. DSO = 17.5 days (AR = £8,000 × 17.5/7 = £20,000). DPO = 20 days (AP = £2,800 × 20/7 = £8,000). Net VAT = £200/wk. PAYE = £500/wk. CT = £348/wk.</p>
+  <p>Events: VAT drains in week 3 (accumulated VAT paid). PAYE drains in week 4 (accumulated PAYE paid). Roll forward for 4 weeks. Compute closing BS and verify $A = L + E$ at each week.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p><strong>Opening check:</strong> A = £30,000 + £20,000 + £40,000 = £90,000. L+E = £8,000 + £4,000 + £0 + £10,000 + £30,000 + £15,000 + £23,000 = £90,000. Balanced.</p>
+      <table>
+        <tr><th></th><th>W0</th><th>W1</th><th>W2</th><th>W3</th><th>W4</th></tr>
+        <tr><td>AR</td><td>£20,000</td><td>£20,000</td><td>£20,000</td><td>£20,000</td><td>£20,000</td></tr>
+        <tr><td>PPE</td><td>£40,000</td><td>£39,900</td><td>£39,800</td><td>£39,700</td><td>£39,600</td></tr>
+        <tr><td>AP</td><td>£8,000</td><td>£8,000</td><td>£8,000</td><td>£8,000</td><td>£8,000</td></tr>
+        <tr><td>VAT</td><td>£4,000</td><td>£4,200</td><td>£4,400</td><td>£200</td><td>£400</td></tr>
+        <tr><td>PAYE</td><td>£0</td><td>£500</td><td>£1,000</td><td>£1,500</td><td>£0</td></tr>
+        <tr><td>CT</td><td>£10,000</td><td>£10,348</td><td>£10,696</td><td>£11,044</td><td>£11,392</td></tr>
+        <tr><td>Loan</td><td>£30,000</td><td>£30,000</td><td>£30,000</td><td>£30,000</td><td>£30,000</td></tr>
+        <tr><td>SC</td><td>£15,000</td><td>£15,000</td><td>£15,000</td><td>£15,000</td><td>£15,000</td></tr>
+        <tr><td>RE</td><td>£23,000</td><td>£24,394</td><td>£25,788</td><td>£27,182</td><td>£28,576</td></tr>
+        <tr><td>L+E</td><td>£90,000</td><td>£92,442</td><td>£94,884</td><td>£92,926</td><td>£93,368</td></tr>
+        <tr><td>A' (AR+PPE)</td><td>£60,000</td><td>£59,900</td><td>£59,800</td><td>£59,700</td><td>£59,600</td></tr>
+        <tr><td><strong>Cash</strong></td><td><strong>£30,000</strong></td><td><strong>£32,542</strong></td><td><strong>£35,084</strong></td><td><strong>£33,226</strong></td><td><strong>£33,768</strong></td></tr>
+        <tr><td><strong>Total A</strong></td><td><strong>£90,000</strong></td><td><strong>£92,442</strong></td><td><strong>£94,884</strong></td><td><strong>£92,926</strong></td><td><strong>£93,368</strong></td></tr>
+      </table>
+      <p>Week 3: the VAT drain hits. Accrual was £4,400; it drains to £200 (just the week 3 charge). Cash drops by £4,200. L+E drops from £94,884 to £92,926 — the liability reduction isn't offset by anything. Cash absorbs it via the plug.</p>
+      <p>Week 4: PAYE drains. Accrual was £2,000 (£500 × 4 weeks); it goes to zero. Cash drops by £2,000 relative to what it would have been without the drain. But net profit still adds £1,394, so cash still rises slightly from W3.</p>
+      <p>$A = L + E$ holds at every week by construction.</p>
+    </div>
+  </details>
+</div>
+
+<hr>
+
+<div class="oneliner">The balance sheet is last week's balance sheet plus this week's flows, with cash as the number that makes it all add up.</div>
+
+<div class="nav">
+  <a href="02-projected-pl.html">&larr; The Projected P&L</a>
+  <a href="04-cash-flow-statement.html">Next: The Cash Flow Statement &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body>
+</html>

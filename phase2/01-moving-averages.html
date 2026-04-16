@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moving Averages as Low-Pass Filters — Phase 2</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Moving Averages as Low-Pass Filters</h1>
+<p class="subtitle">Phase 2 — Seasonal Decomposition, Page 1</p>
+
+<!-- ─── THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>A retailer's monthly revenue bounces between £32k in January and £78k in December. Every month looks wildly different from the last. The raw numbers swing so violently that you can't tell whether the business is growing, shrinking, or standing still.</p>
+<p>Your CFO asks: "Is the business actually growing, or is it just seasonal noise?"</p>
+<p>You need a mathematical tool that strips out the seasonal swings and reveals the <strong>underlying trend</strong> — the slow-moving direction the business is heading, regardless of which month you're looking at.</p>
+</div>
+
+<!-- ─── 1. SIMPLE MOVING AVERAGE ─────────────────────────────── -->
+
+<h2>1. The simple moving average</h2>
+
+<p>The idea is brutally simple. Pick a window of $k$ consecutive months, compute their mean, then slide the window forward one month at a time. Each position of the window gives you one smoothed value.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Simple Moving Average</div>
+<p>Given a time series $x_1, x_2, \ldots, x_n$ and a window width $k$, the <strong>simple moving average</strong> at time $t$ is</p>
+<div class="display-math">$$\text{SMA}_k(t) = \frac{1}{k}\sum_{i=0}^{k-1} x_{t-i}$$</div>
+<p>This is defined for $t = k, k+1, \ldots, n$. The first $k-1$ time points have no SMA because there aren't enough preceding values to fill the window.</p>
+</div>
+
+<p>Why does this smooth? Each individual month carries its own noise — a freak snowstorm kills footfall, a viral post spikes online sales, an invoice lands a day early or a day late. These are <strong>irregular</strong> effects: random, unpredictable, and unlikely to repeat in the same month next year.</p>
+
+<p>Averaging over $k$ months means any single month's anomaly gets diluted by a factor of $\frac{1}{k}$. If one month is £10k above normal, the SMA only moves by $\frac{10}{k}$ thousand. With $k = 12$, that's less than £1k — the noise shrinks; the signal survives.</p>
+
+<p>Formally, if the noise terms $\varepsilon_t$ are independent with mean 0 and variance $\sigma^2$, the variance of the SMA is $\frac{\sigma^2}{k}$. The standard deviation — which measures the "typical" size of the remaining noise — drops from $\sigma$ to $\frac{\sigma}{\sqrt{k}}$. With $k = 12$, that's a reduction by a factor of $\sqrt{12} \approx 3.46$. Noise that swings £10k per month becomes noise of about £2.9k after averaging — much easier to see through.</p>
+
+<p>But this version is <strong>trailing</strong> — the average at time $t$ only uses values from $t, t-1, \ldots, t-k+1$. It systematically lags behind reality. If the trend is rising, the trailing SMA understates the current level. For seasonal decomposition, we need something that sits <em>on</em> the data, not behind it. We need a <strong>centred</strong> average.</p>
+
+<!-- ─── 2. THE 12-MONTH CENTRED MOVING AVERAGE ─────────────────────────────── -->
+
+<h2>2. The 12-month centred moving average</h2>
+
+<p>With monthly data and an annual seasonal cycle, we want a window of exactly 12 months. But 12 is even, so there's no single middle point. A naive 12-point window centred at $t$ would span $t-5.5$ to $t+5.5$ — half-months don't exist in discrete data.</p>
+
+<p>The standard trick: take two consecutive 12-point trailing averages and average <em>them</em>. The first covers months $t-6$ to $t+5$; the second covers $t-5$ to $t+6$. Their average is centred exactly at $t$. But notice: $x_{t-6}$ appears in the first average but not the second, and $x_{t+6}$ appears in the second but not the first. So the endpoints get <strong>half weight</strong>.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — 12-Month Centred Moving Average (CMA)</div>
+<p>For a monthly time series $x_1, \ldots, x_n$, the <strong>centred moving average</strong> at time $t$ is</p>
+<div class="display-math">$$\text{CMA}(t) = \frac{1}{12}\left(\frac{1}{2}x_{t-6} + x_{t-5} + x_{t-4} + \cdots + x_{t+5} + \frac{1}{2}x_{t+6}\right)$$</div>
+<p>This is defined for $t = 7, 8, \ldots, n-6$, requiring at least 13 months of data to produce even a single CMA value.</p>
+</div>
+
+<p><strong>Why the half-weights at endpoints?</strong> Let's derive this explicitly. Write out the two 12-point averages. The first, centred slightly before $t$, is:</p>
+
+<div class="display-math">$$A_1 = \frac{1}{12}(x_{t-6} + x_{t-5} + x_{t-4} + x_{t-3} + x_{t-2} + x_{t-1} + x_t + x_{t+1} + x_{t+2} + x_{t+3} + x_{t+4} + x_{t+5})$$</div>
+
+<p>The second, centred slightly after $t$, is:</p>
+
+<div class="display-math">$$A_2 = \frac{1}{12}(x_{t-5} + x_{t-4} + x_{t-3} + x_{t-2} + x_{t-1} + x_t + x_{t+1} + x_{t+2} + x_{t+3} + x_{t+4} + x_{t+5} + x_{t+6})$$</div>
+
+<p>Now average them. Each interior term ($x_{t-5}$ through $x_{t+5}$) appears in both averages, so it gets weight $\frac{2}{24} = \frac{1}{12}$. But $x_{t-6}$ only appears in $A_1$ and $x_{t+6}$ only appears in $A_2$, so they get weight $\frac{1}{24} = \frac{1}{2} \cdot \frac{1}{12}$:</p>
+
+<div class="display-math">$$\frac{A_1 + A_2}{2} = \frac{1}{24}\bigl(x_{t-6} + 2x_{t-5} + 2x_{t-4} + \cdots + 2x_{t+5} + x_{t+6}\bigr)$$</div>
+
+<p>Factor out the 2 from the interior terms and rearrange:</p>
+
+<div class="display-math">$$= \frac{1}{12}\left(\tfrac{1}{2}x_{t-6} + x_{t-5} + x_{t-4} + \cdots + x_{t+5} + \tfrac{1}{2}x_{t+6}\right)$$</div>
+
+<p>That's the CMA formula. The half-weights aren't arbitrary — they fall directly out of centring an even-length window. It's the unique way to average two offset windows and land exactly on time $t$.</p>
+
+<p>Note that the <strong>total weight sums to 1</strong>: two half-weights ($\frac{1}{2} \cdot \frac{1}{12}$ each = $\frac{1}{12}$ total) plus eleven full weights ($11 \cdot \frac{1}{12}$) gives $\frac{1}{12} + \frac{11}{12} = 1$. The CMA is a proper weighted average.</p>
+
+<div class="proof-box" id="proof-cma-weights">
+<div class="label">Proof — CMA weights sum to 1</div>
+<p>The CMA assigns weight $w_j$ to observation $x_{t+j}$ for $j = -6, -5, \ldots, 5, 6$. Specifically:</p>
+<div class="display-math">$$w_{-6} = w_{6} = \frac{1}{24}, \qquad w_j = \frac{1}{12} \text{ for } j = -5, \ldots, 5$$</div>
+<p>Count: there are 2 endpoint weights and 11 interior weights. The total is:</p>
+<div class="display-math">$$\sum_{j=-6}^{6} w_j = 2 \cdot \frac{1}{24} + 11 \cdot \frac{1}{12} = \frac{2}{24} + \frac{11}{12} = \frac{1}{12} + \frac{11}{12} = 1$$</div>
+<p>So the CMA is a convex combination of the 13 observations — a genuine weighted average. The output always lies between the minimum and maximum of the input values.</p>
+<div class="qed">∎</div>
+</div>
+
+<!-- ─── 3. WHY 12? ─────────────────────────────── -->
+
+<h2>3. Why exactly 12 months?</h2>
+
+<p>Suppose revenue has a repeating annual pattern: high in summer, low in winter. Over any complete 12-month cycle, those highs and lows cancel by design. A December spike of +30% and a February dip of –20% average out when you take the full year together.</p>
+
+<p>More precisely, assume the time series decomposes as $x(t) = T(t) \times S(t) \times I(t)$, where $S(t)$ is periodic with period 12: $S(t) = S(t+12)$ for all $t$. Consider what happens when you average $S$ over 12 consecutive months. Every calendar month appears exactly once in the window. If the normalised seasonal indices sum to 12 (which we'll enforce on the next page), then their average is 1. The CMA <strong>annihilates</strong> the seasonal component, leaving only the trend $T(t)$ and whatever irregular noise $I(t)$ survives the averaging.</p>
+
+<p>The noise $I(t)$ is also reduced. If the irregular components are independent with variance $\sigma^2$, averaging 12 of them reduces variance to $\frac{\sigma^2}{12}$ — the standard error drops by a factor of $\sqrt{12} \approx 3.5$. Not eliminated, but substantially damped.</p>
+
+<p>(There's a deeper reason involving the <strong>convolution theorem</strong> and Fourier analysis: a moving average acts as a low-pass filter in the frequency domain. The frequency response of a $k$-point moving average has zeros at frequencies $\frac{1}{k}, \frac{2}{k}, \ldots$ — it annihilates any periodic component whose frequency is a multiple of $\frac{1}{k}$. With $k = 12$, you kill the annual frequency $\frac{1}{12}$ and its harmonics $\frac{2}{12}, \frac{3}{12}, \ldots$ — exactly the seasonal components. We won't develop this machinery here, but it explains why the technique works so cleanly.)</p>
+
+<!-- ─── 4. WHAT YOU LOSE ─────────────────────────────── -->
+
+<h2>4. What you lose</h2>
+
+<p>The CMA at time $t$ requires data from $t-6$ to $t+6$. That means <strong>no CMA for the first 6 or last 6 months</strong> of your dataset.</p>
+
+<p>The consequences are immediate:</p>
+<ul>
+<li>With 24 months of data, you get CMA values for months 7 through 18 — just 12 usable points out of 24.</li>
+<li>With 18 months, CMA is defined for months 7 through 12 — only 6 points.</li>
+<li>With 13 months, you get a single CMA value at month 7.</li>
+<li>With 12 months or fewer, you get <strong>nothing</strong>.</li>
+</ul>
+
+<p>This is a hard constraint, not a fixable problem. You cannot compute a centred 12-month average without 6 months of future data on each side. Any attempt to "extend" the CMA to the edges — by padding with zeros, mirroring the series, or extrapolating the trend — introduces assumptions about exactly the thing you're trying to extract. The edges are genuinely unknown.</p>
+
+<p>This data-loss problem motivates the minimum data requirement: you need at least 13 months to produce any CMA value at all, and at least 24 months to get a full set of 12 calendar-month CMA values (one per month).</p>
+
+<p>In practice, the last 6 months are the most frustrating gap. A business owner wants to know the trend <em>right now</em> — but the CMA can't be computed for the most recent 6 months because future data doesn't exist yet. This is why the CMA is a tool for <strong>decomposition</strong> (extracting the seasonal pattern from historical data) rather than real-time trend tracking. Once you have the seasonal indices, you project forward using a separate trend model — the CMA has done its job and can retire.</p>
+
+<h2>5. The SMA as a special case</h2>
+
+<p>It's worth noting the relationship between the trailing SMA and the centred CMA. An SMA with window $k$ places equal weight $\frac{1}{k}$ on each of $k$ consecutive observations. The CMA with half-weights at endpoints is a specific variant designed for even-$k$ centring.</p>
+
+<p>For odd windows (say $k = 13$), centring is trivial: put equal weight $\frac{1}{13}$ on $x_{t-6}$ through $x_{t+6}$. No half-weights needed. But as we discussed, 13 months doesn't match the seasonal period, so the seasonal component doesn't cancel cleanly.</p>
+
+<p>The CMA is, in signal-processing terms, a <strong>symmetric FIR filter</strong> with 13 taps. Symmetry guarantees zero phase distortion — the CMA doesn't shift the trend left or right in time. This is crucial for decomposition: you need the CMA to sit exactly at time $t$ so the ratio $x(t) / \text{CMA}(t)$ correctly isolates the seasonal component of month $t$.</p>
+
+<p>This property is called <strong>zero phase</strong>.
+Why does symmetry matter in practice? An asymmetric filter (like the trailing SMA) has a phase lag. If revenue is rising, the trailing SMA consistently underestimates the current trend level. When you divide $x(t)$ by a lagged trend estimate, the resulting ratio is biased upward during growth periods and downward during decline. Your "seasonal indices" would absorb this bias, attributing it to seasonality when it's really a trend artefact. The centred CMA, being symmetric, avoids this entirely.</p>
+
+<!-- ─── 6. EXERCISES ─────────────────────────────── -->
+
+<h2>6. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — CMA by hand</div>
+<p>A small retailer reports the following 18 months of revenue (£k):</p>
+<table>
+<tr><th>Month</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th><th>16</th><th>17</th><th>18</th></tr>
+<tr><td>£k</td><td>35</td><td>32</td><td>38</td><td>42</td><td>50</td><td>55</td><td>58</td><td>40</td><td>45</td><td>48</td><td>60</td><td>75</td><td>38</td><td>35</td><td>41</td><td>46</td><td>53</td><td>58</td></tr>
+</table>
+<p>Compute $\text{CMA}(7)$, $\text{CMA}(8)$, and $\text{CMA}(9)$. For which months is the CMA defined?</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Which months?</strong> The CMA uses data from $t-6$ to $t+6$. With 18 months, we need $t - 6 \geq 1$ and $t + 6 \leq 18$, so $7 \leq t \leq 12$. CMA is defined for months 7 through 12 — six values.</p>
+
+<p><strong>CMA(7):</strong> uses months 1 through 13. List the weights:</p>
+<div class="display-math">$$\text{CMA}(7) = \frac{1}{12}\left(\tfrac{1}{2}(35) + 32 + 38 + 42 + 50 + 55 + 58 + 40 + 45 + 48 + 60 + 75 + \tfrac{1}{2}(38)\right)$$</div>
+<p>Compute the half-weight terms first: $\frac{35}{2} = 17.5$ and $\frac{38}{2} = 19$.</p>
+<p>Now the full-weight interior sum: $32 + 38 + 42 + 50 + 55 + 58 + 40 + 45 + 48 + 60 + 75 = 543$.</p>
+<p>Grand total in the numerator: $17.5 + 543 + 19 = 579.5$.</p>
+<div class="display-math">$$\text{CMA}(7) = \frac{579.5}{12} = 48.29$$</div>
+
+<p><strong>CMA(8):</strong> uses months 2 through 14. Slide the window one step right:</p>
+<div class="display-math">$$\text{CMA}(8) = \frac{1}{12}\left(\tfrac{1}{2}(32) + 38 + 42 + 50 + 55 + 58 + 40 + 45 + 48 + 60 + 75 + 38 + \tfrac{1}{2}(35)\right)$$</div>
+<p>Half-weights: $\frac{32}{2} = 16$ and $\frac{35}{2} = 17.5$. Sum: $16 + 17.5 = 33.5$.</p>
+<p>Full-weight sum: $38 + 42 + 50 + 55 + 58 + 40 + 45 + 48 + 60 + 75 + 38 = 549$.</p>
+<p>Total: $33.5 + 549 = 582.5$.</p>
+<div class="display-math">$$\text{CMA}(8) = \frac{582.5}{12} = 48.54$$</div>
+
+<p><strong>CMA(9):</strong> uses months 3 through 15:</p>
+<div class="display-math">$$\text{CMA}(9) = \frac{1}{12}\left(\tfrac{1}{2}(38) + 42 + 50 + 55 + 58 + 40 + 45 + 48 + 60 + 75 + 38 + 35 + \tfrac{1}{2}(41)\right)$$</div>
+<p>Half-weights: $\frac{38}{2} = 19$ and $\frac{41}{2} = 20.5$. Sum: $19 + 20.5 = 39.5$.</p>
+<p>Full-weight sum: $42 + 50 + 55 + 58 + 40 + 45 + 48 + 60 + 75 + 38 + 35 = 546$.</p>
+<p>Total: $39.5 + 546 = 585.5$.</p>
+<div class="display-math">$$\text{CMA}(9) = \frac{585.5}{12} = 48.79$$</div>
+
+<p><strong>Interpretation:</strong> the trend is gently rising: £48.29k, £48.54k, £48.79k. That's a steady upward drift of about £250/month despite the raw data bouncing between £32k and £75k. The CMA has stripped out the seasonal noise and revealed the underlying growth.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — Applied: identifying trend direction</div>
+<p>A home furnishings retailer provides 24 months of revenue (£k):</p>
+<table>
+<tr><th>Month</th><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th></tr>
+<tr><td>Year 1</td><td>34</td><td>31</td><td>36</td><td>40</td><td>45</td><td>48</td><td>52</td><td>38</td><td>42</td><td>50</td><td>62</td><td>78</td></tr>
+<tr><td>Year 2</td><td>38</td><td>35</td><td>40</td><td>44</td><td>50</td><td>54</td><td>57</td><td>42</td><td>47</td><td>55</td><td>68</td><td>85</td></tr>
+</table>
+<p>Compute the CMA for every month where it's defined. Is the underlying trend growing, flat, or declining? By roughly how much per month?</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p>Index months 1–24 (month 1 = Jan Y1, month 13 = Jan Y2, etc.). CMA is defined for months 7 through 18 (Jul Y1 through Jun Y2) — twelve values.</p>
+
+<p><strong>CMA(7):</strong> months 1–13.</p>
+<p>$\frac{1}{12}(\frac{34}{2} + 31 + 36 + 40 + 45 + 48 + 52 + 38 + 42 + 50 + 62 + 78 + \frac{38}{2})$</p>
+<p>$= \frac{1}{12}(17 + 31 + 36 + 40 + 45 + 48 + 52 + 38 + 42 + 50 + 62 + 78 + 19) = \frac{558}{12} = 46.50$</p>
+
+<p><strong>CMA(8):</strong> months 2–14.</p>
+<p>$= \frac{1}{12}(15.5 + 36 + 40 + 45 + 48 + 52 + 38 + 42 + 50 + 62 + 78 + 38 + 17.5) = \frac{562}{12} = 46.83$</p>
+
+<p><strong>CMA(9):</strong> months 3–15.</p>
+<p>$= \frac{1}{12}(18 + 40 + 45 + 48 + 52 + 38 + 42 + 50 + 62 + 78 + 38 + 35 + 20) = \frac{566}{12} = 47.17$</p>
+
+<p><strong>CMA(10):</strong> months 4–16.</p>
+<p>$= \frac{1}{12}(20 + 45 + 48 + 52 + 38 + 42 + 50 + 62 + 78 + 38 + 35 + 40 + 22) = \frac{570}{12} = 47.50$</p>
+
+<p><strong>CMA(11):</strong> months 5–17.</p>
+<p>$= \frac{1}{12}(22.5 + 48 + 52 + 38 + 42 + 50 + 62 + 78 + 38 + 35 + 40 + 44 + 25) = \frac{574.5}{12} = 47.88$</p>
+
+<p><strong>CMA(12):</strong> months 6–18.</p>
+<p>$= \frac{1}{12}(24 + 52 + 38 + 42 + 50 + 62 + 78 + 38 + 35 + 40 + 44 + 50 + 27) = \frac{580}{12} = 48.33$</p>
+
+<p><strong>CMA(13):</strong> months 7–19.</p>
+<p>$= \frac{1}{12}(26 + 38 + 42 + 50 + 62 + 78 + 38 + 35 + 40 + 44 + 50 + 54 + 28.5) = \frac{585.5}{12} = 48.79$</p>
+
+<p><strong>CMA(14):</strong> months 8–20.</p>
+<p>$= \frac{1}{12}(19 + 42 + 50 + 62 + 78 + 38 + 35 + 40 + 44 + 50 + 54 + 57 + 21) = \frac{590}{12} = 49.17$</p>
+
+<p><strong>CMA(15):</strong> months 9–21.</p>
+<p>$= \frac{1}{12}(21 + 50 + 62 + 78 + 38 + 35 + 40 + 44 + 50 + 54 + 57 + 42 + 23.5) = \frac{594.5}{12} = 49.54$</p>
+
+<p><strong>CMA(16):</strong> months 10–22.</p>
+<p>$= \frac{1}{12}(25 + 62 + 78 + 38 + 35 + 40 + 44 + 50 + 54 + 57 + 42 + 47 + 27.5) = \frac{599.5}{12} = 49.96$</p>
+
+<p><strong>CMA(17):</strong> months 11–23.</p>
+<p>$= \frac{1}{12}(31 + 78 + 38 + 35 + 40 + 44 + 50 + 54 + 57 + 42 + 47 + 55 + 34) = \frac{605}{12} = 50.42$</p>
+
+<p><strong>CMA(18):</strong> months 12–24.</p>
+<p>$= \frac{1}{12}(39 + 38 + 35 + 40 + 44 + 50 + 54 + 57 + 42 + 47 + 55 + 68 + 42.5) = \frac{611.5}{12} = 50.96$</p>
+
+<p><strong>Trend summary:</strong> CMA rises from £46.50k (month 7) to £50.96k (month 18). That's an increase of £4.46k over 11 months, or roughly <strong>£400/month</strong>. The business is clearly growing — about 0.8% per month in absolute terms. The raw data oscillates wildly between £31k and £85k, making growth invisible to the naked eye. The CMA strips the noise and reveals a steady upward drift.</p>
+
+<p>Note the slight non-linearity: the CMA grows faster from month 10 to 13 (the period spanning Nov Y1 to Feb Y2). This could indicate a genuine acceleration or could be an artefact of the irregular component. With only 12 CMA values, we can't distinguish the two — another reminder that more data would help.</p>
+</div>
+</details>
+</div>
+
+<!-- ─── HISTORY ─────────────────────────────── -->
+
+<h2>7. Summary: what the CMA gives you</h2>
+
+<p>The 12-month centred moving average takes noisy monthly data and produces a smooth trend line. It eliminates annual seasonality exactly (because the window spans one full cycle) and reduces irregular noise by a factor of $\sqrt{12}$. The cost is data loss: 6 months at each end, and a minimum of 13 months to produce even one value.</p>
+
+<p>The CMA is a <strong>stepping stone</strong>, not a final product. On the next page, we'll divide the raw data by the CMA to extract the seasonal pattern — the 12 monthly multipliers that tell you how each month compares to the trend. The CMA does the hard work of separating trend from seasonality; the decomposition uses that separation to build a forecasting tool.</p>
+
+<p>The CMA is not a forecast in itself — it doesn't predict the future. It describes the past, stripped of seasonal noise. The forecast comes later, when we project the trend forward and multiply by seasonal indices.</p>
+
+<p>One last point: the CMA is <strong>nonparametric</strong>. It doesn't assume the trend is linear, exponential, or any other specific shape. It simply follows whatever the data does, one month at a time. If the trend accelerates, the CMA accelerates. If it reverses, the CMA reverses (with a slight lag due to the 12-month window). This flexibility is valuable when you don't know the trend's functional form — which, for a small business with limited history, is almost always.</p>
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p>Moving averages predate modern statistics by centuries. Actuaries in the 18th century smoothed mortality tables with running means to price life insurance — noisy year-to-year death counts were useless for setting premiums, but a 5-year average revealed the underlying mortality curve. By the 1820s, meteorologists were using moving averages to separate weather (short-term noise) from climate (long-term trend). The astronomer Alexander von Humboldt used them to map global temperature patterns.</p>
+<p>The 12-month centred variant became standard in economic statistics by the mid-20th century. The UK Central Statistical Office (now the ONS) adopted it for seasonal adjustment of trade, employment, and industrial production figures. The US Census Bureau's X-11 program (1965) — the ancestor of X-13ARIMA-SEATS — uses iterative centred moving averages as its core smoothing mechanism. Even today, the most sophisticated seasonal adjustment tools begin with a moving-average pass before applying parametric refinements.</p>
+</div>
+
+<!-- ─── WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>If you use a 6-month window instead of 12:</strong> consider the concrete numbers. A 6-month average doesn't cover a full annual cycle. Summer months still dominate summer-centred averages; winter months dominate winter-centred ones. The seasonal pattern bleeds through — you'll see the CMA itself oscillating with a 12-month period, and you'll mistake residual seasonality for genuine trend changes. A manager might look at the rising CMA in Q4 and think "the trend is accelerating" when it's actually just the Christmas effect leaking through the filter.</p>
+<p><strong>If you use a 13-month window:</strong> 13 is odd, so centring is straightforward — no half-weights needed. But 13 months doesn't span an exact number of seasonal cycles. The leftover month introduces a half-month phase shift in the seasonal cancellation. For strongly seasonal data, this leaves a ghost ripple in the trend line at half the seasonal amplitude. You'd see the CMA gently oscillating where the true trend is flat — a phantom wave created by imperfect filtering.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">A 12-month centred moving average kills the seasonal signal and shows you what the business is actually doing.</div>
+
+<div class="nav">
+<a href="../phase1/03-inflation-and-blended-growth.html">← Prev: Inflation and Blended Growth</a>
+<a href="02-multiplicative-decomposition.html">Next: Multiplicative Decomposition →</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

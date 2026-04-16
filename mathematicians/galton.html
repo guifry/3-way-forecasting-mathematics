@@ -1,0 +1,127 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Francis Galton — Mathematicians</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head><body>
+
+<h1>Francis Galton (1822&ndash;1911)</h1>
+<p class="subtitle">The man who named regression &mdash; and discovered that extreme values drift back toward the average.</p>
+
+<h2>The Contribution</h2>
+
+<p>In 1886, Galton published a paper titled "Regression towards Mediocrity in Hereditary
+Stature." The experiment behind it was simple in conception but massive in execution:
+he collected height measurements from 928 adult children and their parents, creating
+one of the first large-scale statistical datasets in the social sciences.</p>
+
+<p>What he found surprised him. Tall parents tended to have tall children, but not <em>as</em>
+tall. Short parents tended to have short children, but not as short. The children's
+heights <strong>regressed</strong> &mdash; moved back &mdash; toward the population average.
+Galton initially called this "reversion," then settled on "regression," a word that has
+stuck to the method ever since, long after its biological origins were forgotten.</p>
+
+<p>This was not what Galton expected. He had initially hypothesised that if tall people
+married tall people, the next generation would be even taller, and so on, leading to
+ever-increasing divergence in the population. Instead, he found the opposite: a
+persistent pull toward the centre. The population's spread remained stable across
+generations because extreme values in one generation produced less extreme values in
+the next.</p>
+
+<p>Galton visualised this brilliantly. He plotted the mid-parent height (the average of
+both parents, with the mother's height multiplied by 1.08 to adjust for the sex
+difference) on one axis and the adult child's height on the other. The cloud of points
+formed an ellipse. Through this ellipse he drew a line &mdash; the line of best fit &mdash;
+and noticed that its slope was less than 1.</p>
+
+<p>If the slope had been exactly 1, children would on average be as extreme as their
+parents. A slope less than 1 means the children are, on average, closer to the
+population mean. That is regression to the mean, expressed as a single number: the
+slope of the regression line.</p>
+
+<p>Along the way, Galton introduced or refined several statistical concepts that we use
+directly in this course:</p>
+
+<ul>
+  <li><strong>Percentiles and quartiles.</strong> Galton popularised the idea of describing a
+  distribution not just by its mean but by its position values &mdash; the median, the
+  upper and lower quartiles, and percentiles more generally. He showed that these give
+  a much richer picture of a distribution than the mean alone.</li>
+
+  <li><strong>Correlation.</strong> Galton developed the concept of <em>co-relation</em>,
+  measuring how strongly two variables move together. He represented it geometrically
+  using the axes of his elliptical scatter plots. His student and intellectual successor
+  Karl Pearson later formalised this into the correlation coefficient $r$.</li>
+
+  <li><strong>The regression line itself.</strong> The very word "regression" comes from
+  Galton's biological observation. We now use it for any line (or curve) fitted to data
+  by least squares, regardless of whether anything is regressing toward anything. The
+  biological metaphor has been entirely absorbed into the mathematical vocabulary.</li>
+</ul>
+
+<h2>The Context</h2>
+
+<p>Galton was a Victorian polymath of extraordinary range. He was an explorer who mapped
+parts of southern Africa, a meteorologist who invented the weather map, a psychologist
+who pioneered the study of mental imagery, and the inventor of the fingerprint
+classification system still used (in modified form) by police forces worldwide. He
+was also Charles Darwin's half-cousin, and it was Darwin's <em>Origin of Species</em>
+(1859) that set Galton on the path to studying heredity statistically.</p>
+
+<p>The intellectual environment of the 1880s was one where measurement was becoming
+central to science. Lord Kelvin declared that you do not truly know something until
+you can express it in numbers. Galton took this to an extreme &mdash; he tried to
+quantify intelligence, beauty, the efficacy of prayer, and the boredom of scientific
+lectures (he once counted audience fidgets per minute at the Royal Geographical
+Society). This obsessive impulse to measure, applied to heredity, produced the core
+tools of modern statistics.</p>
+
+<p>Galton's work on regression and correlation established a new mode of scientific
+reasoning. Before Galton, the dominant framework was deterministic: given causes,
+deduce effects. Galton showed that you could reason rigorously about <em>tendencies</em>
+&mdash; not "tall parents produce tall children" but "tall parents produce children
+who are, on average, taller than the mean but shorter than themselves." This
+probabilistic thinking is now so deeply embedded in science that it is hard to
+appreciate how revolutionary it was.</p>
+
+<p>A note on the darker side of this legacy. Galton coined the term <strong>eugenics</strong>
+in 1883 and spent much of his later career advocating for selective human breeding.
+He believed that statistical tools could and should be used to "improve" the human
+race by encouraging reproduction among the "fit" and discouraging it among the "unfit."
+This programme was morally abhorrent and scientifically bankrupt &mdash; it rested on a
+crude misunderstanding of heredity, ignored environmental factors entirely, and was
+used to justify forced sterilisations and worse throughout the twentieth century.
+Galton's statistical tools are essential and we use them throughout this course. His
+social programme was a catastrophe, and we repudiate it without reservation.</p>
+
+<h2>The Legacy</h2>
+
+<p><strong>Phase 0</strong> of this course uses both of Galton's main contributions. Page 3
+introduces percentiles to describe where a company's metrics sit relative to its peers
+&mdash; is this company's DSO in the 90th percentile (slow payers) or the 10th (fast
+payers)? Page 4 introduces linear regression to extrapolate trends forward. The word
+"regression" on that page is Galton's word, inherited from an 1886 study of human
+heights, repurposed for financial forecasting.</p>
+
+<p>Regression to the mean also matters conceptually for anyone building forecasts. A
+company with unusually high revenue growth in one year is statistically likely to grow
+more slowly the next &mdash; not because of any particular causal mechanism, but because
+extreme values are, by definition, unlikely to be repeated. This is not a deep insight,
+but it is a frequently forgotten one. Analysts who extrapolate one exceptional quarter
+into an exceptional decade are ignoring what Galton discovered: extremes regress.
+Always.</p>
+
+<div class="nav">
+  <a href="legendre.html">&larr; Previous: Legendre</a>
+  <a href="pacioli.html">Next: Pacioli &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body></html>

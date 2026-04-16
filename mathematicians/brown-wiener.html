@@ -1,0 +1,127 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brown &amp; Wiener — Mathematicians</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head><body>
+
+<h1>Robert Brown (1773&ndash;1858) and Norbert Wiener (1894&ndash;1964)</h1>
+<p class="subtitle">The botanist who watched pollen jitter, and the mathematician who turned the jitter into a theorem.</p>
+
+<h2>The Contribution</h2>
+
+<p>In the summer of 1827, the Scottish botanist Robert Brown was examining pollen grains
+from the wildflower <em>Clarkia pulchella</em> suspended in water under a microscope.
+He noticed that tiny particles ejected from the pollen were in constant, erratic motion
+&mdash; jiggling this way and that, never settling down, tracing out a path that seemed
+entirely random.</p>
+
+<p>Brown was a meticulous observer, and he set about ruling out every obvious explanation.
+Was the motion biological &mdash; some vital force in the pollen? He ground up rocks, granite, glass, and even a fragment of the Sphinx, suspended the dust in water, and observed the
+same jittering. Not biological. Was it caused by evaporation currents or temperature
+gradients? He sealed drops of water between glass slides and watched for hours. The
+motion continued unabated. Was it something that faded over time? He examined particles
+in water that had been sealed for months. Still jittering.</p>
+
+<p>Brown published his observations carefully but could not explain them. The phenomenon
+&mdash; now called <strong>Brownian motion</strong> &mdash; remained a puzzle for nearly
+eighty years.</p>
+
+<p>The explanation came in 1905, in one of Albert Einstein's <em>annus mirabilis</em> papers.
+Einstein showed that the jittering was caused by molecular bombardment. Each visible
+particle is being battered from all sides by the water molecules surrounding it. The
+individual impacts are far too small to see, but they don't quite cancel out &mdash;
+at any instant, a few more molecules hit from one side than the other, nudging the
+particle in a random direction. A moment later, the imbalance shifts, and the particle
+lurches the other way. Einstein's paper did more than explain Brown's observation: it
+provided strong evidence for the existence of atoms (still debated in some quarters in
+1905) and it laid the mathematical groundwork for a theory of random processes.</p>
+
+<p>The rigorous mathematics came from Norbert Wiener. In 1923, Wiener constructed a
+precise mathematical model of the phenomenon: the <strong>Wiener process</strong> $W(t)$.
+Its defining properties are elegant and few:</p>
+
+<ul>
+  <li>$W(0) = 0$ &mdash; the process starts at zero.</li>
+  <li><strong>Independent increments:</strong> the movement between time $s$ and time $t$ is
+  independent of everything that happened before time $s$. The process has no memory.</li>
+  <li>$W(t) - W(s) \sim N(0, t - s)$ &mdash; the displacement over any interval is normally
+  distributed, with mean zero and variance equal to the length of the interval.</li>
+  <li>The paths are <strong>continuous</strong> but <strong>nowhere differentiable</strong> &mdash;
+  the trajectory is an unbroken curve, but it is so jagged that it has no well-defined
+  slope at any point. You can zoom in as much as you like and the jaggedness never
+  smooths out.</li>
+</ul>
+
+<p>The third property is the one that matters most for this course. It says that the
+standard deviation of the particle's position grows as $\sqrt{t}$. After time $t$,
+the standard deviation is $\sigma\sqrt{t}$ (where $\sigma$ is a scaling constant that
+depends on the physical system). Double the time horizon and the uncertainty grows by
+a factor of $\sqrt{2} \approx 1.41$, not by a factor of 2.</p>
+
+<p>This sub-linear growth of uncertainty is a fundamental property of random walks. It
+is the reason that medium-term forecasting is possible at all: uncertainty grows, but
+it grows more slowly than time passes.</p>
+
+<h2>The Context</h2>
+
+<p>Brown was not the first to observe the phenomenon that bears his name. The Dutch
+scientist Jan Ingenhousz described similar motion of charcoal particles on the surface
+of alcohol in 1785, four decades before Brown. But Brown's careful, systematic
+experiments &mdash; ruling out biological, thermal, and mechanical explanations &mdash;
+established the phenomenon as something genuinely mysterious, something that demanded
+a physical explanation at the molecular level.</p>
+
+<p>Between Brown's observation and Einstein's explanation, the French mathematician Louis
+Bachelier had already used the same mathematical structure to model stock prices. In
+his 1900 thesis <em>Th&eacute;orie de la sp&eacute;culation</em>, Bachelier derived
+many of the properties of what we now call the Wiener process, five years before
+Einstein and twenty-three years before Wiener. His thesis committee, chaired by Henri
+Poincar&eacute;, gave it the grade of <em>honorable</em> rather than the highest mark
+of <em>tr&egrave;s honorable</em>, and the work was largely ignored for half a century.
+When it was rediscovered in the 1950s, it became one of the foundations of mathematical
+finance.</p>
+
+<p>Wiener himself was a remarkable figure. A child prodigy pushed relentlessly by his
+father (a professor of Slavic languages at Harvard), he entered Tufts University at
+eleven and earned his PhD from Harvard at eighteen. His rigorous construction of the
+Wiener process was a landmark of twentieth-century mathematics. Proving that a
+continuous random function with the required statistical properties actually
+<em>exists</em> as a well-defined mathematical object required deep results from measure
+theory and functional analysis. It was harder than it looked.</p>
+
+<h2>The Legacy</h2>
+
+<p>In <strong>Phase 5</strong> of this course, we model forecast uncertainty as a random walk.
+The key formula is:</p>
+
+$$\text{uncertainty at horizon } t = \sigma\sqrt{t}$$
+
+<p>This comes directly from the Wiener process. When we draw a fan chart around a revenue
+forecast, the bands widen as $\sqrt{t}$ &mdash; narrow near the present (where we know
+roughly what will happen) and broad in the far future (where we do not). The shape of
+that fan &mdash; the way it opens up, not linearly but as a square root &mdash; is
+governed by the same mathematics that describes pollen grains jittering in water.</p>
+
+<p>The same $\sqrt{t}$ law underpins the Black&ndash;Scholes option pricing formula, which
+models stock prices as a geometric Brownian motion (a Wiener process in the logarithm
+of the price). It underpins diffusion equations in physics, the theory of heat
+conduction, and much of modern stochastic calculus. For our purposes, the essential
+insight is simpler but no less profound: <em>the future is uncertain, and the uncertainty
+grows &mdash; but it grows slower than you might think</em>. That sub-linear growth is
+what makes forecasting a reasonable activity rather than a hopeless one.</p>
+
+<div class="nav">
+  <a href="pacioli.html">&larr; Previous: Pacioli</a>
+  <a href="britton-fisher-whitley.html">Next: Britton, Fisher &amp; Whitley &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body></html>

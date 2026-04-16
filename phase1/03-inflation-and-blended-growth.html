@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inflation and Blended Growth — Phase 1</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Inflation and Blended Growth</h1>
+<p class="subtitle">Phase 1 — Exponential Growth and the Time Value of Money, Page 3</p>
+
+<!-- ─── PROBLEM ───── -->
+<div class="problem-box">
+  <div class="label">The problem</div>
+  <p>A business has three cost categories. Rent grows with inflation (3%). Supplies grow with revenue (8%). But there's a residual bucket of costs that couldn't be classified as either. What growth rate do you apply to it?</p>
+</div>
+
+<!-- ─── 1. CVP CLASSIFICATION ───── -->
+<h2>1. Cost-Volume-Profit Classification</h2>
+
+<p>Before we can project costs, we need to know <em>what drives them</em>. Management accounting gives us three categories.</p>
+
+<div class="theorem-box">
+  <div class="label">Definition — Fixed Costs</div>
+  <p><strong>Fixed costs</strong> are expenses that do not change with the volume of goods or services produced. Rent, insurance, salaried staff. They grow with <strong>inflation</strong>, not with revenue.</p>
+</div>
+
+<div class="theorem-box">
+  <div class="label">Definition — Variable Costs</div>
+  <p><strong>Variable costs</strong> scale in proportion to output or revenue. Raw materials, commissions, payment processing fees. They grow at the <strong>revenue growth rate</strong>.</p>
+</div>
+
+<div class="theorem-box">
+  <div class="label">Definition — Semi-Variable Costs</div>
+  <p><strong>Semi-variable costs</strong> have both a fixed and a variable component. A phone bill with a base charge plus per-minute usage. In our model, these get split or assigned to one of the two categories above during classification.</p>
+</div>
+
+<p>In practice, not every line item can be cleanly classified. Consider a software subscription that costs £200/month regardless of revenue (fixed?), but you might add seats as the team grows with the business (variable?). These ambiguous items form the <strong>residual</strong> — the unclassifiable remainder.</p>
+
+<p>The key question for each cost line is: <em>if revenue doubled tomorrow, would this cost change?</em> If yes, it's variable. If no, it's fixed. If "it depends", it's residual.</p>
+
+<p>Some concrete examples to build intuition:</p>
+
+<table>
+  <tr><th>Cost</th><th>Category</th><th>Reasoning</th></tr>
+  <tr><td>Office rent</td><td>Fixed</td><td>Doesn't change with revenue</td></tr>
+  <tr><td>Raw materials</td><td>Variable</td><td>Scales directly with output</td></tr>
+  <tr><td>Staff salaries</td><td>Fixed</td><td>Contractual, not volume-linked</td></tr>
+  <tr><td>Shipping costs</td><td>Variable</td><td>More sales = more shipments</td></tr>
+  <tr><td>Accountancy fees</td><td>Residual</td><td>Partially fixed, partially volume-driven</td></tr>
+  <tr><td>Marketing spend</td><td>Residual</td><td>Discretionary, loosely tied to growth</td></tr>
+</table>
+
+<!-- ─── 2. GROWTH RATES BY CATEGORY ───── -->
+<h2>2. Growth Rates by Category</h2>
+
+<p>Using the compound growth machinery from Phase 1, page 1, we project each category week by week.</p>
+
+<p><strong>Fixed costs</strong> grow with inflation. Let $i$ be the annual inflation rate:</p>
+
+<div class="display-math">$$\text{cost}_{\text{fixed}}(w) = \text{base}_{\text{fixed}} \times (1 + i)^{w/52}$$</div>
+
+<p><strong>Variable costs</strong> grow with revenue. Let $g$ be the annual revenue growth rate:</p>
+
+<div class="display-math">$$\text{cost}_{\text{variable}}(w) = \text{base}_{\text{variable}} \times (1 + g)^{w/52}$$</div>
+
+<p>Both formulas use the fractional-exponent approach from Phase 1, page 1. Growth is continuous — costs rise smoothly each week rather than jumping at year boundaries.</p>
+
+<p>The <strong>residual</strong> — costs we couldn't classify — contains an unknown mix of fixed and variable. If we knew the split (say, 40% fixed and 60% variable), we could compute a weighted rate: $0.4i + 0.6g$. But we don't know the split. We need a principled compromise.</p>
+
+<!-- ─── 3. THE BLENDED RATE ───── -->
+<h2>3. The Blended Rate</h2>
+
+<div class="theorem-box">
+  <div class="label">Definition — Blended Growth Rate</div>
+  <p>The <strong>blended rate</strong> is the arithmetic mean of the inflation rate and the revenue growth rate:</p>
+  <div class="display-math">$$r_{\text{blended}} = \frac{i + g}{2}$$</div>
+</div>
+
+<p>For our problem: $r_{\text{blended}} = (0.03 + 0.08) / 2 = 0.055 = 5.5\%$.</p>
+
+<p>Residual costs then grow as:</p>
+
+<div class="display-math">$$\text{cost}_{\text{residual}}(w) = \text{base}_{\text{residual}} \times (1 + r_{\text{blended}})^{w/52}$$</div>
+
+<div class="proof-box" id="proof-blended-between">
+  <div class="label">Proof — Blended rate sits between inflation and growth</div>
+  <p>Let $i, g > 0$. Without loss of generality, assume $i \leq g$. We need to show $i \leq \frac{i+g}{2} \leq g$.</p>
+  <p><em>Left inequality</em>: $\frac{i+g}{2} \geq i \iff i + g \geq 2i \iff g \geq i$. True by assumption.</p>
+  <p><em>Right inequality</em>: $\frac{i+g}{2} \leq g \iff i + g \leq 2g \iff i \leq g$. True by assumption.</p>
+  <p>Therefore $i \leq r_{\text{blended}} \leq g$ for all $0 < i \leq g$. The case $g < i$ is symmetric.</p>
+  <div class="qed">∎</div>
+</div>
+
+<!-- ─── 4. WHY ARITHMETIC MEAN? ───── -->
+<h2>4. Why Arithmetic Mean, Not Geometric?</h2>
+
+<p>The <strong>geometric mean</strong> of two rates would be:</p>
+
+<div class="display-math">$$r_{\text{geo}} = \sqrt{(1+i)(1+g)} - 1$$</div>
+
+<p>For $i = 0.03$, $g = 0.08$: $r_{\text{geo}} = \sqrt{1.03 \times 1.08} - 1 = \sqrt{1.1124} - 1 = 0.0547 = 5.47\%$.</p>
+
+<p>The arithmetic mean gives $5.50\%$. The difference is small (0.03 percentage points), but the geometric mean <em>systematically underweights the larger rate</em>. To see why, note that the geometric mean of two positive numbers always sits at or below the arithmetic mean — this is the AM-GM inequality:</p>
+
+<div class="display-math">$$\frac{a + b}{2} \geq \sqrt{ab} \quad \text{for all } a, b > 0$$</div>
+
+<p>When we genuinely don't know the fixed-variable split of residual costs, the arithmetic mean is the honest middle ground — it treats both drivers with equal weight, placing the estimate exactly halfway between the two rates. The geometric mean would bias downward, which might seem conservative but has no justification when the split is unknown. This is a deliberate design choice (see ADR-006).</p>
+
+<p>In practice the difference is tiny for typical inflation and growth rates. What matters is the <em>principle</em>: we chose arithmetic mean, and we should be consistent.</p>
+
+<!-- ─── 5. DEPRECIATION STRIPPING ───── -->
+<h2>5. Depreciation Stripping</h2>
+
+<p>Profit-and-loss statements include <strong>depreciation</strong> as an expense. But depreciation is a <strong>non-cash charge</strong> — it represents the gradual write-down of an asset's book value over its useful life. No money leaves the bank account when depreciation is recorded.</p>
+
+<div class="theorem-box">
+  <div class="label">Definition — Cash Expenses</div>
+  <p><strong>Cash expenses</strong> are the P&amp;L expenses minus depreciation (and any other non-cash charges):</p>
+  <div class="display-math">$$\text{cash expenses} = \text{P\&L expenses} - \text{depreciation}$$</div>
+</div>
+
+<p>Why does this matter for forecasting? If you project the <em>full</em> P&amp;L expense line (including depreciation) and treat it as a cash outflow, you overstate cash costs. The residual bucket will be inflated by a non-cash phantom.</p>
+
+<p>Consider a business with £30,000/month in P&amp;L expenses, of which £2,000 is depreciation. If you project the full £30,000 as cash cost, you're claiming £2,000/month will leave the bank account when it never will. Over a 3-year forecast that's £72,000 of phantom cash drain — enough to materially distort a cash flow projection.</p>
+
+<p>The rule is simple: strip depreciation <em>before</em> applying growth rates to the residual. Depreciation is accounted for separately through capital expenditure planning, not through operating cost growth.</p>
+
+<!-- ─── 6. FREQUENCY NORMALISATION ───── -->
+<h2>6. Frequency Normalisation</h2>
+
+<p>Financial data arrives monthly. Our forecast runs weekly. We need to convert.</p>
+
+<p>Why $4.33$? There are $365.25$ days in a year (accounting for leap years), $12$ months, and $7$ days in a week:</p>
+
+<div class="display-math">$$\text{weeks per month} = \frac{365.25}{12 \times 7} = \frac{365.25}{84} \approx 4.348$$</div>
+
+<p>Rounded to $4.33$ for simplicity. The conversion rules:</p>
+
+<div class="display-math">$$\text{weekly} = \frac{\text{monthly}}{4.33} \qquad\qquad \text{monthly} = \text{weekly} \times 4.33$$</div>
+
+<p>Example: monthly rent of £8,000 becomes weekly rent of £8,000 / 4.33 = £1,848.</p>
+
+<p>The rounding from 4.348 to 4.33 introduces a small error. Over 52 weeks: $52 / 4.33 = 12.009$ months vs the true $52 / 4.348 = 11.960$ months. The difference is negligible for forecasting — about 0.4% — but it's worth knowing it's there. We accept the rounding because $4.33$ is the conventional factor used across financial planning tools, and consistency across systems matters more than the fourth decimal place.</p>
+
+<p>A useful check: weekly × 52 should approximately equal monthly × 12. Using our example: £1,848 × 52 = £96,096 vs £8,000 × 12 = £96,000. Close enough.</p>
+
+<h3>Annual-to-weekly conversion</h3>
+
+<p>Note that the frequency normalisation above is for <em>amounts</em> (dividing a monthly sum into weekly portions). The <em>growth rate</em> conversion is different — it uses the fractional-exponent approach from Phase 1, page 1:</p>
+
+<div class="display-math">$$r_{\text{weekly}} = (1 + r_{\text{annual}})^{1/52} - 1$$</div>
+
+<p>Don't confuse the two. Dividing £8,000 by 4.33 converts an amount. Taking the 52nd root of $(1 + r)$ converts a rate. They're different operations solving different problems.</p>
+
+<!-- ─── 7. EXERCISES ───── -->
+<h2>7. Exercises</h2>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 1 — Prove the blended rate bound</div>
+  <p>Prove that for any positive inflation rate $i$ and growth rate $g$, the blended rate $r = (i + g)/2$ satisfies $\min(i,g) \leq r \leq \max(i,g)$.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p>Case 1: $i \leq g$. Then $\min(i,g) = i$ and $\max(i,g) = g$.</p>
+      <p>Lower bound: $(i+g)/2 \geq i \iff i + g \geq 2i \iff g \geq i$. ✓</p>
+      <p>Upper bound: $(i+g)/2 \leq g \iff i + g \leq 2g \iff i \leq g$. ✓</p>
+      <p>Case 2: $g < i$. Symmetric argument, swapping $i$ and $g$.</p>
+      <p>Therefore $(i+g)/2 \in [\min(i,g),\, \max(i,g)]$ for all positive $i, g$.</p>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 2 — Applied: weekly cost projection</div>
+  <p>A business has total monthly costs of £30,000. Of these, 60% are classified as fixed, 25% as variable, and 15% as residual. Inflation is 3%, revenue growth is 8%. Monthly depreciation is £1,200 (all within the residual). Project weekly fixed, variable, and residual costs for weeks 1, 13, 26, 39, and 52.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p><strong>Monthly bases</strong>: fixed = £18,000, variable = £7,500, residual = £4,500.</p>
+      <p><strong>Strip depreciation from residual</strong>: cash residual = £4,500 − £1,200 = £3,300/month.</p>
+      <p><strong>Convert to weekly</strong>: fixed = £18,000/4.33 = £4,157, variable = £7,500/4.33 = £1,732, residual = £3,300/4.33 = £762.</p>
+      <p><strong>Growth rates</strong>: fixed at 3%, variable at 8%, residual at blended = 5.5%.</p>
+      <p><strong>Formulas</strong>:</p>
+      <ul>
+        <li>$\text{fixed}(w) = 4{,}157 \times (1.03)^{w/52}$</li>
+        <li>$\text{variable}(w) = 1{,}732 \times (1.08)^{w/52}$</li>
+        <li>$\text{residual}(w) = 762 \times (1.055)^{w/52}$</li>
+      </ul>
+      <table>
+        <tr><th>Week</th><th>Fixed</th><th>Variable</th><th>Residual</th><th>Total</th></tr>
+        <tr>
+          <td>1</td>
+          <td>£4,159</td>
+          <td>£1,735</td>
+          <td>£763</td>
+          <td>£6,657</td>
+        </tr>
+        <tr>
+          <td>13</td>
+          <td>£4,188</td>
+          <td>£1,765</td>
+          <td>£772</td>
+          <td>£6,725</td>
+        </tr>
+        <tr>
+          <td>26</td>
+          <td>£4,219</td>
+          <td>£1,799</td>
+          <td>£782</td>
+          <td>£6,800</td>
+        </tr>
+        <tr>
+          <td>39</td>
+          <td>£4,250</td>
+          <td>£1,834</td>
+          <td>£793</td>
+          <td>£6,877</td>
+        </tr>
+        <tr>
+          <td>52</td>
+          <td>£4,282</td>
+          <td>£1,870</td>
+          <td>£804</td>
+          <td>£6,956</td>
+        </tr>
+      </table>
+      <p>At week 52: fixed costs grew by £125 (3%), variable by £138 (8%), residual by £42 (5.5%). Variable costs diverge fastest, which makes sense — they're tied to the higher growth rate. Over a multi-year horizon this divergence becomes dramatic.</p>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 3 — Depreciation impact</div>
+  <p>A business reports monthly P&amp;L expenses of £45,000, including £3,500 in depreciation. The residual (after separating fixed and variable costs) is £12,000/month from the P&amp;L. (a) What is the cash residual? (b) If the blended rate is 6%, what is the weekly cash residual at week 26? (c) What would the projection be if you forgot to strip depreciation?</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p>(a) Cash residual = £12,000 − £3,500 = £8,500/month = £8,500/4.33 = £1,963/week.</p>
+      <p>(b) At week 26: $1{,}963 \times (1.06)^{26/52} = 1{,}963 \times (1.06)^{0.5} = 1{,}963 \times 1.02956 = \text{£}2{,}021$.</p>
+      <p>(c) Without stripping: base = £12,000/4.33 = £2,771/week. At week 26: $2{,}771 \times 1.02956 = \text{£}2{,}853$. That's £832/week higher — a phantom cost of £43,264/year that will never materialise as a cash outflow.</p>
+    </div>
+  </details>
+</div>
+
+<!-- ─── 8. HISTORY ───── -->
+<div class="history-box">
+  <div class="label">Historical note</div>
+  <p>Cost-Volume-Profit analysis emerged in the early 20th century as management accounting split from financial accounting. The framework was formalised by the Chartered Institute of Management Accountants (CIMA) in Britain and popularised internationally by <a href="../mathematicians/horngren.html">Charles Horngren</a>'s textbooks from the 1960s onward.</p>
+  <p>The fixed/variable distinction — obvious now — was a conceptual breakthrough: it let managers reason about how costs <em>behave</em> rather than just what they <em>are</em>. Before CVP, all costs were treated identically in budgets. Horngren's insight was that a cost's relationship to volume is more important than its accounting classification. This idea underpins everything we do in cost forecasting.</p>
+</div>
+
+<!-- ─── 9. WHAT BREAKS ───── -->
+<div class="break-box">
+  <div class="label">What breaks</div>
+  <ul>
+    <li><strong>Applying revenue growth to fixed costs</strong>: if rent is £4,000/week and you grow it at 8% instead of 3%, by year 3 you project £5,039 instead of £4,371 — overstating by £663/week, or £34,500/year. The error compounds: by year 5, the gap is over £60,000/year. The entire cost forecast becomes unreliable because the growth rate assumption is fundamentally wrong for that cost category.</li>
+    <li><strong>Not stripping depreciation</strong>: if the residual includes £1,200/month of depreciation and you project that forward as a cash cost, you overstate weekly cash outflows by £277. Over 52 weeks, that's £14,400 of phantom cash cost that will never leave the bank account. Worse, you're <em>growing</em> this phantom at the blended rate, so the error compounds over the forecast horizon.</li>
+  </ul>
+</div>
+
+<hr>
+
+<div class="oneliner">Fixed costs follow inflation, variable costs follow revenue, and when you don't know which is which, split the difference.</div>
+
+<div class="nav">
+  <a href="02-geometric-series.html">← Geometric Series</a>
+  <a href="../phase2/01-moving-averages.html">Next: Moving Averages →</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central Tendency — Mean and Median — Phase 0</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Central Tendency — Mean and Median</h1>
+<p class="subtitle">Phase 0 — The Statistical Toolkit, Page 1</p>
+
+<!-- ─── 1. THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>A small consultancy has 14 invoices issued over the past year. Thirteen were paid within 20–35 days. One client disappeared for six months and finally paid 180 days late. Your lender asks: "What is the <em>typical</em> payment delay for this business?"</p>
+<p>If you answer 180, you're lying about the norm. If you average everything together, the outlier drags the number up and misrepresents how most clients behave. You need a precise language for "typical." That's what this page is about.</p>
+</div>
+
+<!-- ─── 2. WHAT "TYPICAL" MEANS ─────────────────────────────── -->
+
+<h2>1. Two candidates for "typical"</h2>
+
+<p>Given a collection of $n$ numbers — payment delays, invoice amounts, whatever — there are two natural ways to summarise the centre.</p>
+
+<p>The <strong>arithmetic mean</strong> adds everything up and divides by how many values you have. It treats every data point equally, weighting a £50 invoice the same as a £50,000 one.</p>
+
+<p>The <strong>median</strong> lines the values up in order and picks the middle one. It ignores how far away the extremes are — only position matters, not magnitude.</p>
+
+<p>Both are legitimate answers to "what's typical?" but they answer subtly different questions. The mean asks: "if you spread the total evenly, what would each value be?" The median asks: "what value sits in the middle of the pack?"</p>
+
+<p>This distinction matters enormously in forecasting. Pick the wrong one and your entire projection is built on a lie. A lender who sees "average payment delay: 39 days" thinks something very different from one who sees "median payment delay: 28 days" — even though both numbers come from the same data.</p>
+
+<p>Let's make this precise.</p>
+
+<!-- ─── 3. FORMAL DEFINITIONS ─────────────────────────────── -->
+
+<h2>2. Formal definitions</h2>
+
+<div class="theorem-box">
+<div class="label">Definition — Arithmetic Mean</div>
+<p>Let $x_1, x_2, \ldots, x_n$ be $n$ real numbers. The <strong>arithmetic mean</strong> is</p>
+<div class="display-math">$$\bar{x} = \frac{1}{n}\sum_{i=1}^{n} x_i$$</div>
+</div>
+
+<p>The mean has two important algebraic properties.</p>
+
+<p>First, it is <strong>linear</strong>: if you scale every data point by a constant $c$, the mean scales by $c$. If you shift every point by $c$, the mean shifts by $c$. Formally, if $y_i = a + bx_i$, then $\bar{y} = a + b\bar{x}$. This linearity is why the mean appears in nearly every formula in statistics — it's algebraically tractable.</p>
+
+<p>Second, the mean <strong>preserves totals</strong>: $n \cdot \bar{x} = \sum x_i$. This is why the mean is the right summary when you care about the total — average monthly revenue times twelve gives you annual revenue.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Order Statistics</div>
+<p>Given $x_1, \ldots, x_n$, the <strong>order statistics</strong> $x_{(1)} \le x_{(2)} \le \cdots \le x_{(n)}$ are the same values sorted in non-decreasing order. The value $x_{(k)}$ is called the $k$-th order statistic.</p>
+</div>
+
+<p>Order statistics throw away the original indexing and keep only the ranked positions. The minimum is $x_{(1)}$, the maximum is $x_{(n)}$, and the median lives in the middle.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Median</div>
+<p>The <strong>median</strong> of $x_1, \ldots, x_n$ is</p>
+<div class="display-math">$$\text{Med}(x) = \begin{cases} x_{\left(\frac{n+1}{2}\right)} & \text{if } n \text{ is odd} \\[6pt] \dfrac{x_{\left(\frac{n}{2}\right)} + x_{\left(\frac{n}{2}+1\right)}}{2} & \text{if } n \text{ is even} \end{cases}$$</div>
+</div>
+
+<p>When $n$ is odd, there is a unique middle element — position $\frac{n+1}{2}$ in the sorted list. When $n$ is even, there are two middle elements at positions $\frac{n}{2}$ and $\frac{n}{2}+1$; the convention is to average them.</p>
+
+<p>Some implementations choose the lower or upper value instead of averaging. In Python's statistics library, the <code>median_low</code> and <code>median_high</code> functions provide these variants. The choice rarely matters in practice — when $n$ is even and the two middle values differ, the gap between them is usually small relative to the spread of the data.</p>
+
+<p>Note that computing the median requires <em>sorting</em> the data first — an $O(n \log n)$ operation. The mean requires only a single pass through the data — $O(n)$. For large datasets this difference is negligible, but it's worth knowing that the median is computationally more expensive than the mean.</p>
+
+<!-- ─── 4. PROPERTIES OF THE MEDIAN ─────────────────────────────── -->
+
+<h2>3. The median minimises absolute error</h2>
+
+<p>Here is a beautiful property that justifies the median on its own terms. The mean minimises the sum of <em>squared</em> distances to the data. What minimises the sum of <em>absolute</em> distances?</p>
+
+<div class="theorem-box">
+<div class="label">Theorem — Median as $L^1$ minimiser</div>
+<p>The median of $x_1, \ldots, x_n$ is the value $m$ that minimises</p>
+<div class="display-math">$$\sum_{i=1}^{n} |x_i - m|$$</div>
+</div>
+
+<div class="proof-box" id="proof-median-l1">
+<div class="label">Proof — Median minimises absolute deviations</div>
+<p><strong>Step 1.</strong> Let $f(m) = \sum_{i=1}^n |x_i - m|$. Consider moving $m$ by a small amount $\epsilon > 0$ to the right. Each term $|x_i - m|$ decreases by $\epsilon$ if $x_i > m$ and increases by $\epsilon$ if $x_i < m$.</p>
+<p><strong>Step 2.</strong> The net change in $f$ is $\epsilon \cdot (\text{count of } x_i < m) - \epsilon \cdot (\text{count of } x_i > m)$.</p>
+<p><strong>Step 3.</strong> Moving $m$ to the right decreases $f$ when there are more points above $m$ than below, and increases $f$ when there are more below than above. The function $f$ is minimised when the counts are balanced — i.e., when $m$ is the median.</p>
+<div class="qed">∎</div>
+</div>
+
+<p>This explains why the median is robust to outliers: it minimises absolute deviations, not squared ones. Squaring amplifies large deviations; absolute values don't.</p>
+
+<!-- ─── 5. WORKED EXAMPLE ─────────────────────────────── -->
+
+<h2>4. Worked example: the rogue invoice</h2>
+
+<p>Here are the 14 payment delays (in days), sorted:</p>
+
+<div class="display-math">$$20,\; 22,\; 23,\; 25,\; 26,\; 27,\; 28,\; 29,\; 30,\; 31,\; 32,\; 33,\; 35,\; 180$$</div>
+
+<p><strong>Mean.</strong> Sum all values:</p>
+<div class="display-math">$$20 + 22 + 23 + 25 + 26 + 27 + 28 + 29 + 30 + 31 + 32 + 33 + 35 + 180 = 541$$</div>
+<div class="display-math">$$\bar{x} = \frac{541}{14} = 38.6 \text{ days}$$</div>
+
+<p>That's higher than 13 of the 14 values. The mean says "typical" is 38.6 days, but only one invoice was even close to that — the rest cluster around 27.</p>
+
+<p><strong>Median.</strong> With $n = 14$ (even), take positions $\frac{14}{2} = 7$ and $\frac{14}{2} + 1 = 8$:</p>
+<div class="display-math">$$\text{Med} = \frac{x_{(7)} + x_{(8)}}{2} = \frac{28 + 29}{2} = 28.5 \text{ days}$$</div>
+
+<p>The median sits right in the heart of the cluster. It's unaffected by the 180-day outlier. Change 180 to 500, or to 1000 — the median stays at 28.5.</p>
+
+<p>Now let's check the $L^1$ property. Sum of absolute deviations from $m = 28.5$:</p>
+<div class="display-math">$$|20-28.5| + |22-28.5| + \cdots + |35-28.5| + |180-28.5| = 8.5+6.5+5.5+3.5+2.5+1.5+0.5+0.5+1.5+2.5+3.5+4.5+6.5+151.5 = 199$$</div>
+<p>Try $m = 38.6$ (the mean): the sum jumps to $18.6+16.6+15.6+\cdots+141.4 = 282.2$. The median truly minimises absolute deviations.</p>
+
+<!-- ─── 6. BREAKDOWN POINT ─────────────────────────────── -->
+
+<h2>5. Robustness and the breakdown point</h2>
+
+<p>The <strong>breakdown point</strong> of an estimator is the fraction of data points that must be corrupted before the estimator can be made arbitrarily wrong.</p>
+
+<p>The mean has a breakdown point of $\frac{1}{n}$. Change a single value to $10^{100}$ and the mean shoots to infinity. For $n = 14$, that's just 7% of the data.</p>
+
+<p>The median has a breakdown point of $\frac{1}{2}$. You need to corrupt <em>half</em> the data before the median can be moved arbitrarily far. This is the highest possible breakdown point for any location estimator.</p>
+
+<p>This is precisely why the forecast engine uses the median for DSO and DPO: in real business data, one rogue invoice is common; half of all invoices being rogue is not.</p>
+
+<!-- ─── 7. WHY IT MATTERS FOR FORECASTING ─────────────────────────────── -->
+
+<h2>6. Why the forecast engine uses both</h2>
+
+<p>In a cash-flow forecast, you need to predict <em>when</em> invoices will be paid. Payment timing is exactly the kind of data that attracts outliers — a client goes bankrupt, a dispute drags on, a cheque gets lost. Using the mean for <strong>DSO</strong> (days sales outstanding) or <strong>DPO</strong> (days payable outstanding) would let one rogue payment distort every future prediction.</p>
+
+<p>So the engine uses the <strong>median</strong> for timing metrics: DSO, DPO, and payment delay estimates.</p>
+
+<p>But for revenue and cost <strong>baselines</strong> — where you're summing up totals and dividing — the mean is appropriate because you genuinely want the "spread evenly" interpretation. If monthly revenue over six months is £10k, £12k, £11k, £9k, £13k, £11k, the mean £11k is a perfectly sensible baseline. And $6 \times 11\text{k} = 66\text{k}$ recovers the total.</p>
+
+<p>The rule of thumb: <em>use the median when outliers are likely; use the mean when the total matters more than any individual value.</em></p>
+
+<!-- ─── 8. A SECOND WORKED EXAMPLE ─────────────────────────────── -->
+
+<h2>7. Second example: revenue baseline</h2>
+
+<p>Monthly revenues for a small shop: £8,200, £7,900, £9,100, £8,500, £8,800, £8,600.</p>
+
+<p><strong>Mean:</strong> $\frac{8200+7900+9100+8500+8800+8600}{6} = \frac{51100}{6} = £8{,}517$.</p>
+
+<p><strong>Median:</strong> sorted = £7,900, £8,200, £8,500, £8,600, £8,800, £9,100. Positions 3 and 4: $\frac{8500 + 8600}{2} = £8{,}550$.</p>
+
+<p>Here the mean and median are close — £8,517 vs £8,550. No outliers, symmetric data. In this case, either works fine, and the mean is preferred because $6 \times 8517 = 51{,}102 \approx 51{,}100$ (the actual total). The median doesn't recover the total: $6 \times 8550 = 51{,}300 \ne 51{,}100$.</p>
+
+<!-- ─── 9. WHEN MEAN AND MEDIAN DIVERGE ─────────────────────────────── -->
+
+<h2>8. When mean and median diverge — and what it tells you</h2>
+
+<p>A useful diagnostic: compare the mean and median. If they're close, the data is roughly symmetric and either measure works. If they diverge, it tells you something important about the shape of the distribution.</p>
+
+<ul>
+<li><strong>Mean &gt; Median:</strong> the distribution is <strong>right-skewed</strong>. There are high outliers pulling the mean up. This is extremely common in financial data — most invoices are moderate, but a few large ones inflate the mean. Payment delays, invoice amounts, and revenue figures almost always exhibit this pattern.</li>
+<li><strong>Mean &lt; Median:</strong> the distribution is <strong>left-skewed</strong>. There are low outliers pulling the mean down. This is rarer in business data but can occur — for example, a batch of invoices where most are paid at 60 days but a few are paid very early (within 5 days) due to early-payment discounts.</li>
+<li><strong>Mean ≈ Median:</strong> the distribution is roughly <strong>symmetric</strong>. Both measures agree, and either is appropriate depending on whether you need to preserve totals.</li>
+</ul>
+
+<p>In our rogue-invoice example, the mean (38.6) exceeds the median (28.5) by 36%. That gap immediately signals a right-skewed distribution with at least one high outlier — exactly what we found.</p>
+
+<p>The formal study of distribution shape — quartiles, percentiles, and the IQR — comes on Phase 0, page 3. For now, the mean-median gap is a quick-and-dirty skewness detector.</p>
+
+<!-- ─── 10. WEIGHTED MEANS ─────────────────────────────── -->
+
+<h2>9. A note on weighted means</h2>
+
+<p>Sometimes not all data points deserve equal weight. If you're computing "average payment delay" across clients, a client with 50 invoices should count more than one with 2 invoices. The <strong>weighted mean</strong> handles this:</p>
+
+<div class="display-math">$$\bar{x}_w = \frac{\sum_{i=1}^{n} w_i x_i}{\sum_{i=1}^{n} w_i}$$</div>
+
+<p>where $w_i$ is the weight for observation $i$. The ordinary mean is the special case where all weights are equal ($w_i = 1$ for all $i$). Weighted means appear throughout the forecast engine — for instance, when averaging DSO across clients weighted by invoice volume.</p>
+
+<p>As a quick example: client A has 10 invoices with average delay 25 days; client B has 2 invoices with average delay 50 days. The unweighted mean of the two averages is $\frac{25+50}{2} = 37.5$ days. But the <em>weighted</em> mean, weighting by invoice count, is:</p>
+
+<div class="display-math">$$\bar{x}_w = \frac{10 \times 25 + 2 \times 50}{10 + 2} = \frac{350}{12} = 29.2 \text{ days}$$</div>
+
+<p>The weighted mean better reflects overall payment behaviour — the business mostly pays in 25 days, with a small minority at 50.</p>
+
+<!-- ─── 11. EXERCISES ─────────────────────────────── -->
+
+<h2>10. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — Compute by hand</div>
+<p>Given the dataset $\{12, 15, 14, 13, 16, 90, 14\}$, compute the mean and median. Which better represents the "typical" value?</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Step 1.</strong> Sort: $12, 13, 14, 14, 15, 16, 90$.</p>
+<p><strong>Step 2.</strong> Mean: $\frac{12 + 13 + 14 + 14 + 15 + 16 + 90}{7} = \frac{174}{7} = 24.9$.</p>
+<p><strong>Step 3.</strong> Median: $n = 7$ (odd), so position $\frac{7+1}{2} = 4$. The 4th value is $x_{(4)} = 14$.</p>
+<p>The mean (24.9) is higher than 6 of the 7 values. The median (14) sits right in the cluster. The median is the better summary here — the outlier 90 inflates the mean.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — Outlier sensitivity</div>
+<p>Start with the dataset $\{10, 12, 11, 13, 14\}$. Compute the mean and median. Now replace the largest value (14) with 140. Recompute both. By what factor did each change?</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Original:</strong> Sorted: $10, 11, 12, 13, 14$. Mean $= \frac{60}{5} = 12.0$. Median $= x_{(3)} = 12$.</p>
+<p><strong>Modified:</strong> Sorted: $10, 11, 12, 13, 140$. Mean $= \frac{186}{5} = 37.2$. Median $= x_{(3)} = 12$.</p>
+<p>The mean jumped from 12.0 to 37.2 — a factor of 3.1. The median didn't change at all. This demonstrates the breakdown point: a single corrupted value (20% of the data) moved the mean by 210% but left the median untouched.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 3 — Mean preserves totals</div>
+<p>A business has monthly costs (£): $4200, 3800, 5100, 4600, 4400, 3900$. Show that $n \cdot \bar{x}$ equals the total, but $n \cdot \text{Med}(x)$ does not.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Step 1.</strong> Total $= 4200 + 3800 + 5100 + 4600 + 4400 + 3900 = £26{,}000$.</p>
+<p><strong>Step 2.</strong> Mean $= \frac{26000}{6} = £4{,}333.33$. Check: $6 \times 4333.33 = £26{,}000$.</p>
+<p><strong>Step 3.</strong> Sorted: $3800, 3900, 4200, 4400, 4600, 5100$. Median $= \frac{4200 + 4400}{2} = £4{,}300$. Check: $6 \times 4300 = £25{,}800 \ne £26{,}000$.</p>
+<p>The mean preserves the total; the median doesn't. This is why the mean is the right choice for budget baselines — you need the sum to come out right.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 4 — Applied: advising a lender</div>
+<p>You have 14 invoices with payment delays (days): $22, 25, 180, 28, 30, 27, 31, 24, 26, 33, 29, 35, 23, 20$. A lender asks for the "typical payment delay" to assess credit risk. Which measure do you report, and why? Compute it.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Step 1.</strong> Sort: $20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 33, 35, 180$.</p>
+<p><strong>Step 2.</strong> The 180-day outlier is clearly exceptional — one bad client, not a pattern. The lender wants to know what's <em>normal</em>, so report the <strong>median</strong>.</p>
+<p><strong>Step 3.</strong> $n = 14$, positions 7 and 8: $\text{Med} = \frac{27 + 28}{2} = 27.5$ days.</p>
+<p><strong>Step 4.</strong> For context, also compute the mean: $\frac{533}{14} = 38.1$ days.</p>
+<p>You'd report: "Median payment delay is 27.5 days. Note: one invoice took 180 days — we recommend treating it as an anomaly. The mean of 38.1 days is inflated by this single outlier and overstates the risk." Reporting only the mean could affect the lending terms unfairly.</p>
+</div>
+</details>
+</div>
+
+<!-- ─── 10. HISTORY ─────────────────────────────── -->
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p>The idea of a "typical value" has a surprisingly fraught history. <a href="../mathematicians/quetelet.html">Adolphe Quetelet</a> (1796–1874) coined the concept of <em>l'homme moyen</em> — the "average man" — arguing that the mean of human measurements revealed a Platonic ideal. He averaged chest circumferences of Scottish soldiers and heights of French conscripts, treating deviations from the mean as "errors" rather than natural variation.</p>
+<p><a href="../mathematicians/galton.html">Francis Galton</a> (1822–1911) was among the first to take seriously the idea that the <em>distribution</em> of values matters, not just the centre. He popularised percentiles (Phase 0, page 3) and the median as alternatives to Quetelet's obsession with the mean. For Galton, variation wasn't error — it was the raw material of evolution.</p>
+<p>The word "median" itself was introduced by Galton in 1882. The word "average" comes from the Arabic <em>awariya</em>, a maritime insurance term for damage to cargo — fittingly, it was born in commerce.</p>
+</div>
+
+<!-- ─── 11. WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>If you use the mean for payment timing:</strong> a single disputed invoice that drags on for 6 months can inflate your "typical delay" from 28 days to 39 days. Your cash-flow forecast then assumes everyone pays 39 days late, pushing projected cash receipts out by 11 unnecessary days. The lender sees a worse picture than reality warrants, and the business may not get the credit it needs.</p>
+<p><strong>If you use the median for totals:</strong> the median of monthly revenues doesn't preserve the total. If revenues are £5k, £5k, £5k, £5k, £100k, the median is £5k but the mean is £24k. For budgeting and totalling, you need the mean because $n \cdot \bar{x}$ recovers the sum. Using the median here would understate annual revenue by a factor of nearly 5.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">The mean spreads the total evenly; the median finds the middle of the pack. Use each where it belongs.</div>
+
+<div class="nav">
+<a href="../index.html">← Index</a>
+<a href="02-dispersion.html">Next: Dispersion →</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

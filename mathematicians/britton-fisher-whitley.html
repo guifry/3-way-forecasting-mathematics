@@ -1,0 +1,138 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Britton, Fisher &amp; Whitley — Mathematicians</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head><body>
+
+<h1>Erik Britton, Paul Fisher &amp; John Whitley</h1>
+<p class="subtitle">The Bank of England economists who taught the world to draw uncertainty.</p>
+
+<h2>The Contribution</h2>
+
+<p>In February 1996, the Bank of England published something new in its quarterly
+<em>Inflation Report</em>: a forecast that admitted it might be wrong. Instead of a single
+line projecting future inflation &mdash; the standard practice at every central bank
+in the world &mdash; the Bank showed a shaded region. The region was dark in the centre,
+where the forecast was most likely, fading to progressively lighter bands at the edges,
+where outcomes were less probable but still plausible. This was the <strong>fan chart</strong>.</p>
+
+<p>The idea was immediately striking. A single line says: "we think inflation will be
+2.5% in two years." A fan chart says: "we think inflation will most likely be around
+2.5%, but it could plausibly be anywhere from 1% to 4%, and here is how confident we
+are at each level." The visual impact was powerful &mdash; anyone could look at the
+chart and immediately grasp that the future is uncertain, that it is <em>more</em>
+uncertain further out, and that the risks might not be symmetric.</p>
+
+<p>The methodology behind the fan chart was described in detail by Erik Britton, Paul
+Fisher, and John Whitley in a 1998 paper published in the Bank of England <em>Quarterly
+Bulletin</em>: "The Inflation Report projections: understanding the fan chart." The paper
+explained how the Bank constructed its probability bands, how they reflected both the
+width of uncertainty and its direction, and how the chart should be read by policymakers
+and the public.</p>
+
+<p>The key ideas in the Britton&ndash;Fisher&ndash;Whitley framework were:</p>
+
+<ul>
+  <li>The forecast is not a line but a <strong>probability distribution</strong> at each
+  future time point. The fan chart visualises this distribution by showing nested
+  confidence bands.</li>
+
+  <li>The bands represent specific probability intervals. The darkest central band might
+  cover the central 30% of the distribution, the next lighter band the next 30%, and
+  so on, out to 90% total coverage. The remaining 10% falls outside the chart entirely
+  &mdash; the truly surprising outcomes.</li>
+
+  <li>The width of the bands <strong>grows with the forecast horizon</strong>. Near-term
+  forecasts are relatively precise; two-year-ahead forecasts are wide. This growth
+  reflects the accumulation of uncertainty over time &mdash; the same $\sqrt{t}$
+  phenomenon described in <a href="brown-wiener.html">Brown and Wiener's story</a>.</li>
+
+  <li>The bands can be <strong>asymmetric</strong>. This was one of the Bank's innovations.
+  If the Monetary Policy Committee judges that the risks to inflation are skewed to the
+  upside &mdash; that there is more chance of inflation being higher than expected than
+  lower &mdash; the upward bands are drawn wider than the downward ones. The underlying
+  distribution is modelled as a <strong>two-piece normal</strong>: a normal distribution
+  with one standard deviation above the mode and a different one below.</li>
+</ul>
+
+<h2>The Context</h2>
+
+<p>The 1990s were a period of institutional upheaval for the Bank of England. The United
+Kingdom adopted inflation targeting in October 1992, in the aftermath of Black Wednesday
+and the ejection from the Exchange Rate Mechanism. The Bank was granted operational
+independence to set interest rates in May 1997. In this environment, clear communication
+of monetary policy became not just desirable but essential. The Monetary Policy Committee
+needed to convey not only its best guess about future inflation but its <em>confidence</em>
+in that guess, and the direction of the risks.</p>
+
+<p>Before the fan chart, central banks typically published a single-point forecast,
+sometimes accompanied by a table of "risks" described in qualitative terms: "the
+balance of risks is judged to be on the upside." This was unsatisfying. It gave the
+public no sense of <em>how much</em> uncertainty there was, or how the uncertainty changed
+with the forecast horizon. A point forecast implicitly claims a precision that no
+macroeconomic forecast can deliver.</p>
+
+<p>The fan chart was a conceptual leap. It made uncertainty a <em>visible, quantified</em>
+part of the forecast rather than an afterthought. It also served an important
+institutional function: it gave the MPC a framework for expressing its collective
+judgement about risks, not just about the central case.</p>
+
+<p>The intellectual roots go deeper than 1996. The mathematics of uncertainty
+quantification stretches back through the Wiener process, through Einstein, through
+Gauss's theory of errors. What Britton, Fisher, and Whitley did was take these
+mathematical ideas and turn them into a <strong>communication tool</strong> &mdash; a chart
+that a journalist, a parliamentarian, or a member of the public could look at and
+understand.</p>
+
+<p>The fan chart spread rapidly. The Riksbank, the Norges Bank, the Reserve Bank of
+New Zealand, the Czech National Bank, and many others adopted variants. The International
+Monetary Fund uses fan charts in its <em>World Economic Outlook</em>. The format has become
+a standard way to present macroeconomic forecasts, and variations of it appear in
+climate science, epidemiology, and financial risk management.</p>
+
+<h2>The Legacy</h2>
+
+<p><strong>Phase 5, page 2</strong> of this course implements a simplified version of the
+Britton&ndash;Fisher&ndash;Whitley fan chart. Our version makes two simplifying assumptions:
+we use symmetric bands (assuming risks are balanced, with no directional skew) and we
+grow the bands as $\sigma\sqrt{t}$, where $\sigma$ is estimated from the historical
+forecast errors of the model.</p>
+
+<p>The simplified formula for our confidence bands at horizon $t$ is:</p>
+
+$$\text{forecast}(t) \pm k \cdot \sigma \sqrt{t}$$
+
+<p>where $k$ determines which probability interval we are drawing. For a normal
+distribution, $k = 1$ gives roughly 68% coverage, $k = 1.645$ gives 90%, and $k = 1.96$
+gives 95%. The $\sqrt{t}$ factor is the Wiener process at work, encoding the principle
+that uncertainty accumulates but at a decelerating rate.</p>
+
+<p>The full Bank of England methodology is more sophisticated than what we implement. It
+uses the two-piece normal distribution to allow asymmetry, and the Monetary Policy
+Committee directly sets the mode, the degree of skew, and the overall width of
+uncertainty at each forecast horizon. But the core principle is identical: uncertainty
+is not a caveat to be mentioned in a footnote. It is a central feature of any honest
+forecast, and it deserves to be shown, measured, and drawn.</p>
+
+<p>Britton, Fisher, and Whitley are not household names. They did not prove a new theorem
+or discover a new physical phenomenon. What they did was arguably more valuable for
+the practice of forecasting: they built a bridge between the mathematics of uncertainty
+and the craft of communicating forecasts honestly. Every fan chart in this course &mdash;
+and in every central bank report published since 1996 &mdash; is a descendant of their
+work.</p>
+
+<div class="nav">
+  <a href="brown-wiener.html">&larr; Previous: Brown &amp; Wiener</a>
+  <a href="../index.html">Back to index &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body></html>

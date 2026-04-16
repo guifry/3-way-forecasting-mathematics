@@ -1,0 +1,126 @@
+:root { --bg: #1a1a2e; --surface: #16213e; --text: #e0e0e0; --accent: #e94560; --accent2: #0f3460; --dim: #8888a0; --sidebar-w: 240px; }
+* { margin: 0; padding: 0; box-sizing: border-box; scrollbar-width: thin; scrollbar-color: rgba(136,136,160,0.3) transparent; }
+*::-webkit-scrollbar { width: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: rgba(136,136,160,0.3); border-radius: 3px; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(136,136,160,0.5); }
+body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text); line-height: 1.75; padding: 2rem 2rem 2rem calc(var(--sidebar-w) + 3rem); max-width: calc(760px + var(--sidebar-w) + 3rem); margin: 0 auto; }
+
+.site-sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh; background: var(--surface); border-right: 1px solid var(--accent2); overflow-y: auto; padding: 1.2rem 0; z-index: 100; display: flex; flex-direction: column; }
+.sidebar-title { display: block; color: var(--accent); font-weight: bold; font-size: 0.95rem; text-decoration: none; padding: 0 1rem 0.8rem; border-bottom: 1px solid var(--accent2); margin-bottom: 0.6rem; letter-spacing: 0.02em; }
+.sidebar-title:hover { text-decoration: underline; }
+.sidebar-tools { padding: 0 0.6rem; margin-bottom: 0.4rem; }
+.sidebar-tool { display: block; color: var(--dim); text-decoration: none; font-size: 0.8rem; padding: 0.3rem 0.6rem; border-radius: 4px; margin-bottom: 0.15rem; transition: background 0.15s, color 0.15s; }
+.sidebar-tool:hover { background: var(--accent2); color: var(--text); }
+.sidebar-tool.active { color: var(--accent); background: rgba(233, 69, 96, 0.1); }
+.sidebar-hr { border: none; border-top: 1px solid var(--accent2); margin: 0.4rem 0.8rem; }
+.sidebar-phases { flex: 1; overflow-y: auto; padding: 0.3rem 0; }
+.sidebar-phase-toggle { display: block; width: 100%; text-align: left; background: none; border: none; color: var(--dim); font-family: inherit; font-size: 0.78rem; padding: 0.35rem 1rem; cursor: pointer; transition: color 0.15s, background 0.15s; text-transform: uppercase; letter-spacing: 0.04em; }
+.sidebar-phase-toggle:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.sidebar-phase-toggle.active { color: var(--accent); }
+.sidebar-phase-toggle::before { content: '\25b8'; margin-right: 0.4rem; font-size: 0.65rem; display: inline-block; transition: transform 0.2s; }
+.sidebar-phase-toggle.expanded::before { transform: rotate(90deg); }
+.sidebar-pages { display: none; padding: 0.1rem 0 0.3rem 0; }
+.sidebar-pages.open { display: block; }
+.sidebar-page { display: block; color: var(--dim); text-decoration: none; font-size: 0.75rem; padding: 0.2rem 1rem 0.2rem 1.8rem; transition: color 0.15s, background 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-page:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.sidebar-page.active { color: var(--accent); background: rgba(233, 69, 96, 0.08); }
+
+.sidebar-hamburger { display: none; position: fixed; top: 0.8rem; left: 0.8rem; z-index: 200; background: var(--surface); border: 1px solid var(--accent2); border-radius: 4px; padding: 0.5rem; cursor: pointer; width: 36px; height: 36px; }
+.sidebar-hamburger span { display: block; width: 18px; height: 2px; background: var(--dim); margin: 3px auto; transition: all 0.3s; }
+.sidebar-hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(3px, 4px); }
+.sidebar-hamburger.open span:nth-child(2) { opacity: 0; }
+.sidebar-hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(3px, -4px); }
+
+@media (max-width: 900px) {
+  body { padding: 2rem 1.5rem; max-width: 760px; }
+  .site-sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+  .site-sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,0.5); }
+  .sidebar-hamburger { display: block; }
+}
+h1 { font-size: 1.8rem; color: var(--accent); margin-bottom: 0.3rem; }
+h2 { font-size: 1.35rem; color: var(--accent); margin-top: 2.5rem; margin-bottom: 0.8rem; border-bottom: 1px solid var(--accent2); padding-bottom: 0.3rem; }
+h3 { font-size: 1.1rem; color: var(--dim); margin-top: 1.5rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+p { margin-bottom: 1rem; }
+.subtitle { color: var(--dim); font-size: 1rem; margin-bottom: 2rem; }
+.theorem-box { background: var(--surface); border-left: 3px solid var(--accent); padding: 1.2rem 1.5rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+.theorem-box .label { font-weight: bold; color: var(--accent); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+.proof-box { background: var(--surface); border-left: 3px solid #4a9; padding: 1.2rem 1.5rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+.proof-box .label { font-weight: bold; color: #4a9; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+.problem-box { background: #2a1a1e; border-left: 3px solid #e9a045; padding: 1.2rem 1.5rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+.problem-box .label { font-weight: bold; color: #e9a045; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+.break-box { background: #1a1a28; border-left: 3px solid #888; padding: 1rem 1.5rem; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+.break-box .label { font-weight: bold; color: #aaa; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+.history-box { background: #1a2a1e; border-left: 3px solid #6a9; padding: 1.2rem 1.5rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+.history-box .label { font-weight: bold; color: #6a9; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+.qed { text-align: right; color: #4a9; font-size: 1.2rem; }
+.display-math { text-align: center; margin: 1.2rem 0; font-size: 1.1rem; }
+ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+li { margin-bottom: 0.4rem; }
+strong { color: #fff; }
+em { color: var(--dim); }
+hr { border: none; border-top: 1px solid var(--accent2); margin: 2.5rem 0; }
+.oneliner { background: var(--surface); padding: 1rem 1.5rem; margin: 1.2rem 0; border-radius: 6px; text-align: center; font-size: 1.05rem; font-style: italic; color: #ccc; }
+.nav { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--accent2); display: flex; justify-content: space-between; font-size: 0.9rem; }
+.nav a { color: var(--accent); text-decoration: none; }
+.nav a:hover { text-decoration: underline; }
+.index-list { list-style: none; margin: 0; padding: 0; }
+.index-list li { margin-bottom: 0.8rem; padding: 0.8rem 1.2rem; background: var(--surface); border-radius: 6px; }
+.index-list li a { color: var(--accent); text-decoration: none; font-weight: bold; }
+.index-list li a:hover { text-decoration: underline; }
+.index-list li .desc { color: var(--dim); font-size: 0.9rem; margin-top: 0.2rem; }
+.phase-label { color: var(--dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2rem; margin-bottom: 0.5rem; }
+.refresher-box { background: var(--surface); border-left: 3px solid #4a9; padding: 1.2rem 1.5rem; margin: 1.2rem 0; border-radius: 0 6px 6px 0; }
+.refresher-box .label { font-weight: bold; color: #4a9; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+.refresher-label { color: #4a9; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2rem; margin-bottom: 0.5rem; font-weight: bold; }
+.exercise { background: var(--surface); border-left: 3px solid #6a9; padding: 1rem 1.5rem; margin: 1rem 0; border-radius: 0 6px 6px 0; }
+.exercise .exercise-label { font-weight: bold; color: #6a9; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+.exercise details { margin-top: 0.8rem; }
+.exercise summary { cursor: pointer; color: #4a9; font-size: 0.9rem; font-weight: bold; padding: 0.4rem 0; user-select: none; }
+.exercise summary:hover { color: #6cb; }
+.exercise summary::marker { color: #4a9; }
+.exercise details[open] summary { margin-bottom: 0.5rem; }
+.quiz-toggle { display: inline-block; background: rgba(74,153,102,0.12); border: 1px solid #4a9; color: #4a9; padding: 0.3rem 0.8rem; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.8rem; margin-bottom: 0.5rem; transition: background 0.2s, color 0.2s; letter-spacing: 0.03em; }
+.quiz-toggle:hover { background: rgba(74,153,102,0.25); }
+.quiz-toggle.active { background: #4a9; color: var(--bg); }
+.quiz-active .qa { visibility: hidden; }
+.quiz-hard .qa-full { visibility: hidden; }
+.quiz-hint .qa-part { visibility: hidden; }
+.exercise .solution { background: rgba(74, 153, 102, 0.08); border-radius: 4px; padding: 0.8rem 1rem; margin-top: 0.3rem; }
+figure { margin: 1.5rem 0; text-align: center; }
+figure svg { max-width: 100%; }
+figcaption { color: var(--dim); font-size: 0.85rem; margin-top: 0.5rem; }
+table { border-collapse: collapse; margin: 1rem 0; width: 100%; }
+th, td { padding: 0.5rem 0.8rem; border: 1px solid var(--accent2); text-align: left; }
+th { background: var(--surface); color: var(--accent); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
+a { color: var(--accent); }
+.mathematician-header { display: flex; gap: 2rem; align-items: flex-start; margin-bottom: 2rem; }
+.mathematician-photo { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent); flex-shrink: 0; }
+.mathematician-info h1 { margin-bottom: 0.5rem; }
+.mathematician-dates { color: var(--dim); font-size: 1.05rem; margin-bottom: 0.3rem; }
+.mathematician-nationality { color: var(--dim); font-size: 0.95rem; margin-bottom: 0.3rem; }
+.mathematician-areas { color: var(--accent); font-size: 0.9rem; font-style: italic; margin-bottom: 0; }
+.mathematician-theorems { list-style: disc; margin: 0.5rem 0 1rem 1.5rem; }
+.mathematician-theorems li { margin-bottom: 0.4rem; }
+.mathematician-bio { line-height: 1.8; }
+.mathematician-references { width: 100%; }
+.mathematician-references td a { text-decoration: none; }
+.mathematician-references td a:hover { text-decoration: underline; }
+.mathematician-references tr { cursor: pointer; }
+.mathematician-references tr:hover { background: var(--surface); }
+.timeline-container { margin: 2rem 0; }
+.timeline-row { display: flex; align-items: flex-end; gap: 0; padding-bottom: 2rem; border-bottom: 3px solid var(--accent2); margin-bottom: 1rem; position: relative; flex-wrap: wrap; justify-content: flex-start; }
+.timeline-entry { display: flex; flex-direction: column; align-items: center; width: 90px; position: relative; cursor: pointer; text-decoration: none; }
+.timeline-entry .timeline-line { width: 2px; height: 40px; background: var(--accent2); }
+.timeline-entry .timeline-photo { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.timeline-entry:hover .timeline-photo { transform: translateY(-8px); box-shadow: 0 8px 20px rgba(233, 69, 96, 0.3); }
+.timeline-entry .timeline-name { font-size: 0.7rem; color: var(--dim); text-align: center; margin-top: 0.3rem; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timeline-entry .timeline-year { font-size: 0.6rem; color: var(--dim); }
+.timeline-tooltip { display: none; position: absolute; bottom: calc(100% + 12px); left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--accent2); border-radius: 6px; padding: 0.8rem 1rem; min-width: 200px; max-width: 280px; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+.timeline-entry:hover .timeline-tooltip { display: block; }
+.timeline-tooltip .tt-name { color: var(--accent); font-weight: bold; font-size: 0.9rem; margin-bottom: 0.3rem; }
+.timeline-tooltip .tt-dates { color: var(--dim); font-size: 0.8rem; margin-bottom: 0.2rem; }
+.timeline-tooltip .tt-nationality { color: var(--dim); font-size: 0.8rem; margin-bottom: 0.4rem; }
+.timeline-tooltip .tt-theorems { list-style: disc; margin: 0 0 0 1rem; padding: 0; font-size: 0.75rem; color: var(--text); }
+.timeline-tooltip .tt-theorems li { margin-bottom: 0.2rem; }
+.timeline-era { color: var(--dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 1.5rem; margin-bottom: 0.5rem; }

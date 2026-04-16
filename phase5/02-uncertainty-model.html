@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Uncertainty Model — Phase 5</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>The Uncertainty Model</h1>
+<p class="subtitle">Phase 5 — Uncertainty Quantification, Page 2</p>
+
+<!-- ─── 1. THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>You need a function that maps "week number" to "uncertainty rate." Week 1 should have low uncertainty (you know roughly what's happening next week). Week 260 (five years out) should have high uncertainty. And the growth between them should follow the $\sqrt{t}$ law from the previous page — not linear, not exponential.</p>
+<p>Design that function. Calibrate it. Make it adapt to how volatile the business actually is.</p>
+<p>The result should satisfy three properties: (1) low uncertainty at week 1, (2) high uncertainty at the forecast horizon, and (3) $\sqrt{w}$ growth between them, consistent with the random walk theory from the previous page.</p>
+</div>
+
+<!-- ─── 2. THE MODEL ─────────────────────────────── -->
+
+<h2>1. The uncertainty rate function</h2>
+
+<div class="theorem-box">
+<div class="label">Definition — Uncertainty rate</div>
+<p>The uncertainty rate at week $w$ is</p>
+<div class="display-math">$$\sigma(w) = \min\!\left(\text{BASE} + k\sqrt{w - 1},\; \text{MAX}\right)$$</div>
+<p>where</p>
+<div class="display-math">$$k = \frac{\text{MAX} - \text{BASE}}{\sqrt{\text{TOTAL\_WEEKS} - 1}}$$</div>
+<p>Default parameters: $\text{BASE} = 0.05$, $\text{MAX} = 0.40$, $\text{TOTAL\_WEEKS} = 260$.</p>
+</div>
+
+<p>Let's unpack this piece by piece.</p>
+
+<h3>Boundary conditions</h3>
+
+<p>The function is designed to hit two targets:</p>
+<ul>
+<li>At $w = 1$ (this week): $\sigma(1) = \text{BASE} + k\sqrt{0} = \text{BASE}$. Uncertainty starts at the base rate.</li>
+<li>At $w = \text{TOTAL\_WEEKS}$ (end of forecast): $\sigma(\text{TOTAL\_WEEKS}) = \text{BASE} + k\sqrt{\text{TOTAL\_WEEKS} - 1}$. We want this to equal MAX.</li>
+</ul>
+
+<p>Setting the second condition equal to MAX and solving for $k$:</p>
+
+<div class="display-math">$$\text{MAX} = \text{BASE} + k\sqrt{\text{TOTAL\_WEEKS} - 1}$$</div>
+<div class="display-math">$$k = \frac{\text{MAX} - \text{BASE}}{\sqrt{\text{TOTAL\_WEEKS} - 1}}$$</div>
+
+<p>With the defaults: $k = \frac{0.40 - 0.05}{\sqrt{259}} = \frac{0.35}{16.093} = 0.02175$.</p>
+
+<p>This is a clean derivation: two boundary conditions (start and end) determine two parameters (BASE is given, $k$ is computed). The function is fully determined by specifying where it starts, where it ends, and its shape ($\sqrt{w}$).</p>
+
+<h3>The $\sqrt{w-1}$ shape</h3>
+
+<p>We use $\sqrt{w-1}$ rather than $\sqrt{w}$ so that uncertainty is exactly BASE at week 1 (no accumulated error yet). The square root shape comes directly from our <a href="01-random-walks.html">previous page</a>: if weekly forecast errors are independent with constant variance, cumulative uncertainty grows as $\sqrt{n}$. The function $\sigma(w)$ encodes this physical reality.</p>
+
+<h3>The MAX cap</h3>
+
+<p>Without a cap, uncertainty could exceed 100% — meaning the confidence band would be wider than the forecast itself. That's meaningless. The $\min$ with MAX ensures uncertainty saturates at a sensible ceiling. At 40%, the model says: "five years out, I could be off by up to 40% of the balance." Beyond that, the forecast is more aspiration than prediction, and the cap acknowledges this honestly.</p>
+
+<p>The choice of MAX = 0.40 is a judgement call, not a mathematical derivation. It sits at the boundary between "wide but useful" and "so wide it's meaningless." A 40% band on a £200k balance gives ±£80k — you can still make meaningful decisions within that range. A 70% band (±£140k) would span from £60k to £340k, which tells you very little.</p>
+
+<p>In practice, the $\min$ cap only binds very late in the forecast. For the default parameters, $\text{BASE} + k\sqrt{w-1}$ reaches MAX at $w = \text{TOTAL\_WEEKS} = 260$ by construction. It can only exceed MAX if the forecast horizon extends beyond TOTAL_WEEKS, in which case $\sigma$ is capped at 0.40 indefinitely.</p>
+
+<!-- ─── 3. CV-INFORMED BASE RATE ─────────────────────────────── -->
+
+<h2>2. Adapting to business volatility</h2>
+
+<p>Not all businesses are equally predictable. A subscription SaaS company with 95% monthly retention has very different forecast uncertainty than a project-based consultancy with lumpy revenue. The <strong>coefficient of variation (CV)</strong> from <a href="../phase0/02-dispersion.html">Phase 0, page 2</a> captures this.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — CV-informed base rate</div>
+<p>The base uncertainty rate adapts to business volatility as follows:</p>
+<div class="display-math">$$\text{BASE} = \begin{cases} 0.03 & \text{if CV} < 0.3 \quad \text{(predictable business)} \\ 0.08 & \text{if CV} > 0.6 \quad \text{(erratic business)} \\ 0.05 & \text{otherwise} \end{cases}$$</div>
+<p>where CV is the coefficient of variation of historical weekly revenue.</p>
+</div>
+
+<p>A predictable business (CV &lt; 0.3) starts with only 3% uncertainty — it barely deviates week to week. An erratic business (CV &gt; 0.6) starts at 8% — even next week is somewhat uncertain. The default 5% covers the middle ground.</p>
+
+<p>Changing BASE also changes $k$, because $k$ depends on $\text{MAX} - \text{BASE}$. A predictable business has a larger gap to fill ($0.40 - 0.03 = 0.37$), so $k$ is slightly higher, meaning uncertainty grows faster in proportional terms — but from a lower starting point.</p>
+
+<p>Let's compute $k$ for each tier explicitly. With $\sqrt{259} = 16.093$:</p>
+
+<table>
+<tr><th>Tier</th><th>CV range</th><th>BASE</th><th>MAX - BASE</th><th>$k$</th></tr>
+<tr><td>Predictable</td><td>&lt; 0.3</td><td>0.03</td><td>0.37</td><td>0.02299</td></tr>
+<tr><td>Default</td><td>0.3 – 0.6</td><td>0.05</td><td>0.35</td><td>0.02175</td></tr>
+<tr><td>Erratic</td><td>&gt; 0.6</td><td>0.08</td><td>0.32</td><td>0.01988</td></tr>
+</table>
+
+<p>An interesting consequence: all three tiers converge to $\sigma = 0.40$ at week 260. Far enough into the future, the business's inherent volatility doesn't matter — uncertainty saturates at MAX regardless. The CV distinction only affects the <em>near-term</em> uncertainty, which is precisely where operational decisions are made.</p>
+
+<p>The CV thresholds (0.3 and 0.6) are calibrated to typical business types. A subscription SaaS company with monthly churn under 3% typically has CV below 0.3. A project-based consultancy with lumpy contract wins often exceeds 0.6. Most businesses fall in the middle.</p>
+
+<p>Why not make BASE a continuous function of CV? Simplicity. Three tiers are enough to capture the meaningful variation; a continuous function would suggest false precision. The difference between CV = 0.31 and CV = 0.29 is noise — it shouldn't change the uncertainty model. The discrete tiers absorb that noise gracefully.</p>
+
+<p>If the business has insufficient history to compute CV reliably (fewer than 12 weeks of data, say), the default BASE = 0.05 is the safe choice. Better to use a reasonable default than to compute a CV from 4 data points and treat it as gospel.</p>
+
+<!-- ─── 4. FAN CHARTS ─────────────────────────────── -->
+
+<h2>3. Fan charts</h2>
+
+<p>The uncertainty rate $\sigma(w)$ converts to concrete confidence bands via the <strong>spread</strong>:</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Fan chart bands</div>
+<p>At week $w$ with forecast balance $B(w)$:</p>
+<div class="display-math">$$\text{spread}(w) = |B(w)| \times \sigma(w)$$</div>
+<div class="display-math">$$\text{Lower}(w) = B(w) - \text{spread}(w)$$</div>
+<div class="display-math">$$\text{Upper}(w) = B(w) + \text{spread}(w)$$</div>
+</div>
+
+<p>These are symmetric bands — the upper and lower bounds are equidistant from the central forecast. This is a simplification. The <strong>Bank of England</strong>'s fan charts use asymmetric probability densities, where the risks might skew upward or downward. Our symmetric version captures the essential idea — growing uncertainty over time — without the added complexity of skew estimation.</p>
+
+<p>We use $|B(w)|$ (absolute value) because if the balance is negative (the business is in overdraft), the spread should still be positive. A balance of $-£50{,}000$ with $\sigma = 0.20$ gives a spread of £10,000, so the band runs from $-£60{,}000$ to $-£40{,}000$.</p>
+
+<p>Note the asymmetry in interpretation: when the balance is positive, the lower bound of the fan chart answers "how bad could things get?" — i.e., "could we run out of cash?" When the balance is negative, the lower bound says "how deep could the overdraft go?" Both are critical for treasury management, but they require different responses.</p>
+
+<p>In a real implementation, you'd plot the fan chart as a shaded region widening over time, with darker shading near the central forecast and lighter shading at the extremes. The Bank of England uses colour gradients to indicate probability density — darker = more likely. Our simplified version uses a single band at one standard deviation, but the principle is identical.</p>
+
+<p>Multiple bands can be layered: a 1-sigma band (68% coverage) inside a 2-sigma band (95% coverage) inside a 3-sigma band (99.7%). Each successive band is wider, and the colour gets lighter, creating the characteristic "fan" shape. For our forecasting application, a single band at ±1 sigma is sufficient for most decisions, with the option to scale up by the z-scores from the next page when needed.</p>
+
+<!-- ─── 5. FULL WORKED EXAMPLE ─────────────────────────────── -->
+
+<h2>4. Full worked example</h2>
+
+<p>A business has CV = 0.45 (middle tier), so BASE = 0.05, MAX = 0.40, TOTAL_WEEKS = 260.</p>
+
+<div class="display-math">$$k = \frac{0.40 - 0.05}{\sqrt{259}} = \frac{0.35}{16.093} = 0.02175$$</div>
+
+<p><strong>Uncertainty schedule:</strong></p>
+
+<table>
+<tr><th>Week $w$</th><th>$\sqrt{w-1}$</th><th>$\text{BASE} + k\sqrt{w-1}$</th><th>$\sigma(w)$</th></tr>
+<tr><td>1</td><td>0</td><td>0.050</td><td>0.050</td></tr>
+<tr><td>13</td><td>3.464</td><td>$0.050 + 0.02175 \times 3.464 = 0.125$</td><td>0.125</td></tr>
+<tr><td>26</td><td>5.000</td><td>$0.050 + 0.02175 \times 5.000 = 0.159$</td><td>0.159</td></tr>
+<tr><td>52</td><td>7.141</td><td>$0.050 + 0.02175 \times 7.141 = 0.205$</td><td>0.205</td></tr>
+<tr><td>104</td><td>10.149</td><td>$0.050 + 0.02175 \times 10.149 = 0.271$</td><td>0.271</td></tr>
+<tr><td>156</td><td>12.450</td><td>$0.050 + 0.02175 \times 12.450 = 0.321$</td><td>0.321</td></tr>
+<tr><td>208</td><td>14.387</td><td>$0.050 + 0.02175 \times 14.387 = 0.363$</td><td>0.363</td></tr>
+<tr><td>260</td><td>16.093</td><td>$0.050 + 0.02175 \times 16.093 = 0.400$</td><td>0.400</td></tr>
+</table>
+
+<p>Notice the characteristic square-root shape: uncertainty rises steeply at first (from 0.05 to 0.125 in the first quarter), then flattens out (from 0.363 to 0.400 in the last year). Early weeks add the most marginal uncertainty; later weeks add less and less.</p>
+
+<p><strong>Fan chart on £200k starting balance.</strong> Assume the balance stays roughly constant at £200,000 (simplified — in reality it would evolve):</p>
+
+<table>
+<tr><th>Week</th><th>$\sigma(w)$</th><th>Spread</th><th>Lower</th><th>Upper</th></tr>
+<tr><td>1</td><td>0.050</td><td>£10,000</td><td>£190,000</td><td>£210,000</td></tr>
+<tr><td>13</td><td>0.125</td><td>£25,000</td><td>£175,000</td><td>£225,000</td></tr>
+<tr><td>52</td><td>0.205</td><td>£41,000</td><td>£159,000</td><td>£241,000</td></tr>
+<tr><td>104</td><td>0.271</td><td>£54,200</td><td>£145,800</td><td>£254,200</td></tr>
+<tr><td>260</td><td>0.400</td><td>£80,000</td><td>£120,000</td><td>£280,000</td></tr>
+</table>
+
+<p>At week 1, the band is tight (±£10k). By year 5, it's ±£80k — wide, but not absurdly so. The MAX cap ensures it never exceeds ±40% of the balance.</p>
+
+<h3>Interpreting the fan chart</h3>
+
+<p>The fan chart answers a specific question: "given what we know today, how wide is the range of plausible outcomes at week $w$?" It does <em>not</em> say the balance will definitely fall within the band — it says the band covers roughly one standard deviation of uncertainty in each direction (about 68% of outcomes under normality).</p>
+
+<p>For a treasury team, the key number is the <strong>lower bound</strong>. If the lower bound at any week dips below zero — or below the minimum cash buffer the business needs — that's a signal to arrange financing <em>now</em>, while options are still available. Waiting until the cash actually runs out is too late.</p>
+
+<p>Notice how the fan opens asymptotically: the first 13 weeks add 7.5 percentage points of uncertainty (0.050 to 0.125), whilst the last 52 weeks add only 3.7 points (0.363 to 0.400). The marginal information value of each additional forecast week diminishes — the $\sqrt{w}$ shape encodes this diminishing precision naturally.</p>
+
+<!-- ─── 6. HISTORY ─────────────────────────────── -->
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p>The <strong>Bank of England</strong> introduced <strong>fan charts</strong> in its February 1996 <em>Inflation Report</em>, becoming the first central bank to communicate forecast uncertainty visually. The innovation is attributed to <a href="../mathematicians/britton-fisher-whitley.html">Britton, Fisher, and Whitley</a> (1998), who formalised the methodology. Before fan charts, central banks published single-point forecasts — implying false precision. The BoE's fan charts showed probability bands widening into the future, making uncertainty an explicit part of the communication. The idea spread rapidly: the ECB, Fed, and most central banks now publish some form of uncertainty visualisation. Our model is a simplified version of the same principle — $\sqrt{t}$ growth of uncertainty with a cap — adapted for business cash-flow forecasting rather than macroeconomic inflation.</p>
+</div>
+
+<!-- ─── 7. WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>With linear uncertainty growth:</strong> if $\sigma(w) = \text{BASE} + c \cdot w$ for some constant $c$, uncertainty at week 260 could be reasonable — but the path there is wrong. At week 52, linear growth gives much higher uncertainty than $\sqrt{w}$ growth. You'd overestimate near-term uncertainty (the range where decisions actually get made) while being no more accurate long-term. The square root shape matches the physics of independent error accumulation; linear growth doesn't.</p>
+<p><strong>Without the MAX cap:</strong> if the business is very volatile (high $k$) or the forecast horizon very long, $\sigma(w)$ could exceed 1.0 — meaning the uncertainty band is wider than the entire balance. A band of $\pm 120\%$ around £200k gives a range of $-£40{,}000$ to £440,000. The lower bound is negative even though the balance is positive — the model is saying "we genuinely don't know the sign of the cash balance." At that point the forecast is worthless, and the MAX cap at 40% is an honest admission: beyond this level of uncertainty, the number isn't a forecast, it's a guess.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">Uncertainty grows as the square root of time, starts from a CV-calibrated base, and caps at a ceiling that keeps the forecast honest.</div>
+
+<!-- ─── 8. EXERCISES ─────────────────────────────── -->
+
+<h2>5. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — Derive k from boundary conditions</div>
+<p>Starting from the requirement that $\sigma(1) = \text{BASE}$ and $\sigma(\text{TOTAL\_WEEKS}) = \text{MAX}$, derive the formula for $k$. Then compute $k$ for each of the three CV tiers (CV &lt; 0.3, CV &gt; 0.6, and default) with TOTAL_WEEKS = 260 and MAX = 0.40.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Derivation.</strong> We need $\sigma(1) = \text{BASE}$ and $\sigma(\text{TOTAL\_WEEKS}) = \text{MAX}$.</p>
+<p>At $w = 1$: $\sigma(1) = \text{BASE} + k\sqrt{1-1} = \text{BASE} + 0 = \text{BASE}$. This holds automatically for any $k$.</p>
+<p>At $w = \text{TOTAL\_WEEKS}$: $\sigma(\text{TOTAL\_WEEKS}) = \text{BASE} + k\sqrt{\text{TOTAL\_WEEKS} - 1}$. Setting this equal to MAX:</p>
+<div class="display-math">$$\text{MAX} = \text{BASE} + k\sqrt{\text{TOTAL\_WEEKS} - 1}$$</div>
+<div class="display-math">$$k\sqrt{\text{TOTAL\_WEEKS} - 1} = \text{MAX} - \text{BASE}$$</div>
+<div class="display-math">$$k = \frac{\text{MAX} - \text{BASE}}{\sqrt{\text{TOTAL\_WEEKS} - 1}}$$</div>
+
+<p><strong>For each tier</strong> (with TOTAL_WEEKS = 260, MAX = 0.40, $\sqrt{259} = 16.093$):</p>
+
+<table>
+<tr><th>Tier</th><th>BASE</th><th>MAX - BASE</th><th>$k$</th></tr>
+<tr><td>Predictable (CV &lt; 0.3)</td><td>0.03</td><td>0.37</td><td>$0.37/16.093 = 0.02299$</td></tr>
+<tr><td>Default</td><td>0.05</td><td>0.35</td><td>$0.35/16.093 = 0.02175$</td></tr>
+<tr><td>Erratic (CV &gt; 0.6)</td><td>0.08</td><td>0.32</td><td>$0.32/16.093 = 0.01988$</td></tr>
+</table>
+
+<p>Interestingly, the erratic business has the lowest $k$ — it starts higher but grows slower to the same ceiling. The predictable business starts low and climbs faster, but still ends at the same MAX. All three converge at week 260.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — Full 260-week schedule and fan chart</div>
+<p>A business has CV = 0.45 (so BASE = 0.05) and a starting cash balance of £200,000. Compute the full uncertainty schedule $\sigma(w)$ at weeks 1, 4, 13, 26, 39, 52, 78, 104, 130, 156, 182, 208, 234, 260. Then compute the fan chart bands at each week, assuming the balance stays at £200,000.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p>Parameters: BASE = 0.05, MAX = 0.40, $k = 0.02175$.</p>
+
+<table>
+<tr><th>Week</th><th>$\sqrt{w-1}$</th><th>Raw $\sigma$</th><th>$\sigma(w)$</th><th>Spread</th><th>Lower</th><th>Upper</th></tr>
+<tr><td>1</td><td>0.000</td><td>0.050</td><td>0.050</td><td>£10,000</td><td>£190,000</td><td>£210,000</td></tr>
+<tr><td>4</td><td>1.732</td><td>0.088</td><td>0.088</td><td>£17,600</td><td>£182,400</td><td>£217,600</td></tr>
+<tr><td>13</td><td>3.464</td><td>0.125</td><td>0.125</td><td>£25,050</td><td>£174,950</td><td>£225,050</td></tr>
+<tr><td>26</td><td>5.000</td><td>0.159</td><td>0.159</td><td>£31,750</td><td>£168,250</td><td>£231,750</td></tr>
+<tr><td>39</td><td>6.164</td><td>0.184</td><td>0.184</td><td>£36,800</td><td>£163,200</td><td>£236,800</td></tr>
+<tr><td>52</td><td>7.141</td><td>0.205</td><td>0.205</td><td>£41,050</td><td>£158,950</td><td>£241,050</td></tr>
+<tr><td>78</td><td>8.775</td><td>0.241</td><td>0.241</td><td>£48,150</td><td>£151,850</td><td>£248,150</td></tr>
+<tr><td>104</td><td>10.149</td><td>0.271</td><td>0.271</td><td>£54,150</td><td>£145,850</td><td>£254,150</td></tr>
+<tr><td>130</td><td>11.358</td><td>0.297</td><td>0.297</td><td>£59,400</td><td>£140,600</td><td>£259,400</td></tr>
+<tr><td>156</td><td>12.450</td><td>0.321</td><td>0.321</td><td>£64,150</td><td>£135,850</td><td>£264,150</td></tr>
+<tr><td>182</td><td>13.454</td><td>0.343</td><td>0.343</td><td>£68,550</td><td>£131,450</td><td>£268,550</td></tr>
+<tr><td>208</td><td>14.387</td><td>0.363</td><td>0.363</td><td>£72,600</td><td>£127,400</td><td>£272,600</td></tr>
+<tr><td>234</td><td>15.264</td><td>0.382</td><td>0.382</td><td>£76,400</td><td>£123,600</td><td>£276,400</td></tr>
+<tr><td>260</td><td>16.093</td><td>0.400</td><td>0.400</td><td>£80,000</td><td>£120,000</td><td>£280,000</td></tr>
+</table>
+
+<p>The fan opens rapidly in the first quarter (spread doubles from £10k to £25k) then widens more gradually. By week 260, the band spans £120k–£280k: a wide range, but the $\sqrt{w}$ shape ensures the near-term forecast (where operational decisions are made) remains usefully tight.</p>
+
+<p>To verify the boundary conditions: at week 1, $\sigma(1) = 0.050 = \text{BASE}$. At week 260, $\sigma(260) = 0.400 = \text{MAX}$. The function hits its targets exactly, and the $\sqrt{w-1}$ shape fills in between.</p>
+
+<p>For comparison, if we'd used linear interpolation ($\sigma(w) = 0.05 + \frac{0.35}{259}(w-1)$), at week 52 we'd get $\sigma = 0.05 + 0.001351 \times 51 = 0.119$. The square-root model gives $0.205$ — nearly twice as much. The linear model <em>understates</em> near-term uncertainty and <em>overstates</em> it in the mid-range. The physics of error accumulation ($\sqrt{n}$) demands the concave shape.</p>
+
+<p>Here's a side-by-side comparison at key weeks:</p>
+
+<table>
+<tr><th>Week</th><th>$\sigma$ (sqrt model)</th><th>$\sigma$ (linear model)</th><th>Ratio</th></tr>
+<tr><td>13</td><td>0.125</td><td>0.066</td><td>1.89</td></tr>
+<tr><td>52</td><td>0.205</td><td>0.119</td><td>1.72</td></tr>
+<tr><td>130</td><td>0.297</td><td>0.224</td><td>1.33</td></tr>
+<tr><td>260</td><td>0.400</td><td>0.400</td><td>1.00</td></tr>
+</table>
+
+<p>Both models agree at the endpoints but diverge significantly in between. The square-root model front-loads the uncertainty growth, which matches reality: most of the "learning" about forecast accuracy happens in the first few months.</p>
+</div>
+</details>
+</div>
+
+<div class="nav">
+<a href="01-random-walks.html">&larr; Random Walks</a>
+<a href="03-combining-uncertainties.html">Next: Combining Uncertainties &rarr;</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

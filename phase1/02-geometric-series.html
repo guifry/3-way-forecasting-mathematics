@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geometric Series and the Annuity Formula — Phase 1</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Geometric Series and the Annuity Formula</h1>
+<p class="subtitle">Phase 1 — Exponential Growth and the Time Value of Money, Page 2</p>
+
+<!-- ─── PROBLEM ───── -->
+<div class="problem-box">
+  <div class="label">The problem</div>
+  <p>A business takes a £100,000 loan at 5% annual interest, repaying in equal weekly instalments over 5 years. What is the fixed weekly payment?</p>
+  <p>This isn't a simple division — you can't just split £100,000 across 260 weeks, because interest accrues on the outstanding balance. This is a question about <strong>annuities</strong>, and the answer requires summing a geometric series.</p>
+</div>
+
+<!-- ─── 1. THE GEOMETRIC SERIES ───── -->
+<h2>1. The Geometric Series</h2>
+
+<p>Consider the sum of a geometric progression with first term 1, common ratio $r$, and $n$ terms:</p>
+
+<div class="display-math">$$S = 1 + r + r^2 + r^3 + \cdots + r^{n-1}$$</div>
+
+<p>To find a closed form, multiply both sides by $r$:</p>
+
+<div class="display-math">$$rS = r + r^2 + r^3 + \cdots + r^n$$</div>
+
+<p>Now look at the two sums. Nearly every term appears in both — the $r, r^2, \ldots, r^{n-1}$ terms are shared. Subtracting the second from the first cancels all the middle terms, leaving only the first term of $S$ and the last term of $rS$:</p>
+
+<div class="display-math">$$S - rS = (1 + r + r^2 + \cdots + r^{n-1}) - (r + r^2 + \cdots + r^n) = 1 - r^n$$</div>
+
+<p>Factor out $S$ on the left:</p>
+
+<div class="display-math">$$S(1 - r) = 1 - r^n$$</div>
+
+<p>Divide both sides by $(1 - r)$, which is valid provided $r \neq 1$:</p>
+
+<div class="theorem-box">
+  <div class="label">Theorem — Geometric Series (finite)</div>
+  <p>For $r \neq 1$ and $n$ a positive integer:</p>
+  <div class="display-math">$$\sum_{k=0}^{n-1} r^k = \frac{1 - r^n}{1 - r}$$</div>
+</div>
+
+<p>This identity is the engine behind every loan repayment calculation in existence. Let's verify it with a small example before we move on.</p>
+
+<p>Take $r = 0.5$, $n = 4$. The sum by hand: $1 + 0.5 + 0.25 + 0.125 = 1.875$. By formula:</p>
+
+<div class="display-math">$$\frac{1 - (0.5)^4}{1 - 0.5} = \frac{1 - 0.0625}{0.5} = \frac{0.9375}{0.5} = 1.875 \quad\checkmark$$</div>
+
+<p>The formula collapses $n$ additions into a single fraction. For $n = 260$ (five years of weekly payments), doing the sum term by term would be absurd. The closed form makes it tractable.</p>
+
+<p>One edge case worth noting: when $r = 1$, every term equals 1, so $S = n$. The formula $\frac{1 - r^n}{1 - r}$ gives $\frac{0}{0}$, which is undefined — hence the restriction $r \neq 1$. For annuities this never arises (interest rates are never exactly 100% per period), but it's good mathematical hygiene to acknowledge.</p>
+
+<!-- ─── 2. ANNUAL-TO-WEEKLY RATE ───── -->
+<h2>2. Annual-to-Weekly Rate Conversion</h2>
+
+<p>Before we can work with weekly payments, we need the <strong>weekly interest rate</strong>. The requirement: 52 weeks of compounding at rate $r_w$ must equal one year at rate $r_a$.</p>
+
+<div class="display-math">$$(1 + r_w)^{52} = 1 + r_a$$</div>
+
+<p>Take the 52nd root of both sides:</p>
+
+<div class="display-math">$$1 + r_w = (1 + r_a)^{1/52}$$</div>
+
+<div class="theorem-box">
+  <div class="label">Definition — Weekly rate from annual</div>
+  <div class="display-math">$$r_w = (1 + r_a)^{1/52} - 1$$</div>
+</div>
+
+<p>For our problem: $r_w = (1.05)^{1/52} - 1 = 0.000938 = 0.0938\%$ per week.</p>
+
+<p>Note the difference from the naive approach of simply dividing the annual rate: $0.05/52 = 0.000962$. That's 2.5% higher than the correct rate of $0.000938$. Why?</p>
+
+<p>The naive method ignores the fact that weekly interest itself compounds. If you earn $0.000962$ per week for 52 weeks, compounding gives $(1.000962)^{52} = 1.05124$, which is a 5.124% annual rate — not the 5% we started with. The correct weekly rate must satisfy $(1 + r_w)^{52} = 1.05$ <em>exactly</em>, and that's what the formula gives us.</p>
+
+<p>We derived this in Phase 1, page 1 — the same fractional-exponent logic applies here.</p>
+
+<p>The principle: <em>always convert rates by taking roots, never by dividing</em>. Division is tempting but mathematically wrong.</p>
+
+<!-- ─── 3. PRESENT VALUE AND THE ANNUITY FORMULA ───── -->
+<h2>3. Present Value and the Annuity Formula</h2>
+
+<p>The idea behind loan repayment is <strong>present value</strong>: a pound tomorrow is worth less than a pound today, because a pound today could be invested and grow. We need to quantify exactly how much less.</p>
+
+<p>A payment of £$C$ made $k$ periods from now is worth less than £$C$ today, because money available now could earn interest. Its <strong>present value</strong> is:</p>
+
+<div class="display-math">$$PV_k = C \cdot (1 + r)^{-k}$$</div>
+
+<p>For example, £100 paid 10 weeks from now, at a weekly rate of 0.1%, has present value $100 \times (1.001)^{-10} = 100 \times 0.9900 = \text{£}99.00$. The further into the future a payment falls, the less it's worth today.</p>
+
+<p>A loan of principal $P$ is repaid by $n$ equal payments of $C$. The lender requires that the sum of all present values equals $P$ — that's the definition of a fair loan:</p>
+
+<div class="display-math">$$P = C(1+r)^{-1} + C(1+r)^{-2} + \cdots + C(1+r)^{-n}$$</div>
+
+<p>Factor out $C$:</p>
+
+<div class="display-math">$$P = C \sum_{k=1}^{n} (1+r)^{-k}$$</div>
+
+<p>Let $q = (1+r)^{-1}$. The sum becomes:</p>
+
+<div class="display-math">$$\sum_{k=1}^{n} q^k = q \sum_{k=0}^{n-1} q^k = q \cdot \frac{1 - q^n}{1 - q}$$</div>
+
+<p>Substituting $q = (1+r)^{-1}$ and simplifying $1 - q = 1 - \frac{1}{1+r} = \frac{r}{1+r}$:</p>
+
+<div class="display-math">$$\sum_{k=1}^{n} (1+r)^{-k} = \frac{1}{1+r} \cdot \frac{1 - (1+r)^{-n}}{r/(1+r)} = \frac{1 - (1+r)^{-n}}{r}$$</div>
+
+<p>So $P = C \cdot \frac{1 - (1+r)^{-n}}{r}$. Solving for $C$:</p>
+
+<div class="theorem-box">
+  <div class="label">Theorem — Annuity Payment Formula</div>
+  <div class="display-math">$$C = \frac{P \cdot r}{1 - (1 + r)^{-n}}$$</div>
+  <p>where $P$ is the principal, $r$ is the per-period interest rate, and $n$ is the number of periods.</p>
+</div>
+
+<p>For our problem: $P = 100{,}000$, $r_w = 0.000938$, $n = 5 \times 52 = 260$. Let's compute step by step:</p>
+
+<p>Numerator: $P \cdot r_w = 100{,}000 \times 0.000938 = 93.80$.</p>
+
+<p>Denominator: first compute $(1+r_w)^{-n} = (1.000938)^{-260}$. Since $(1.000938)^{260} = (1.05)^5 = 1.2763$, we get $(1.000938)^{-260} = 1/1.2763 = 0.7836$. So $1 - 0.7836 = 0.2164$.</p>
+
+<div class="display-math">$$C = \frac{93.80}{0.2164} = \text{£}433.46 \text{ per week}$$</div>
+
+<p>Over 260 weeks, the business pays $260 \times 433.46 = \text{£}112{,}700$ in total. The cost of borrowing is therefore £12,700 — about 12.7% of the principal. This is less than $5\% \times 5 = 25\%$ simple interest would suggest because principal is repaid progressively, reducing the balance on which interest accrues.</p>
+
+<!-- ─── 4. AMORTISATION SCHEDULE ───── -->
+<h2>4. Amortisation Schedule</h2>
+
+<p>Knowing the total payment is only half the story. For cash flow forecasting, we need to know <em>how much of each payment is interest</em> (a cost on the P&amp;L) and <em>how much is principal repayment</em> (a balance sheet movement). This split changes every period.</p>
+
+<p>Each weekly payment $C$ splits into <strong>interest</strong> and <strong>principal repayment</strong>:</p>
+
+<div class="display-math">$$\text{interest}_k = \text{remaining}_{k-1} \times r$$</div>
+<div class="display-math">$$\text{principal}_k = C - \text{interest}_k$$</div>
+<div class="display-math">$$\text{remaining}_k = \text{remaining}_{k-1} - \text{principal}_k$$</div>
+
+<p>Early in the loan, the remaining balance is large, so most of each payment goes to interest. As the balance shrinks, the interest portion drops and the principal portion rises. This is sometimes called the <strong>front-loading</strong> of interest.</p>
+
+<p>Why does this matter? In a three-way forecast, the interest portion appears on the <strong>profit and loss</strong> statement (it's a cost of financing). The principal portion appears on the <strong>balance sheet</strong> (it reduces a liability). Getting the split wrong means both statements are wrong.</p>
+
+<h3>Worked example: 10-period schedule</h3>
+
+<p>Let $P = \text{£}10{,}000$, $r = 0.01$ per period, $n = 10$. First compute $C$:</p>
+
+<div class="display-math">$$C = \frac{10{,}000 \times 0.01}{1 - (1.01)^{-10}} = \frac{100}{1 - 0.9053} = \frac{100}{0.0947} = \text{£}1{,}055.82$$</div>
+
+<table>
+  <tr><th>Period</th><th>Payment</th><th>Interest</th><th>Principal</th><th>Remaining</th></tr>
+  <tr><td>0</td><td>—</td><td>—</td><td>—</td><td>£10,000.00</td></tr>
+  <tr><td>1</td><td>£1,055.82</td><td>£100.00</td><td>£955.82</td><td>£9,044.18</td></tr>
+  <tr><td>2</td><td>£1,055.82</td><td>£90.44</td><td>£965.38</td><td>£8,078.80</td></tr>
+  <tr><td>3</td><td>£1,055.82</td><td>£80.79</td><td>£975.03</td><td>£7,103.77</td></tr>
+  <tr><td>4</td><td>£1,055.82</td><td>£71.04</td><td>£984.78</td><td>£6,118.99</td></tr>
+  <tr><td>5</td><td>£1,055.82</td><td>£61.19</td><td>£994.63</td><td>£5,124.36</td></tr>
+  <tr><td>6</td><td>£1,055.82</td><td>£51.24</td><td>£1,004.58</td><td>£4,119.78</td></tr>
+  <tr><td>7</td><td>£1,055.82</td><td>£41.20</td><td>£1,014.62</td><td>£3,105.16</td></tr>
+  <tr><td>8</td><td>£1,055.82</td><td>£31.05</td><td>£1,024.77</td><td>£2,080.39</td></tr>
+  <tr><td>9</td><td>£1,055.82</td><td>£20.80</td><td>£1,035.02</td><td>£1,045.37</td></tr>
+  <tr><td>10</td><td>£1,055.82</td><td>£10.45</td><td>£1,045.37</td><td>£0.00</td></tr>
+</table>
+
+<p>Notice: in period 1, interest is £100 out of £1,055.82 (9.5%). By period 10, interest is just £10.45 (1.0%). The balance converges to zero exactly at the final payment.</p>
+
+<p>This pattern — front-loaded interest, back-loaded principal — is universal in amortising loans. It means that in the early years of a mortgage or business loan, you're mostly paying for the privilege of borrowing, not reducing the debt itself. Understanding this is critical for cash flow forecasting: the <em>interest</em> component is a cost, while the <em>principal</em> component is a balance sheet movement.</p>
+
+<div class="proof-box" id="proof-balance-zero">
+  <div class="label">Proof — Balance reaches zero at period n</div>
+  <p>We need to show that the amortisation schedule, by construction, zeroes the balance. The remaining balance after $k$ payments is:</p>
+  <div class="display-math">$$B_k = P(1+r)^k - C \cdot \frac{(1+r)^k - 1}{r}$$</div>
+  <p>At $k = n$, substitute $C = Pr/(1-(1+r)^{-n})$:</p>
+  <div class="display-math">$$B_n = P(1+r)^n - \frac{Pr}{1-(1+r)^{-n}} \cdot \frac{(1+r)^n - 1}{r}$$</div>
+  <p>The $r$ cancels:</p>
+  <div class="display-math">$$B_n = P(1+r)^n - P \cdot \frac{(1+r)^n - 1}{1 - (1+r)^{-n}}$$</div>
+  <p>Note that $1 - (1+r)^{-n} = \frac{(1+r)^n - 1}{(1+r)^n}$. Substituting:</p>
+  <div class="display-math">$$B_n = P(1+r)^n - P \cdot \frac{(1+r)^n - 1}{\frac{(1+r)^n - 1}{(1+r)^n}} = P(1+r)^n - P(1+r)^n = 0$$</div>
+  <div class="qed">∎</div>
+</div>
+
+<!-- ─── 5. EXERCISES ───── -->
+<h2>5. Exercises</h2>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 1 — Derive the annuity formula</div>
+  <p>Starting from $P = C \sum_{k=1}^{n}(1+r)^{-k}$, derive the closed form $C = Pr / (1 - (1+r)^{-n})$ showing every algebraic step.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p>Let $q = (1+r)^{-1}$. Then:</p>
+      <div class="display-math">$$P = C \sum_{k=1}^{n} q^k = C \cdot q \cdot \frac{1 - q^n}{1 - q}$$</div>
+      <p>Substitute $q = 1/(1+r)$, so $1 - q = 1 - 1/(1+r) = r/(1+r)$:</p>
+      <div class="display-math">$$P = C \cdot \frac{1}{1+r} \cdot \frac{1 - (1+r)^{-n}}{r/(1+r)}$$</div>
+      <p>The $(1+r)$ factors cancel:</p>
+      <div class="display-math">$$P = C \cdot \frac{1 - (1+r)^{-n}}{r}$$</div>
+      <p>Solve for $C$:</p>
+      <div class="display-math">$$C = \frac{P \cdot r}{1 - (1+r)^{-n}}$$</div>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 2 — 10-period amortisation verification</div>
+  <p>Using the table above ($P = \text{£}10{,}000$, $r = 0.01$, $n = 10$), verify that the total interest paid equals $10 \times C - P$, and that the remaining balance at period 10 is exactly zero.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p>Total payments: $10 \times 1{,}055.82 = \text{£}10{,}558.20$.</p>
+      <p>Total interest: $10{,}558.20 - 10{,}000 = \text{£}558.20$.</p>
+      <p>Summing the interest column: $100.00 + 90.44 + 80.79 + 71.04 + 61.19 + 51.24 + 41.20 + 31.05 + 20.80 + 10.45 = \text{£}558.20$. ✓</p>
+      <p>The remaining balance traces: $10{,}000 \to 9{,}044.18 \to 8{,}078.80 \to \cdots \to 1{,}045.37 \to 0.00$. The final principal repayment of £1,045.37 exactly eliminates the remaining balance. ✓</p>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 3 — Applied: £50k loan at 6% over 3 years</div>
+  <p>A business borrows £50,000 at 6% annual interest, repaying weekly over 3 years. Compute the weekly payment and build the first 8 weeks of the amortisation schedule.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p>Weekly rate: $r_w = (1.06)^{1/52} - 1 = 0.001121 = 0.1121\%$.</p>
+      <p>Number of payments: $n = 3 \times 52 = 156$.</p>
+      <div class="display-math">$$C = \frac{50{,}000 \times 0.001121}{1 - (1.001121)^{-156}} = \frac{56.07}{1 - 0.8396} = \frac{56.07}{0.1604} = \text{£}349.55$$</div>
+      <table>
+        <tr><th>Week</th><th>Payment</th><th>Interest</th><th>Principal</th><th>Remaining</th></tr>
+        <tr><td>0</td><td>—</td><td>—</td><td>—</td><td>£50,000.00</td></tr>
+        <tr><td>1</td><td>£349.55</td><td>£56.07</td><td>£293.48</td><td>£49,706.52</td></tr>
+        <tr><td>2</td><td>£349.55</td><td>£55.74</td><td>£293.81</td><td>£49,412.71</td></tr>
+        <tr><td>3</td><td>£349.55</td><td>£55.41</td><td>£294.14</td><td>£49,118.57</td></tr>
+        <tr><td>4</td><td>£349.55</td><td>£55.08</td><td>£294.47</td><td>£48,824.10</td></tr>
+        <tr><td>5</td><td>£349.55</td><td>£54.75</td><td>£294.80</td><td>£48,529.30</td></tr>
+        <tr><td>6</td><td>£349.55</td><td>£54.42</td><td>£295.13</td><td>£48,234.17</td></tr>
+        <tr><td>7</td><td>£349.55</td><td>£54.09</td><td>£295.46</td><td>£47,938.71</td></tr>
+        <tr><td>8</td><td>£349.55</td><td>£53.76</td><td>£295.79</td><td>£47,642.92</td></tr>
+      </table>
+      <p>In week 1, interest is £56.07 out of £349.55 (16%). The principal portion slowly increases as the balance drops.</p>
+      <p>Total paid over 156 weeks: $156 \times 349.55 = \text{£}54{,}530$. Total interest: $54{,}530 - 50{,}000 = \text{£}4{,}530$.</p>
+    </div>
+  </details>
+</div>
+
+<!-- ─── 6. HISTORY ───── -->
+<div class="history-box">
+  <div class="label">Historical note</div>
+  <p><a href="../mathematicians/fibonacci.html">Fibonacci</a> published <em>Liber Abaci</em> in 1202, introducing Hindu-Arabic numerals to European commerce. But the book wasn't just about notation — it contained worked problems on interest, currency exchange, and profit allocation that were directly relevant to Pisan merchants trading across the Mediterranean.</p>
+  <p>Chapter 12 of <em>Liber Abaci</em> includes a problem on distributing profits from a joint venture over time — essentially an annuity calculation. Medieval merchants needed these tools for trade financing, and Fibonacci gave them the mathematical framework. The geometric series was mathematics born from commercial necessity, centuries before it appeared as a theorem in a pure mathematics textbook.</p>
+</div>
+
+<!-- ─── 7. WHAT BREAKS ───── -->
+<div class="break-box">
+  <div class="label">What breaks</div>
+  <ul>
+    <li><strong>Using $r_a/52$ instead of $(1+r_a)^{1/52}-1$</strong>: the naive division gives $0.05/52 = 0.000962$, while the correct rate is $0.000938$. The naive rate is 2.5% too high. Over 260 weeks, this accumulates: the naive method computes a weekly payment of £434.59 instead of £433.46 — overstating total repayments by about £294 across the life of the loan. Small per payment, but systematic and entirely avoidable.</li>
+    <li><strong>Zero interest rate</strong>: the annuity formula degenerates because $r = 0$ puts zero in both numerator and denominator. But the limit is well-defined. Apply L'Hôpital's rule, differentiating numerator and denominator with respect to $r$:
+      <div class="display-math">$$\lim_{r \to 0} \frac{Pr}{1-(1+r)^{-n}} = P \lim_{r \to 0} \frac{1}{n(1+r)^{-(n+1)}} = \frac{P}{n}$$</div>
+      At zero interest, you simply divide the principal evenly across all payments. In code, you'd handle $r = 0$ as a special case to avoid division by zero.</li>
+  </ul>
+</div>
+
+<hr>
+
+<div class="oneliner">A loan is a geometric series in disguise — each payment's present value shrinks by a constant ratio, and summing them recovers the principal exactly.</div>
+
+<div class="nav">
+  <a href="01-compound-interest.html">← Compound Interest</a>
+  <a href="03-inflation-and-blended-growth.html">Next: Inflation and Blended Growth →</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body>
+</html>

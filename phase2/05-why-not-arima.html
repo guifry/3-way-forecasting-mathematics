@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Why Not X-13ARIMA? — Phase 2</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Why Not X-13ARIMA?</h1>
+<p class="subtitle">Phase 2 — Seasonal Decomposition, Page 5</p>
+
+<!-- ─── THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>A statistician reviews your forecasting model and raises an eyebrow. "You're using ratio-to-moving-average? That's essentially the X-11 method from 1965. The US Census Bureau, the ONS, Eurostat, and Statistics Canada all use X-13ARIMA-SEATS now. It's been the gold standard for a decade. Why are you using a method that's sixty years old?"</p>
+<p>This is a fair challenge. The answer is honest, mathematical, and ultimately about one thing: <strong>how much data you have</strong>.</p>
+</div>
+
+<!-- ─── 1. WHAT ARIMA IS ─────────────────────────────── -->
+
+<h2>1. What ARIMA is</h2>
+
+<p>ARIMA stands for <strong>AutoRegressive Integrated Moving Average</strong>. It's a parametric model for time series that combines three mechanisms, each capturing a different kind of temporal structure.</p>
+
+<p><strong>AutoRegressive (AR):</strong> the current value depends on its own past values. An AR(1) model says:</p>
+<div class="display-math">$$X_t = \phi_1 X_{t-1} + \varepsilon_t$$</div>
+<p>where $\phi_1$ is the autoregressive coefficient (measuring how strongly the present depends on the immediate past) and $\varepsilon_t$ is white noise — independent, identically distributed random shocks with mean 0 and variance $\sigma^2$. This captures <strong>momentum</strong>: if revenue was high last month, it tends to be high this month too. The parameter $|\phi_1| < 1$ ensures the process is stationary (it doesn't explode).</p>
+
+<p><strong>Integrated (I):</strong> many real-world series aren't stationary — they trend upward or downward over time. <strong>Differencing</strong> removes the trend. Define the <strong>backshift operator</strong> $B$ by $BX_t = X_{t-1}$. The first difference is:</p>
+<div class="display-math">$$Y_t = X_t - X_{t-1} = (1 - B)X_t$$</div>
+<p>If $Y_t$ is stationary but $X_t$ isn't, we say $X_t$ is "integrated of order 1" and write $d = 1$. Differencing twice ($d = 2$) removes quadratic trends, but in practice $d = 1$ handles most business data.</p>
+
+<p><strong>Moving Average (MA):</strong> the current value depends on past forecast errors. An MA(1) model says:</p>
+<div class="display-math">$$X_t = \varepsilon_t + \theta_1 \varepsilon_{t-1}$$</div>
+<p>where $\theta_1$ measures how strongly a past shock echoes into the present. This captures the effect of one-off events that linger: a viral marketing campaign that boosts revenue for two months before fading, or a supply disruption that affects the current and next period.</p>
+
+<p>Combine all three into <strong>ARIMA$(p, d, q)$</strong>, where $p$ = number of AR terms, $d$ = order of differencing, $q$ = number of MA terms. The general ARIMA(1,1,1) model is written compactly as:</p>
+
+<div class="display-math">$$(1 - \phi_1 B)(1 - B)X_t = (1 + \theta_1 B)\varepsilon_t$$</div>
+
+<p>Expand the left side. $(1 - \phi_1 B)(1 - B) = 1 - B - \phi_1 B + \phi_1 B^2$, so:</p>
+
+<div class="display-math">$$X_t - X_{t-1} - \phi_1 X_{t-1} + \phi_1 X_{t-2} = \varepsilon_t + \theta_1 \varepsilon_{t-1}$$</div>
+
+<p>Rearranging:</p>
+
+<div class="display-math">$$X_t = (1 + \phi_1)X_{t-1} - \phi_1 X_{t-2} + \varepsilon_t + \theta_1 \varepsilon_{t-1}$$</div>
+
+<p>This is a concrete prediction formula: given the last two observations and the last error, predict the next value. The parameters $\phi_1$, $\theta_1$, and $\sigma^2$ must be estimated from data — that's 3 parameters for this simple specification.</p>
+
+<!-- ─── 2. SEASONAL ARIMA ─────────────────────────────── -->
+
+<h2>2. Seasonal ARIMA</h2>
+
+<p>Monthly data with annual seasonality requires <strong>seasonal terms</strong> that operate at lag 12 (one full year back) instead of lag 1. The notation is ARIMA$(p, d, q)(P, D, Q)_{12}$, where uppercase letters denote seasonal components:</p>
+
+<ul>
+<li>$P$ = seasonal AR order (dependence on the same month last year)</li>
+<li>$D$ = seasonal differencing order (removes repeating yearly patterns)</li>
+<li>$Q$ = seasonal MA order (seasonal shocks that echo)</li>
+</ul>
+
+<p>The "workhorse" seasonal model is ARIMA$(1,1,1)(1,1,1)_{12}$. Written out:</p>
+
+<div class="display-math">$$(1 - \phi_1 B)(1 - \Phi_1 B^{12})(1 - B)(1 - B^{12})X_t = (1 + \theta_1 B)(1 + \Theta_1 B^{12})\varepsilon_t$$</div>
+
+<p>Count the <strong>parameters to estimate</strong>:</p>
+<ul>
+<li>$\phi_1$ — non-seasonal AR coefficient</li>
+<li>$\theta_1$ — non-seasonal MA coefficient</li>
+<li>$\Phi_1$ — seasonal AR coefficient</li>
+<li>$\Theta_1$ — seasonal MA coefficient</li>
+<li>$\sigma^2$ — noise variance</li>
+</ul>
+
+<p>That's <strong>5 parameters</strong>. Not many in absolute terms — but everything depends on how many data points you have to estimate them from.</p>
+
+<!-- ─── 3. WHAT X-13ARIMA ADDS ─────────────────────────────── -->
+
+<h2>3. What X-13ARIMA-SEATS adds</h2>
+
+<p>The raw ARIMA model is the mathematical engine. X-13ARIMA-SEATS wraps it with a full suite of practical tools:</p>
+
+<ul>
+<li><strong>Automatic model selection:</strong> tests multiple $(p,d,q)(P,D,Q)$ combinations using AIC (Akaike Information Criterion) and BIC (Bayesian Information Criterion) to pick the best-fitting parsimonious model.</li>
+<li><strong>Trading-day adjustment:</strong> months have different numbers of Mondays, Tuesdays, etc. A month with 23 working days generates more B2B revenue than one with 20. X-13 fits regression coefficients for each day-of-week effect.</li>
+<li><strong>Easter and holiday effects:</strong> Easter moves between March and April, shifting spending patterns. X-13 models this variable-date effect explicitly.</li>
+<li><strong>Outlier detection:</strong> identifies and adjusts for three types — additive outliers (one-off spikes), level shifts (permanent step changes), and temporary changes (effects that decay).</li>
+<li><strong>Diagnostic tests:</strong> checks residual autocorrelation, spectral peaks at seasonal frequencies, and sliding-span stability (do the seasonal factors change if you shift the estimation window?).</li>
+</ul>
+
+<p>It's a sophisticated, battle-tested system. For the kind of data it was designed for — monthly GDP, employment, retail trade, industrial production — it's the right tool. These series have hundreds or thousands of observations, exhibit complex seasonal patterns with trading-day effects, and are updated continuously for decades.</p>
+
+<!-- ─── 4. WHAT IT NEEDS ─────────────────────────────── -->
+
+<h2>4. What it needs: data</h2>
+
+<p>Here's the crux. The ONS recommends <strong>at least 7 years</strong> (84 monthly observations) for reliable X-13ARIMA seasonal adjustment. The US Census Bureau says 5 years (60 observations) as a "minimum acceptable." Eurostat guidelines specify "at least 3 years, preferably 5 or more." The Bank of England's seasonal adjustment policy requires 5 years as a starting point.</p>
+
+<p>Why so much? Because the model must:</p>
+<ol>
+<li><strong>Identify the correct model orders</strong> $(p,d,q)(P,D,Q)$ from autocorrelation and partial autocorrelation patterns. These patterns only stabilise with enough repetitions of the seasonal cycle.</li>
+<li><strong>Estimate 3–7 parameters</strong> with enough degrees of freedom for confidence intervals to be meaningful. With 5 parameters and 12 effective data points, you have 7 degrees of freedom — barely enough for a single t-test, let alone model comparison.</li>
+<li><strong>Detect outliers</strong> without mistaking regular seasonal variation for anomalies. With one year of data, is a December spike an outlier or a seasonal effect? You can't tell.</li>
+<li><strong>Separate trading-day effects from seasonal effects.</strong> Both repeat annually, but through different mechanisms. Disentangling them requires seeing many years where the trading-day composition varies.</li>
+</ol>
+
+<p>Each of these tasks requires seeing the seasonal cycle repeat <em>multiple</em> times. One cycle isn't a pattern — it's an anecdote. Two cycles might be coincidence. Five cycles start to look like a pattern. Seven cycles give you statistical confidence.</p>
+
+<!-- ─── 5. THE DEGREES OF FREEDOM CRISIS ─────────────────────────────── -->
+
+<h2>5. The degrees-of-freedom crisis</h2>
+
+<p>A typical small business provides 12–24 months of historical data. Let's count what ARIMA actually needs versus what's available.</p>
+
+<p>For the standard seasonal ARIMA$(1,1,1)(1,1,1)_{12}$:</p>
+
+<p><strong>Parameters to estimate:</strong> $\phi_1, \theta_1, \Phi_1, \Theta_1, \sigma^2$ — that's $k = 5$.</p>
+
+<p><strong>Data consumed by differencing:</strong></p>
+<ul>
+<li>One regular difference $(d = 1)$: loses 1 observation.</li>
+<li>One seasonal difference $(D = 1)$: loses 12 observations (one full year).</li>
+<li>Combined: $1 + 12 = 13$ observations consumed before estimation even begins.</li>
+</ul>
+
+<p><strong>Effective sample size:</strong> $n_{\text{eff}} = n - 13$.</p>
+
+<p><strong>Residual degrees of freedom:</strong> $\text{df} = n_{\text{eff}} - k = n - 18$.</p>
+
+<p>Now apply this to realistic data volumes:</p>
+
+<p>With $n = 12$ (one year): $n_{\text{eff}} = 12 - 13 = -1$. <strong>Negative.</strong> The model cannot even be differenced. You can't form a single differenced observation, let alone estimate any parameters. The model is mathematically impossible.</p>
+
+<p>With $n = 24$ (two years): $n_{\text{eff}} = 24 - 13 = 11$. Degrees of freedom: $11 - 5 = 6$. You're estimating 5 parameters from 11 effective observations — nearly half the data is consumed by the model itself. Parameter standard errors will be enormous. Confidence intervals will span from negative to positive values, meaning you can't even determine the <em>sign</em> of most coefficients. Model selection via AIC/BIC is meaningless: every candidate model fits the noise equally well.</p>
+
+<p>With $n = 36$ (three years): $n_{\text{eff}} = 23$, df $= 18$. Better, but still below the 30-df rule of thumb for asymptotic results (like maximum likelihood estimation) to be reliable. The Census Bureau considers this insufficient for production seasonal adjustment.</p>
+
+<p>With $n = 60$ (five years): $n_{\text{eff}} = 47$, df $= 42$. <em>Now</em> the model has room to breathe. Parameter estimates stabilise. Diagnostic tests have statistical power. Model selection becomes meaningful. This is the Census Bureau's minimum for a reason.</p>
+
+<!-- ─── 6. THE HONEST CHOICE ─────────────────────────────── -->
+
+<h2>6. The honest choice</h2>
+
+<p>The ratio-to-moving-average method from Pages 1–4 makes <strong>far fewer assumptions</strong>:</p>
+
+<ul>
+<li>No parametric model for the trend — it just averages over a window.</li>
+<li>No assumed error structure — no AR, MA, or distributional assumptions.</li>
+<li>No model selection step — there's nothing to overfit.</li>
+<li>Number of estimated parameters: <strong>zero</strong>. The method is entirely nonparametric.</li>
+</ul>
+
+<p>The tradeoff is real, and it cuts both ways. With 5+ years of good data, ARIMA extracts genuinely more signal: it captures trend momentum (the AR component), adjusts for trading-day composition, detects and corrects outliers automatically, and models the error structure for proper prediction intervals. The ratio-to-MA method misses all of this — it treats every year's observation with equal weight, can't distinguish trading-day effects from seasonal effects, and has no outlier detection.</p>
+
+<p>But with 12–24 months of data, ARIMA doesn't just extract less signal — it <strong>hallucinates</strong> signal. With 6 degrees of freedom, the model fits noise as if it were structure. The seasonal factors it produces look precise (four decimal places, confidence intervals, diagnostic p-values) but are actually artefacts of overfitting. A model that confidently reports "February is 3.217% below trend" based on two Februaries and five estimated parameters isn't measuring anything — it's telling a story.</p>
+
+<p>The ratio-to-MA method, with its single February data point, says "here's what February looked like" and nothing more. It's less informative but it's <em>honest</em>. It doesn't dress up ignorance as knowledge.</p>
+
+<!-- ─── 7. WHEN TO SWITCH ─────────────────────────────── -->
+
+<h2>7. When to switch</h2>
+
+<p>The decision rule is straightforward and based on the degrees-of-freedom analysis:</p>
+
+<ul>
+<li><strong>Under 36 months (< 3 years):</strong> ratio-to-moving-average only. ARIMA is mathematically indefensible at these sample sizes.</li>
+<li><strong>36–59 months (3–5 years):</strong> ratio-to-MA as the primary method. ARIMA can be run as a <em>cross-check</em> — if it broadly agrees with the simpler method, that's reassuring. If it disagrees, trust the simpler method and investigate why ARIMA diverges (likely model misspecification or outlier sensitivity).</li>
+<li><strong>60+ months (5+ years):</strong> X-13ARIMA-SEATS becomes the preferred method. The data can support it. Continue computing ratio-to-MA indices as a sanity check — if the two methods disagree by more than 5 percentage points on any monthly index, investigate the ARIMA specification.</li>
+</ul>
+
+<p>Most small businesses seeking a three-way forecast have 12–24 months of historical data. They're firmly in the first category. That's not a failing of the forecasting model — it's a reality of the data environment. You use the method the data can support.</p>
+
+<p>There's also a <strong>transparency</strong> argument. The ratio-to-MA method can be explained to a non-statistician in five minutes: "we average out the seasonal cycle, divide to see the pattern, then normalise." Try explaining ARIMA$(1,1,1)(1,1,1)_{12}$ with backshift operators to a business owner. The simpler method produces indices that anyone can verify by hand — pull up a spreadsheet, check the arithmetic. ARIMA produces indices via maximum likelihood estimation of a state-space model — even the auditor needs specialist software to reproduce the output. When your audience is a CFO, a lender, or an investor, interpretability matters as much as statistical power.</p>
+
+<h2>8. What both methods agree on</h2>
+
+<p>Despite their different mathematical machinery, both methods share core assumptions that are worth stating explicitly:</p>
+
+<ul>
+<li><strong>The seasonal pattern is stable.</strong> Both assume that December's seasonal index this year is the same as December's index next year. If the business is undergoing structural change — shifting from retail to online, expanding into a new market, changing its product mix — the historical seasonal pattern may not apply going forward. Neither method can detect this from short data.</li>
+<li><strong>The multiplicative model holds.</strong> Both assume seasonal effects are proportional, not additive. For most business revenue, this is correct. For cost items with large fixed components, it's not — which is why we introduced dampening on Page 4.</li>
+<li><strong>The trend is locally smooth.</strong> The CMA assumes the trend doesn't jump abruptly. ARIMA assumes the differenced series is stationary. Both break if the business hits a step change (e.g., losing its largest client, opening a second location).</li>
+</ul>
+
+<p>The choice between ratio-to-MA and ARIMA is about <em>how much structure to impose</em> beyond these shared assumptions. With scarce data, impose less. With abundant data, impose more. The mathematics is clear on where the boundary lies.</p>
+
+<!-- ─── 9. EXERCISES ─────────────────────────────── -->
+
+<h2>9. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — Degrees of freedom count</div>
+<p>For an ARIMA$(1,1,1)(1,1,1)_{12}$ model, compute the effective sample size and residual degrees of freedom for $n = 12, 24, 36, 60, 84$ observations. At what sample size does the model first achieve at least 30 residual degrees of freedom?</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p>The model has $k = 5$ parameters: $\phi_1, \theta_1, \Phi_1, \Theta_1, \sigma^2$.</p>
+<p>Differencing consumes $d + D \times s = 1 + 1 \times 12 = 13$ observations.</p>
+<p>Effective sample size: $n_{\text{eff}} = n - 13$.</p>
+<p>Residual degrees of freedom: $\text{df} = n_{\text{eff}} - k = n - 13 - 5 = n - 18$.</p>
+
+<table>
+<tr><th>$n$ (months)</th><th>Years</th><th>$n_{\text{eff}}$</th><th>df</th><th>Assessment</th></tr>
+<tr><td>12</td><td>1</td><td>$-1$</td><td>$-6$</td><td>Impossible — cannot even difference the series</td></tr>
+<tr><td>24</td><td>2</td><td>11</td><td>6</td><td>Severely underpowered — estimates unreliable</td></tr>
+<tr><td>36</td><td>3</td><td>23</td><td>18</td><td>Marginal — below 30-df threshold</td></tr>
+<tr><td>60</td><td>5</td><td>47</td><td>42</td><td>Adequate — diagnostic tests have power</td></tr>
+<tr><td>84</td><td>7</td><td>71</td><td>66</td><td>Comfortable — standard for production use</td></tr>
+</table>
+
+<p>Setting $\text{df} \geq 30$: $n - 18 \geq 30$, so $n \geq 48$.</p>
+<p>The model first reaches 30 degrees of freedom at <strong>$n = 48$ months (4 years)</strong>.</p>
+<p>This aligns with the Census Bureau's 5-year recommendation: 60 months gives $\text{df} = 42$, which includes a safety margin for the additional degrees of freedom consumed by model selection, outlier adjustment, and trading-day regression. At 48 months you're at the bare minimum; at 60 months you have meaningful headroom.</p>
+
+<p><strong>The key insight:</strong> with 12 months — the typical small-business dataset — the model is not just underpowered. It is <em>impossible to fit</em>. There are fewer observations than the differencing step alone requires. This isn't a matter of "could do better with more data" — it's a hard mathematical impossibility.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — Applied: defending the method to an auditor</div>
+<p>A statistician auditor challenges your use of ratio-to-moving-average for a client with 18 months of monthly revenue data. Write a structured response covering: (a) why ARIMA is not appropriate, (b) what the simpler method does and does not capture, and (c) under what conditions you would recommend upgrading to X-13ARIMA-SEATS.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>(a) Why ARIMA fails with 18 months.</strong></p>
+<p>The simplest seasonal ARIMA specification capable of capturing annual seasonality is ARIMA$(1,1,1)(1,1,1)_{12}$. This requires estimating 5 parameters after losing 13 observations to regular and seasonal differencing. With $n = 18$:</p>
+<div class="display-math">$$n_{\text{eff}} = 18 - 13 = 5 \qquad \text{df} = 5 - 5 = 0$$</div>
+<p>Zero residual degrees of freedom. The model is exactly identified: it fits the 5 effective data points perfectly with 5 parameters, leaving zero capacity to distinguish signal from noise. Parameter confidence intervals are undefined. Model selection criteria (AIC, BIC) cannot discriminate between model structures. The software may converge to an arbitrary local optimum, producing seasonal factors that look precise but are entirely artefactual.</p>
+<p>Even relaxing to ARIMA$(0,1,1)(0,1,1)_{12}$ — the simplest non-trivial seasonal model — still requires 3 parameters ($\theta_1, \Theta_1, \sigma^2$) with $n_{\text{eff}} = 5$, giving $\text{df} = 2$. Two degrees of freedom cannot support any meaningful diagnostic test.</p>
+
+<p><strong>(b) What ratio-to-moving-average captures.</strong></p>
+<p>The method computes a 12-month centred moving average to estimate the trend, divides observed values by the trend to isolate the seasonal-irregular component, then averages by calendar month and normalises. With 18 months, the CMA is defined for months 7–12 (six points), giving one ratio per calendar month for six months and none for the other six. This is thin — but it is transparently thin.</p>
+<p>The method makes no parametric assumptions, estimates no parameters, and cannot overfit. The resulting indices reflect what actually happened in the historical data, without a model interpolating or extrapolating between observations. For months with no SI value, the algorithm flags the gap rather than inventing a number.</p>
+<p>What it misses: trend momentum (AR effects), trading-day composition, automatic outlier detection, and error-structure modelling. If an anomalous month occurred in the data, its effect flows directly into the seasonal index with no correction. With more data, these limitations would become relevant. With 18 months, they are secondary concerns — there simply isn't enough data for any method to reliably detect these effects.</p>
+
+<p><strong>(c) When to upgrade.</strong></p>
+<p>Once the client has accumulated 48–60 months of monthly data (4–5 years), we would recommend re-running the decomposition using X-13ARIMA-SEATS. At that point, the seasonal ARIMA model has 30+ degrees of freedom, model selection criteria become statistically meaningful, and automatic outlier detection adds genuine analytical value.</p>
+<p>We would continue computing the ratio-to-MA indices as a parallel cross-check. If the two methods agree within ±5 percentage points on each monthly index, confidence in the ARIMA result is high. If they disagree on any month by more than 5 points, the ARIMA model specification should be reviewed — the disagreement likely indicates model misspecification, insufficient data for the chosen model order, or an undetected structural break.</p>
+<p>In summary: we chose the simpler method because the data cannot support the more complex one. Applying ARIMA to 18 months would produce results that appear more sophisticated but are mathematically less trustworthy. The ratio-to-MA method is an honest representation of what 18 months of data can tell us.</p>
+</div>
+</details>
+</div>
+
+<!-- ─── HISTORY ─────────────────────────────── -->
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p>The lineage runs six decades. <strong>X-11</strong> (1965, US Census Bureau, Julius Shiskin) used iterative moving averages — essentially a sophisticated, multi-pass version of the ratio-to-MA method on this page. <strong>X-11-ARIMA</strong> (1975, Statistics Canada, Estela Bee Dagum) added ARIMA forecasting to extend the series before applying X-11's filters, reducing the end-of-series data-loss problem. <strong>X-12-ARIMA</strong> (1998, US Census Bureau) automated model selection and added regression-based pre-adjustment for trading days, holidays, and outliers. <strong>X-13ARIMA-SEATS</strong> (2012) integrated the SEATS (Signal Extraction in ARIMA Time Series) algorithm developed by Agustín Maravall at the Bank of Spain, offering a model-based alternative to X-11's nonparametric filters.</p>
+<p>The original ARIMA methodology was published in 1970 by George Box and Gwilym Jenkins — <em>Time Series Analysis: Forecasting and Control</em> — and remains one of the most cited statistics books ever written. The Box-Jenkins approach of "identify, estimate, diagnose" became the standard framework for applied time-series modelling.</p>
+</div>
+
+<!-- ─── WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>If you use ARIMA with 12 data points:</strong> seasonal differencing alone consumes 12 observations, leaving zero. Even skipping seasonal differencing and fitting a simpler ARIMA$(1,1,1)$, you have $12 - 1 = 11$ effective observations and $11 - 3 = 8$ degrees of freedom. The model will find "patterns" in pure noise — a phenomenon called <strong>overfitting</strong>. A concrete symptom: change a single observation by £1,000 and the seasonal factors shift dramatically. This <strong>parameter instability</strong> — where small data changes produce large model changes — is the hallmark of a model with insufficient data. No auditor can verify a result that would change if you corrected a single invoice.</p>
+<p><strong>If you use ratio-to-MA with 10 years of data:</strong> you're leaving information on the table. The method weights January 2016 and January 2025 equally when computing the January index, even though the business and its seasonal pattern may have evolved substantially. It cannot detect that seasonal shape has changed (e.g., Black Friday shifting November sales). It ignores trading-day effects entirely — a February with 20 working days looks the same as one with 19. With 120 observations, these effects are estimable and ignoring them introduces systematic error that grows over the forecast horizon.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">Use the method the data can support. With 12–24 months, that's ratio-to-moving-average. With 60+, it's X-13ARIMA-SEATS. Anything else is pretending you know more than you do.</div>
+
+<div class="nav">
+<a href="04-dampened-seasonality.html">← Prev: Dampened Seasonality</a>
+<a href="../phase3/01-double-entry.html">Next: Double Entry →</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Double-Entry as a Conservation Law — Phase 3</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Double-Entry as a Conservation Law</h1>
+<p class="subtitle">Phase 3 — The Accounting Identity, Page 1</p>
+
+<div class="problem-box">
+  <div class="label">The problem</div>
+  <p>You are projecting 30+ line items — revenue, costs, trade receivables, payables, tax accruals, fixed assets, loans, cash. Each evolves week by week according to its own formula. How do you ensure <em>internal consistency</em>? If you project each item independently, nothing guarantees the numbers add up. You need a mathematical constraint that forces every projection to cohere — an invariant that, if violated, immediately signals an error.</p>
+</div>
+
+<h2>1. The Fundamental Equation</h2>
+
+<p>Every business has <strong>assets</strong> — things it owns or is owed. Cash in the bank, equipment in the warehouse, invoices customers haven't paid yet. It also has <strong>liabilities</strong> — things it owes to others. Supplier invoices not yet paid, tax due to HMRC, bank loans. The difference between what you own and what you owe is the owners' claim, called <strong>equity</strong>.</p>
+
+<p>The fundamental insight of accounting is that these three quantities are not independent:</p>
+
+<div class="theorem-box">
+  <div class="label">Theorem — The Accounting Identity</div>
+  <p>At any point in time, for any entity:</p>
+  <div class="display-math">$$A = L + E$$</div>
+  <p>where $A$ is total assets, $L$ is total liabilities, and $E$ is total equity. This is not an approximation — it is an <strong>exact identity</strong>, maintained by construction.</p>
+</div>
+
+<p>Why is this true? Because equity is <em>defined</em> as the residual: $E = A - L$. What you own, minus what you owe, equals the owners' stake. Rearranging gives $A = L + E$. Every pound of assets is financed by either a creditor (liability) or an owner (equity). There is nowhere else for it to come from.</p>
+
+<p>This is a <strong>conservation law</strong>. In physics, energy is conserved — it changes form but never appears or disappears. Similarly, in accounting, every transaction must affect both sides equally. If assets increase, either liabilities or equity must increase to match — or another asset must decrease by the same amount. The total is always in balance.</p>
+
+<p>To make this concrete, consider a simple example. A company has £80,000 in assets (£50,000 cash + £30,000 equipment), £20,000 in liabilities (a bank loan), and £60,000 in equity (£40,000 share capital + £20,000 retained earnings). Check: $80{,}000 = 20{,}000 + 60{,}000$. Now suppose the company buys £5,000 of inventory on credit. Assets increase by £5,000 (inventory), liabilities increase by £5,000 (payable to supplier). New totals: $85{,}000 = 25{,}000 + 60{,}000$. The identity is maintained — not approximately, but exactly.</p>
+
+<p>We can decompose equity further. Equity typically consists of <strong>share capital</strong> (money shareholders paid in) and <strong>retained earnings</strong> (accumulated profits not yet distributed as dividends):</p>
+
+<div class="display-math">$$E = \text{share\_capital} + \text{retained\_earnings}$$</div>
+
+<p>Retained earnings is the bridge between the balance sheet and the P&L. Every pound of profit increases retained earnings; every pound of loss decreases it. This is how the flow statement (P&L) feeds into the stock statement (BS).</p>
+
+<h2>2. Transactions Preserve the Invariant</h2>
+
+<p>Let us trace six common transactions and verify that $A = L + E$ holds after each one. We start with a balance sheet where $A = L + E = \text{£}100{,}000$.</p>
+
+<h3>Transaction 1: Invoice issued (£5,000)</h3>
+<p>You deliver a service and raise a sales invoice. Revenue of £5,000 is recognised in the P&L. The customer hasn't paid yet, so no cash moves. Instead:</p>
+<ul>
+  <li><strong>Assets</strong>: Trade receivables increase by £5,000</li>
+  <li><strong>Equity</strong>: Retained earnings increase by £5,000 (via revenue flowing through the P&L)</li>
+</ul>
+<p>Before: $A = 100{,}000$, $L + E = 100{,}000$. After: $A = 105{,}000$, $L + E = 105{,}000$. Both sides increased by £5,000. Identity holds.</p>
+
+<h3>Transaction 2: Cash received from customer (£5,000)</h3>
+<p>The customer pays the invoice from Transaction 1. Cash arrives in the bank:</p>
+<ul>
+  <li><strong>Assets</strong>: Cash increases by £5,000; Trade receivables decrease by £5,000</li>
+</ul>
+<p>Two assets swap — one goes up, the other goes down by exactly the same amount. Total $A$ is unchanged. $L$ and $E$ are unchanged. This is a <strong>same-side swap</strong>: the composition of assets changed, but their total did not.</p>
+
+<h3>Transaction 3: Bill paid (£2,000)</h3>
+<p>You pay a supplier for goods already received and recorded as a payable:</p>
+<ul>
+  <li><strong>Assets</strong>: Cash decreases by £2,000</li>
+  <li><strong>Liabilities</strong>: Trade payables decrease by £2,000</li>
+</ul>
+<p>$A$ decreased by £2,000. $L$ decreased by £2,000. $E$ unchanged. Both sides of the identity decrease equally. The equation $A = L + E$ is preserved.</p>
+
+<h3>Transaction 4: Loan taken (£20,000)</h3>
+<p>The bank lends you £20,000. The money arrives in your current account:</p>
+<ul>
+  <li><strong>Assets</strong>: Cash increases by £20,000</li>
+  <li><strong>Liabilities</strong>: Loan increases by £20,000</li>
+</ul>
+<p>Both sides increase equally. No effect on equity — borrowing doesn't create profit.</p>
+
+<h3>Transaction 5: Depreciation charge (£500)</h3>
+<p>Your equipment loses £500 of book value this week. This is an expense in the P&L, but <em>no cash moves</em>:</p>
+<ul>
+  <li><strong>Assets</strong>: PPE (property, plant, equipment) decreases by £500</li>
+  <li><strong>Equity</strong>: Retained earnings decrease by £500 (via depreciation expense in P&L)</li>
+</ul>
+<p>$A$ down £500. $E$ down £500. $L$ unchanged. Both sides decrease equally.</p>
+
+<h3>Transaction 6: Operating expense paid in cash (£3,000)</h3>
+<p>You pay monthly rent of £3,000 from the bank account:</p>
+<ul>
+  <li><strong>Assets</strong>: Cash decreases by £3,000</li>
+  <li><strong>Equity</strong>: Retained earnings decrease by £3,000 (via rent expense in P&L)</li>
+</ul>
+<p>$A$ down £3,000. $E$ down £3,000. Identity holds.</p>
+
+<p>Every transaction falls into one of these patterns: both sides move by the same amount in the same direction, or items on the same side swap without changing the total. The identity is preserved every time, for every transaction, without exception.</p>
+
+<p>Let us tabulate all six transactions to see the running balance sheet evolve:</p>
+
+<table>
+  <tr><th>After</th><th>Cash</th><th>AR</th><th>PPE</th><th>Total A</th><th>AP</th><th>Loan</th><th>RE</th><th>Total L+E</th></tr>
+  <tr><td>Start</td><td>—</td><td>—</td><td>—</td><td>£100,000</td><td>—</td><td>—</td><td>—</td><td>£100,000</td></tr>
+  <tr><td>Txn 1</td><td>—</td><td>+5,000</td><td>—</td><td>£105,000</td><td>—</td><td>—</td><td>+5,000</td><td>£105,000</td></tr>
+  <tr><td>Txn 2</td><td>+5,000</td><td>-5,000</td><td>—</td><td>£105,000</td><td>—</td><td>—</td><td>—</td><td>£105,000</td></tr>
+  <tr><td>Txn 3</td><td>-2,000</td><td>—</td><td>—</td><td>£103,000</td><td>-2,000</td><td>—</td><td>—</td><td>£103,000</td></tr>
+  <tr><td>Txn 4</td><td>+20,000</td><td>—</td><td>—</td><td>£123,000</td><td>—</td><td>+20,000</td><td>—</td><td>£123,000</td></tr>
+  <tr><td>Txn 5</td><td>—</td><td>—</td><td>-500</td><td>£122,500</td><td>—</td><td>—</td><td>-500</td><td>£122,500</td></tr>
+  <tr><td>Txn 6</td><td>-3,000</td><td>—</td><td>—</td><td>£119,500</td><td>—</td><td>—</td><td>-3,000</td><td>£119,500</td></tr>
+</table>
+
+<p>At every row, Total A = Total L+E. The identity never wavers.</p>
+
+<h2>3. The Three Financial Statements</h2>
+
+<p>A business produces three linked statements. Understanding their relationship is essential before we project them.</p>
+
+<p>The <strong>Profit and Loss statement (P&L)</strong> measures <em>flows over a period</em>. Revenue minus costs equals profit. It tells you how much value the business created (or destroyed) during a given week, month, or year. Think of it as a speedometer — it measures the rate. We project this in <a href="02-projected-pl.html">Page 2</a>.</p>
+
+<p>The <strong>Balance Sheet (BS)</strong> measures <em>stocks at a point in time</em>. It lists everything the business owns and owes on a specific date. It is the embodiment of $A = L + E$. Think of it as an odometer — it measures the cumulative position. We project this in <a href="03-balance-sheet.html">Page 3</a>.</p>
+
+<p>The <strong>Cash Flow Statement (CF)</strong> explains <em>how the stock of cash changed</em>. The P&L includes non-cash items (like depreciation) and timing differences (like revenue recognised before cash is received). The CF statement reconciles the P&L with the actual movement in the cash balance. We derive this in <a href="04-cash-flow-statement.html">Page 4</a>.</p>
+
+<p>Think of it this way: the P&L is a video — it captures what happened over a period. The BS is a photograph — it captures the state at a single moment. The CF statement is the explanation of how one photograph became the next.</p>
+
+<p>The connections between the three:</p>
+<ul>
+  <li>Net profit from the P&L feeds into retained earnings on the BS</li>
+  <li>But profit is not the same as cash — you can be profitable and run out of cash (customers haven't paid, tax bills are due, equipment was purchased)</li>
+  <li>The CF statement bridges this gap: it starts from profit and adjusts for every non-cash item and every timing difference to arrive at actual cash movement</li>
+  <li>The closing cash on the CF statement must equal the cash balance on the BS</li>
+</ul>
+
+<p>These three statements form a closed system. If one is wrong, at least one of the others must also be wrong. This is the power of the 3-way model.</p>
+
+<h2>4. Proof by Induction</h2>
+
+<div class="proof-box" id="proof-invariant-induction">
+  <div class="label">Proof — The accounting identity holds at all times</div>
+  <p><strong>Base case.</strong> At time $t = 0$ (incorporation), the company is set up with some initial assets funded by equity (share capital) and possibly liabilities (loans). By construction, $A_0 = L_0 + E_0$. For example, founders inject £20,000 of share capital: Cash (A) = £20,000, Share capital (E) = £20,000, and $20{,}000 = 0 + 20{,}000$.</p>
+  <p><strong>Inductive step.</strong> Assume $A_k = L_k + E_k$ after $k$ transactions. Consider the $(k+1)$th transaction. It must be one of the following types:</p>
+  <ul>
+    <li><strong>Type I</strong> (same-side swap): one asset increases by $d$, another asset decreases by $d$. Then $\Delta A = +d - d = 0$, $\Delta L = 0$, $\Delta E = 0$. So $A_{k+1} = A_k = L_k + E_k = L_{k+1} + E_{k+1}$.</li>
+    <li><strong>Type II</strong> (asset-liability): $\Delta A = +d$, $\Delta L = +d$ (or both $-d$). Then $A_{k+1} = A_k + d = (L_k + E_k) + d = (L_k + d) + E_k = L_{k+1} + E_{k+1}$.</li>
+    <li><strong>Type III</strong> (asset-equity): $\Delta A = +d$, $\Delta E = +d$ (or both $-d$). Same argument: $A_{k+1} = A_k + d = L_k + (E_k + d) = L_{k+1} + E_{k+1}$.</li>
+    <li><strong>Type IV</strong> (liability-equity swap): $\Delta L = +d$, $\Delta E = -d$. Then $A_{k+1} = A_k = L_k + E_k = (L_k + d) + (E_k - d) = L_{k+1} + E_{k+1}$.</li>
+  </ul>
+  <p>Every possible double-entry transaction falls into one of these four types. In each case, $A_{k+1} = L_{k+1} + E_{k+1}$.</p>
+  <p><strong>Conclusion.</strong> By mathematical induction, $A_n = L_n + E_n$ for all $n \geq 0$. The identity holds after any finite sequence of valid double-entry transactions.</p>
+  <div class="qed">∎</div>
+</div>
+
+<p>Note the crucial qualifier: <em>valid double-entry</em> transactions. If someone records only one side of a transaction — say, cash goes down but nothing else changes — the identity breaks. This is precisely why double-entry exists: it makes single-sided errors structurally impossible.</p>
+
+<p>The proof also reveals something subtle: the identity does not depend on the <em>order</em> of transactions. Whether you process the loan before the invoice or after, the final balance sheet is the same (assuming no dependencies between them). This is because addition is commutative — the sequence of $+d$ and $-d$ adjustments produces the same total regardless of order. In the forecasting model, this means we can compute each line item independently for a given week, then assemble the balance sheet. We don't need to simulate individual transactions in sequence.</p>
+
+<h2>5. Why This Matters for Forecasting</h2>
+
+<p>In a 3-way forecast, you project all three statements simultaneously over 260 weeks. The accounting identity gives you a <strong>built-in error detector</strong>. If your projected balance sheet doesn't balance — if $A \neq L + E$ at any week — something is wrong. A line item was forgotten, a sign was flipped, a timing assumption is inconsistent.</p>
+
+<p>We will exploit this further in <a href="03-balance-sheet.html">Page 3</a>, where cash is computed as a <strong>plug</strong> — the value that forces $A = L + E$. This means cash is never projected independently; it falls out of getting everything else right. And we verify the result independently via the cash flow statement in <a href="04-cash-flow-statement.html">Page 4</a>.</p>
+
+<p>This is the architectural principle of the entire model: project revenues, costs, receivables, payables, tax accruals, fixed assets, and equity according to their own formulae. Derive cash as the residual. Then verify with a separate calculation. If they disagree, you have a bug — and you know it immediately.</p>
+
+<div class="history-box">
+  <div class="label">Historical note</div>
+  <p>In 1494, the Franciscan friar <a href="../mathematicians/pacioli.html">Luca Pacioli</a> published <em>Summa de Arithmetica, Geometria, Proportioni et Proportionalita</em>, a 615-page encyclopaedia of mathematics. Buried within it was a 27-page section titled <em>Particularis de computis et scripturis</em> — "Details of calculation and recording." This was the first published description of double-entry bookkeeping. Pacioli didn't invent the system — Venetian merchants had been using it for at least two centuries, and fragments survive from Florentine ledgers as early as 1299. But by codifying it in print, Pacioli made it teachable and universal. The core insight — that every transaction has two equal and opposite entries — has not changed in over 530 years. It is one of the most durable ideas in the history of applied mathematics.</p>
+</div>
+
+<div class="break-box">
+  <div class="label">What breaks</div>
+  <ul>
+    <li><strong>Single-entry tracking</strong> records only one side of each transaction. You know cash went down by £3,000, but you don't know whether it was an expense (reducing equity) or a debt repayment (reducing liabilities) or a prepayment (swapping one asset for another). Errors are invisible — there is no balancing check. You cannot detect if a transaction was recorded incorrectly, or missed entirely. Single-entry systems cannot produce a reliable balance sheet, and without a balance sheet, there is no 3-way model.</li>
+    <li><strong>Projecting cash independently</strong> from the balance sheet. If you forecast cash using one model and assets/liabilities using another, the balance sheet won't balance. The error compounds over time — a small inconsistency in week 1 grows as each subsequent week builds on incorrect prior values. Cash must be derived from the other items, not projected in isolation. This is why we use the plug approach.</li>
+  </ul>
+</div>
+
+<h2>6. Exercises</h2>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 1 — Invariant preservation (academic)</div>
+  <p>For each of the six transaction types in Section 2, write out the accounting identity before and after the transaction. Show algebraically that $A_{k+1} = L_{k+1} + E_{k+1}$ given $A_k = L_k + E_k$.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p><strong>Transaction 1 (invoice issued, £5,000):</strong></p>
+      <p>Before: $A_k = L_k + E_k$. After: $A_{k+1} = A_k + 5{,}000$, $L_{k+1} = L_k$, $E_{k+1} = E_k + 5{,}000$.</p>
+      <p>Check: $A_k + 5{,}000 = L_k + (E_k + 5{,}000) = L_k + E_k + 5{,}000$. Since $A_k = L_k + E_k$, this holds. Type III transaction.</p>
+      <p><strong>Transaction 2 (cash received, £5,000):</strong></p>
+      <p>$A_{k+1} = (A_k + 5{,}000 - 5{,}000) = A_k$, $L_{k+1} = L_k$, $E_{k+1} = E_k$.</p>
+      <p>$A_k = L_k + E_k$. Trivially holds. Type I transaction (same-side swap).</p>
+      <p><strong>Transaction 3 (bill paid, £2,000):</strong></p>
+      <p>$A_{k+1} = A_k - 2{,}000$, $L_{k+1} = L_k - 2{,}000$, $E_{k+1} = E_k$.</p>
+      <p>$A_k - 2{,}000 = (L_k - 2{,}000) + E_k = L_k + E_k - 2{,}000$. Holds. Type II.</p>
+      <p><strong>Transaction 4 (loan taken, £20,000):</strong></p>
+      <p>$A_{k+1} = A_k + 20{,}000$, $L_{k+1} = L_k + 20{,}000$, $E_{k+1} = E_k$.</p>
+      <p>$A_k + 20{,}000 = (L_k + 20{,}000) + E_k$. Holds. Type II.</p>
+      <p><strong>Transaction 5 (depreciation, £500):</strong></p>
+      <p>$A_{k+1} = A_k - 500$, $L_{k+1} = L_k$, $E_{k+1} = E_k - 500$.</p>
+      <p>$A_k - 500 = L_k + (E_k - 500)$. Holds. Type III.</p>
+      <p><strong>Transaction 6 (expense paid, £3,000):</strong></p>
+      <p>$A_{k+1} = A_k - 3{,}000$, $L_{k+1} = L_k$, $E_{k+1} = E_k - 3{,}000$.</p>
+      <p>$A_k - 3{,}000 = L_k + (E_k - 3{,}000)$. Holds. Type III.</p>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 2 — Build a balance sheet (applied)</div>
+  <p>A company starts with: Cash £50,000, no receivables, PPE £30,000, no payables, Loan £20,000, Share capital £40,000, Retained earnings £20,000. Verify $A = L + E$. Then process these transactions in order:</p>
+  <ol>
+    <li>Issue sales invoice for £8,000</li>
+    <li>Record a purchase on credit: goods worth £3,000 received, creating a £3,000 payable and £3,000 expense</li>
+    <li>Pay the £3,000 payable from cash</li>
+    <li>Receive £5,000 cash from customer (partial payment of the £8,000 invoice)</li>
+    <li>Depreciation charge of £250</li>
+    <li>Take additional loan of £10,000</li>
+  </ol>
+  <p>After each transaction, state the updated values of every BS item and verify $A = L + E$. Compute the final balance sheet.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p><strong>Opening:</strong> Cash £50,000 + AR £0 + PPE £30,000 = A £80,000. Loan £20,000 + SC £40,000 + RE £20,000 = L+E £80,000. Balanced.</p>
+      <p><strong>After (1) — invoice issued:</strong> AR becomes £8,000, RE becomes £28,000. A = £50,000 + £8,000 + £30,000 = £88,000. L+E = £20,000 + £40,000 + £28,000 = £88,000.</p>
+      <p><strong>After (2) — purchase on credit:</strong> AP created at £3,000, RE drops to £25,000 (expense). A unchanged at £88,000. L+E = £23,000 + £40,000 + £25,000 = £88,000.</p>
+      <p><strong>After (3) — pay payable:</strong> Cash drops to £47,000, AP drops to £0. A = £47,000 + £8,000 + £30,000 = £85,000. L+E = £20,000 + £40,000 + £25,000 = £85,000.</p>
+      <p><strong>After (4) — cash from customer:</strong> Cash rises to £52,000, AR drops to £3,000. A = £52,000 + £3,000 + £30,000 = £85,000. L+E unchanged at £85,000.</p>
+      <p><strong>After (5) — depreciation:</strong> PPE drops to £29,750, RE drops to £24,750. A = £52,000 + £3,000 + £29,750 = £84,750. L+E = £20,000 + £40,000 + £24,750 = £84,750.</p>
+      <p><strong>After (6) — loan:</strong> Cash rises to £62,000, Loan rises to £30,000. A = £62,000 + £3,000 + £29,750 = £94,750. L+E = £30,000 + £40,000 + £24,750 = £94,750.</p>
+      <p><strong>Final balance sheet:</strong></p>
+      <table>
+        <tr><th>Assets</th><th></th><th>Liabilities + Equity</th><th></th></tr>
+        <tr><td>Cash</td><td>£62,000</td><td>Loan</td><td>£30,000</td></tr>
+        <tr><td>Trade receivables</td><td>£3,000</td><td>Share capital</td><td>£40,000</td></tr>
+        <tr><td>PPE</td><td>£29,750</td><td>Retained earnings</td><td>£24,750</td></tr>
+        <tr><td><strong>Total</strong></td><td><strong>£94,750</strong></td><td><strong>Total</strong></td><td><strong>£94,750</strong></td></tr>
+      </table>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 3 — Classify the transaction type (academic)</div>
+  <p>For each scenario, state whether it is Type I (same-side swap), Type II (asset-liability), Type III (asset-equity), or Type IV (liability-equity swap), as defined in the proof above:</p>
+  <ol>
+    <li>Sell old equipment for its book value</li>
+    <li>Receive a government grant (no repayment obligation)</li>
+    <li>Convert a loan into shares (debt-for-equity swap)</li>
+    <li>Write off a bad debt (customer will never pay)</li>
+    <li>Pay a dividend from retained earnings</li>
+  </ol>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p><strong>(1) Sell equipment at book value:</strong> Cash up, PPE down. Two assets swap. <strong>Type I.</strong></p>
+      <p><strong>(2) Government grant:</strong> Cash up (asset), revenue recognised → RE up (equity). <strong>Type III.</strong></p>
+      <p><strong>(3) Debt-for-equity swap:</strong> Loan down (liability), share capital up (equity). $\Delta L = -d$, $\Delta E = +d$. <strong>Type IV.</strong></p>
+      <p><strong>(4) Bad debt write-off:</strong> AR down (asset), RE down via expense (equity). <strong>Type III</strong> (both negative).</p>
+      <p><strong>(5) Dividend:</strong> Cash down (asset), RE down (equity). <strong>Type III</strong> (both negative).</p>
+    </div>
+  </details>
+</div>
+
+<hr>
+
+<div class="oneliner">Every pound of assets is funded by either a creditor or an owner — this is the invariant that holds the entire forecast together.</div>
+
+<div class="nav">
+  <a href="../phase2/05-why-not-arima.html">&larr; Why Not ARIMA?</a>
+  <a href="02-projected-pl.html">Next: The Projected P&L &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body>
+</html>

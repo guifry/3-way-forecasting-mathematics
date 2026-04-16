@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSO, DPO, and the Cash Conversion Cycle — Phase 4</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>DSO, DPO, and the Cash Conversion Cycle</h1>
+<p class="subtitle">Phase 4 — Working Capital Dynamics, Page 1</p>
+
+<!-- ─── 1. THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>Your business earns £100k in January. The P&L says so. But your bank account doesn't see that £100k on 31 January — because customers haven't paid yet. Some pay in 25 days, some in 35, one might take 180. Meanwhile, you owe your suppliers, and <em>they</em> expect payment on their own schedule.</p>
+<p>Revenue is not cash. The gap between earning and receiving — and between incurring cost and paying — is the beating heart of working capital. This page gives you the mathematics to measure that gap precisely.</p>
+</div>
+
+<!-- ─── 2. DSO ─────────────────────────────── -->
+
+<h2>1. Days Sales Outstanding</h2>
+
+<p><strong>Days Sales Outstanding (DSO)</strong> measures the typical number of days between issuing an invoice and receiving payment. It answers the question: "how long does it take customers to pay?"</p>
+
+<div class="theorem-box">
+<div class="label">Definition — DSO</div>
+<p>Let $d_1, d_2, \ldots, d_n$ be the payment delays (in days) for $n$ invoices in a period. The <strong>Days Sales Outstanding</strong> is</p>
+<div class="display-math">$$\text{DSO} = \text{Med}(d_1, d_2, \ldots, d_n)$$</div>
+<p>where $\text{Med}$ denotes the median as defined in Phase 0, page 1.</p>
+</div>
+
+<h3>Why median, not mean?</h3>
+
+<p>We established in <a href="../phase0/01-mean-and-median.html">Phase 0, page 1</a> that the median is robust to outliers whilst the mean is not. Payment delays are precisely the kind of data plagued by outliers — a disputed invoice, a client in administration, a forgotten payment. One 180-day-late invoice shouldn't set the tone for your entire cash forecast.</p>
+
+<p>Let's make this concrete. Consider 10 invoices with the following payment delays (in days), already sorted:</p>
+
+<div class="display-math">$$22,\; 25,\; 28,\; 29,\; 30,\; 31,\; 32,\; 35,\; 38,\; 180$$</div>
+
+<p><strong>Mean:</strong></p>
+<div class="display-math">$$\bar{d} = \frac{22 + 25 + 28 + 29 + 30 + 31 + 32 + 35 + 38 + 180}{10} = \frac{450}{10} = 45 \text{ days}$$</div>
+
+<p>That's higher than 9 of the 10 values. The mean says "typical" is 45 days, yet the vast majority of customers pay around 30.</p>
+
+<p><strong>Median:</strong> With $n = 10$, take positions 5 and 6:</p>
+<div class="display-math">$$\text{Med} = \frac{d_{(5)} + d_{(6)}}{2} = \frac{30 + 31}{2} = 30.5 \text{ days}$$</div>
+
+<p>The median gives the "typical" delay — right in the cluster. The outlier is still visible in the data, but it doesn't hijack the summary statistic. If you used the mean to forecast when January's £100k would arrive, you'd predict it 15 days later than reality for most invoices.</p>
+
+<!-- ─── 3. DPO ─────────────────────────────── -->
+
+<h2>2. Days Payable Outstanding</h2>
+
+<p><strong>Days Payable Outstanding (DPO)</strong> is the mirror image of DSO. It measures how long <em>you</em> take to pay your suppliers.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — DPO</div>
+<p>Let $p_1, p_2, \ldots, p_m$ be the payment delays (in days) for $m$ supplier invoices in a period. The <strong>Days Payable Outstanding</strong> is</p>
+<div class="display-math">$$\text{DPO} = \text{Med}(p_1, p_2, \ldots, p_m)$$</div>
+</div>
+
+<p>The same reasoning applies: use the median because one slow-paid supplier bill (perhaps under dispute) shouldn't distort the picture. DPO tells you: "on a typical bill, how long do we take to pay?"</p>
+
+<p>A high DPO means you hold onto cash longer before paying. From a cash-flow perspective, a high DPO is <em>good</em> — your suppliers are effectively financing your operations. But push it too far and suppliers tighten terms or cut you off entirely.</p>
+
+<p>Consider a worked example. Suppose you have 8 supplier bills with payment delays (days), sorted:</p>
+
+<div class="display-math">$$14,\; 18,\; 20,\; 21,\; 23,\; 25,\; 28,\; 30$$</div>
+
+<p><strong>Mean:</strong> $\frac{14+18+20+21+23+25+28+30}{8} = \frac{179}{8} = 22.4$ days.</p>
+
+<p><strong>Median:</strong> $m = 8$, positions 4 and 5: $\text{DPO} = \frac{21 + 23}{2} = 22$ days.</p>
+
+<p>Here the mean and median are close (22.4 vs 22), because there are no extreme outliers. That's typical for payables — you control when you pay, so the distribution is tighter than receivables. But the principle still holds: use the median for robustness.</p>
+
+<!-- ─── 4. CCC ─────────────────────────────── -->
+
+<h2>3. The Cash Conversion Cycle</h2>
+
+<div class="theorem-box">
+<div class="label">Definition — Cash Conversion Cycle</div>
+<p>The <strong>Cash Conversion Cycle (CCC)</strong> is</p>
+<div class="display-math">$$\text{CCC} = \text{DSO} - \text{DPO}$$</div>
+<p>measured in days. It captures the net delay between paying suppliers and receiving cash from customers.</p>
+</div>
+
+<p>Three regimes emerge:</p>
+
+<ul>
+<li><strong>CCC &gt; 0:</strong> You pay suppliers before customers pay you. Cash is locked in working capital. You need financing (or a cash buffer) to cover the gap.</li>
+<li><strong>CCC &lt; 0:</strong> Customers pay you before you pay suppliers. Your suppliers are financing your operations. Supermarkets live here — they sell goods for cash on day 0 but pay suppliers on day 45.</li>
+<li><strong>CCC = 0:</strong> Self-financing. Inflows and outflows are synchronised.</li>
+</ul>
+
+<!-- ─── 5. BALANCE SHEET CONNECTION ─────────────────────────────── -->
+
+<h2>4. Balance sheet connection</h2>
+
+<p>DSO and DPO link the P&L to the balance sheet. The key insight: receivables represent <em>how many weeks of revenue are still unpaid</em>, and payables represent <em>how many weeks of costs are still owed</em>.</p>
+
+<p>If you earn revenue $R$ per week and it takes DSO days to collect, then at any point you have roughly $\frac{\text{DSO}}{7}$ weeks of revenue sitting as receivables:</p>
+
+<div class="display-math">$$\text{Receivables} \approx R \times \frac{\text{DSO}}{7}$$</div>
+
+<p>The $\frac{\text{DSO}}{7}$ converts days to weeks, since $R$ is weekly revenue. Similarly, if weekly COGS is $C$:</p>
+
+<div class="display-math">$$\text{Payables} \approx C \times \frac{\text{DPO}}{7}$$</div>
+
+<p>These are approximations — they assume steady-state revenue and costs, which is never exactly true. But for a forecast model operating on weekly granularity, they're the right formulae to generate balance sheet positions from P&L flows.</p>
+
+<!-- ─── 6. SELF-FINANCING PROOF ─────────────────────────────── -->
+
+<h2>5. Self-financing working capital</h2>
+
+<div class="theorem-box">
+<div class="label">Theorem — Self-financing condition</div>
+<p>If $\text{CCC} = 0$, then</p>
+<div class="display-math">$$\frac{\text{Receivables}}{R} = \frac{\text{Payables}}{C}$$</div>
+<p>That is, receivables as a proportion of revenue equal payables as a proportion of COGS.</p>
+</div>
+
+<div class="proof-box" id="proof-self-financing">
+<div class="label">Proof</div>
+<p>From the balance sheet formulae above:</p>
+<div class="display-math">$$\text{Receivables} = R \times \frac{\text{DSO}}{7}, \qquad \text{Payables} = C \times \frac{\text{DPO}}{7}$$</div>
+<p>Dividing each by its respective flow:</p>
+<div class="display-math">$$\frac{\text{Receivables}}{R} = \frac{\text{DSO}}{7}, \qquad \frac{\text{Payables}}{C} = \frac{\text{DPO}}{7}$$</div>
+<p>If $\text{CCC} = 0$, then $\text{DSO} = \text{DPO}$, so:</p>
+<div class="display-math">$$\frac{\text{Receivables}}{R} = \frac{\text{DSO}}{7} = \frac{\text{DPO}}{7} = \frac{\text{Payables}}{C}$$</div>
+<p>The proportion of revenue locked in receivables equals the proportion of COGS deferred in payables. Every pound owed to you is matched by a pound you owe — working capital finances itself.</p>
+<div class="qed">∎</div>
+</div>
+
+<p>Conversely, when $\text{CCC} > 0$, receivables (as a fraction of revenue) exceed payables (as a fraction of COGS). The business must find cash from elsewhere — retained earnings, credit facilities, or equity — to cover the gap.</p>
+
+<p>It's worth dwelling on what "self-financing" actually means in practice. A business with CCC = 0 doesn't need <em>any</em> external cash to fund its day-to-day operations. The cash cycle is closed: suppliers effectively lend you the money to finance the receivables you're waiting to collect. Every pound you owe a supplier is matched by a pound a customer owes you, and the timing lines up perfectly.</p>
+
+<p>This is rare in practice — most businesses have CCC > 0 and need a working capital facility. But the formula tells you exactly how many days of gap you need to fund, and the balance sheet formulae translate that into a pound figure.</p>
+
+<!-- ─── 7. WORKED EXAMPLE ─────────────────────────────── -->
+
+<h2>6. Full worked example</h2>
+
+<p>Consider a business with weekly revenue $R = £15{,}000$ and weekly COGS $C = £9{,}000$.</p>
+
+<p><strong>Customer invoices</strong> (10 payment delays in days, sorted):</p>
+<div class="display-math">$$22,\; 25,\; 28,\; 29,\; 30,\; 31,\; 32,\; 35,\; 38,\; 180$$</div>
+
+<p><strong>Supplier bills</strong> (8 payment delays in days, sorted):</p>
+<div class="display-math">$$14,\; 18,\; 20,\; 21,\; 23,\; 25,\; 28,\; 30$$</div>
+
+<p><strong>Step 1: DSO.</strong> $n = 10$, positions 5 and 6: $\text{DSO} = \frac{30 + 31}{2} = 30.5$ days.</p>
+
+<p><strong>Step 2: DPO.</strong> $m = 8$, positions 4 and 5: $\text{DPO} = \frac{21 + 23}{2} = 22$ days.</p>
+
+<p><strong>Step 3: CCC.</strong> $\text{CCC} = 30.5 - 22 = 8.5$ days. Positive — cash is locked in working capital.</p>
+
+<p><strong>Step 4: Balance sheet positions.</strong></p>
+<div class="display-math">$$\text{Receivables} = £15{,}000 \times \frac{30.5}{7} = £15{,}000 \times 4.357 = £65{,}357$$</div>
+<div class="display-math">$$\text{Payables} = £9{,}000 \times \frac{22}{7} = £9{,}000 \times 3.143 = £28{,}286$$</div>
+
+<p><strong>Step 5: Net working capital requirement.</strong></p>
+<div class="display-math">$$\text{Receivables} - \text{Payables} = £65{,}357 - £28{,}286 = £37{,}071$$</div>
+
+<p>This business needs roughly £37k of cash (or credit) permanently tied up in working capital. That's the cost of having a CCC of 8.5 days on these revenue and cost flows.</p>
+
+<h3>Sensitivity check</h3>
+
+<p>What if DSO drops to 25 (faster collections) while DPO stays at 22?</p>
+<div class="display-math">$$\text{CCC} = 25 - 22 = 3 \text{ days}$$</div>
+<div class="display-math">$$\text{Receivables} = £15{,}000 \times \frac{25}{7} = £53{,}571$$</div>
+<div class="display-math">$$\text{Net WC} = £53{,}571 - £28{,}286 = £25{,}286$$</div>
+
+<p>Reducing DSO by 5.5 days freed up roughly £12k of working capital. That's real cash — it flows straight into the bank account as old receivables are collected faster than new ones accumulate. This is why treasury teams obsess over DSO: every day of improvement liberates $R/7$ of cash. At £15k/week revenue, that's £2,143 per day of DSO improvement.</p>
+
+<p>Conversely, what if DPO increases to 30 (negotiating longer supplier terms)?</p>
+<div class="display-math">$$\text{CCC} = 30.5 - 30 = 0.5 \text{ days}$$</div>
+<div class="display-math">$$\text{Payables} = £9{,}000 \times \frac{30}{7} = £38{,}571$$</div>
+<div class="display-math">$$\text{Net WC} = £65{,}357 - £38{,}571 = £26{,}786$$</div>
+
+<p>Extending DPO by 8 days saved about £10k in working capital. The business is now nearly self-financing (CCC ≈ 0.5 days). Both levers — faster collections and slower payments — compress the CCC and release cash.</p>
+
+<!-- ─── 8. HISTORY ─────────────────────────────── -->
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p>The Cash Conversion Cycle emerged from the credit analysis tradition of the <strong>Association for Financial Professionals (AFP)</strong> and the <strong>CFA Institute</strong> in the 1980s, where analysts needed a single metric to capture how efficiently a business converts its operations into cash. The concept has older roots in trade finance — Renaissance Venetian merchants tracked essentially the same thing when managing the delay between paying for spices in Alexandria and selling them in Venice. The modern three-component form (DSO + DIO - DPO, where DIO is Days Inventory Outstanding) is standard in credit analysis; our two-component version (DSO - DPO) drops inventory because service businesses — our primary focus — carry no stock.</p>
+</div>
+
+<!-- ─── 9. WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>If you use the mean instead of the median for DSO:</strong> that single 180-day outlier inflates DSO from 30.5 to 45 days. Your forecast then delays all cash receipts by an extra two weeks. On £15k/week revenue, that's £30k of phantom working capital drag — the model thinks the business needs £30k more cash than it actually does. Lending decisions, dividend forecasts, and covenant calculations all get poisoned.</p>
+<p><strong>If you ignore DPO entirely:</strong> you can't see the supplier financing benefit. A business with DSO = 30 and DPO = 45 is actually <em>supplier-financed</em> (CCC = -15). Ignoring DPO, you'd model it as needing 30 days of working capital when it actually needs none. You'd overstate the cash requirement by the entire payables balance.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">Revenue tells you what you earned; DSO and DPO tell you when the cash actually moves.</div>
+
+<!-- ─── 10. EXERCISES ─────────────────────────────── -->
+
+<h2>7. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — Prove CCC = 0 implies self-financing</div>
+<p>Starting from the definitions $\text{Receivables} = R \cdot \frac{\text{DSO}}{7}$ and $\text{Payables} = C \cdot \frac{\text{DPO}}{7}$, prove that $\text{CCC} = 0$ implies $\frac{\text{Receivables}}{R} = \frac{\text{Payables}}{C}$. Then prove the converse: if $\frac{\text{Receivables}}{R} = \frac{\text{Payables}}{C}$, then $\text{CCC} = 0$.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Forward direction ($\text{CCC} = 0 \Rightarrow$ self-financing):</strong></p>
+<p>$\text{CCC} = 0$ means $\text{DSO} = \text{DPO}$. Then:</p>
+<div class="display-math">$$\frac{\text{Receivables}}{R} = \frac{\text{DSO}}{7} = \frac{\text{DPO}}{7} = \frac{\text{Payables}}{C}$$</div>
+<p>The second equality uses $\text{DSO} = \text{DPO}$.</p>
+<p><strong>Converse ($\frac{\text{Receivables}}{R} = \frac{\text{Payables}}{C} \Rightarrow \text{CCC} = 0$):</strong></p>
+<p>If $\frac{\text{Receivables}}{R} = \frac{\text{Payables}}{C}$, substituting the definitions:</p>
+<div class="display-math">$$\frac{\text{DSO}}{7} = \frac{\text{DPO}}{7}$$</div>
+<p>Multiply both sides by 7: $\text{DSO} = \text{DPO}$, hence $\text{CCC} = \text{DSO} - \text{DPO} = 0$.</p>
+<p>The equivalence is complete: CCC = 0 if and only if working capital is self-financing.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — Full computation from raw data</div>
+<p>A business has weekly revenue £12,000 and weekly COGS £7,200. Here are 30 customer invoice delays (days):</p>
+<div class="display-math">$$18, 22, 25, 19, 30, 28, 26, 31, 24, 27, 33, 29, 21, 35, 23, 20, 26, 32, 28, 27, 34, 22, 25, 29, 31, 180, 24, 26, 30, 28$$</div>
+<p>And 20 supplier bill delays (days):</p>
+<div class="display-math">$$12, 15, 18, 14, 20, 22, 16, 19, 21, 17, 23, 18, 15, 20, 14, 25, 19, 16, 21, 18$$</div>
+<p>Compute DSO, DPO, CCC, receivables, payables, and net working capital requirement.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Step 1: Sort and find DSO.</strong></p>
+<p>Sorted customer delays ($n = 30$):</p>
+<div class="display-math">$$18, 19, 20, 21, 22, 22, 23, 24, 24, 25, 25, 26, 26, 26, 27, 27, 28, 28, 28, 29, 29, 30, 30, 31, 31, 32, 33, 34, 35, 180$$</div>
+<p>$n = 30$ (even). Median positions: 15 and 16. $d_{(15)} = 27$, $d_{(16)} = 27$.</p>
+<div class="display-math">$$\text{DSO} = \frac{27 + 27}{2} = 27 \text{ days}$$</div>
+<p>Note: the 180-day outlier has zero effect on the median.</p>
+
+<p><strong>Step 2: Sort and find DPO.</strong></p>
+<p>Sorted supplier delays ($m = 20$):</p>
+<div class="display-math">$$12, 14, 14, 15, 15, 16, 16, 17, 18, 18, 18, 19, 19, 20, 20, 21, 21, 22, 23, 25$$</div>
+<p>$m = 20$ (even). Median positions: 10 and 11. $p_{(10)} = 18$, $p_{(11)} = 18$.</p>
+<div class="display-math">$$\text{DPO} = \frac{18 + 18}{2} = 18 \text{ days}$$</div>
+
+<p><strong>Step 3: CCC.</strong></p>
+<div class="display-math">$$\text{CCC} = 27 - 18 = 9 \text{ days}$$</div>
+<p>Positive — cash is locked in working capital.</p>
+
+<p><strong>Step 4: Balance sheet positions.</strong></p>
+<div class="display-math">$$\text{Receivables} = £12{,}000 \times \frac{27}{7} = £12{,}000 \times 3.857 = £46{,}286$$</div>
+<div class="display-math">$$\text{Payables} = £7{,}200 \times \frac{18}{7} = £7{,}200 \times 2.571 = £18{,}514$$</div>
+
+<p><strong>Step 5: Net working capital.</strong></p>
+<div class="display-math">$$£46{,}286 - £18{,}514 = £27{,}771$$</div>
+<p>This business needs roughly £27.8k permanently tied up in working capital to bridge the 9-day gap between paying suppliers and collecting from customers.</p>
+</div>
+</details>
+</div>
+
+<div class="nav">
+<a href="../phase3/04-cash-flow-statement.html">&larr; Cash Flow Statement</a>
+<a href="02-trend-extrapolation.html">Next: Trend Extrapolation &rarr;</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

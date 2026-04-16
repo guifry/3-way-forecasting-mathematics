@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multiplicative Decomposition — Phase 2</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Multiplicative Decomposition</h1>
+<p class="subtitle">Phase 2 — Seasonal Decomposition, Page 2</p>
+
+<!-- ─── THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>You've computed the trend using the CMA from the previous page. You can see the business is growing at about £400/month. But the raw data still swings between £31k and £85k — the CMA only tells you where the centre is, not the shape of the seasonal pattern around it.</p>
+<p>You need to extract the <strong>seasonal pattern</strong> — the regular annual shape — as a set of 12 monthly multipliers. Once you have those, you can project the pattern forward onto future months: "December is always 57% above trend; February is always 28% below."</p>
+</div>
+
+<!-- ─── 1. THE MULTIPLICATIVE MODEL ─────────────────────────────── -->
+
+<h2>1. The multiplicative model</h2>
+
+<p>We assume every observed value $x(t)$ is the product of three components:</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Multiplicative Decomposition</div>
+<p>A time series $x(t)$ follows a <strong>multiplicative model</strong> if</p>
+<div class="display-math">$$x(t) = T(t) \times S(t) \times I(t)$$</div>
+<p>where:</p>
+<ul>
+<li>$T(t)$ is the <strong>trend</strong> — the slow-moving underlying level of the series</li>
+<li>$S(t)$ is the <strong>seasonal component</strong> — a periodic multiplier with period 12, so $S(t) = S(t+12)$ for all $t$</li>
+<li>$I(t)$ is the <strong>irregular component</strong> — random noise, unpredictable shocks, one-off events</li>
+</ul>
+</div>
+
+<p><strong>Why multiplicative, not additive?</strong> The alternative model is additive: $x(t) = T(t) + S(t) + I(t)$. This implies the seasonal swing is a fixed pound amount regardless of business scale.</p>
+
+<p>Consider what that means concretely. If December always adds "+£15k" to the baseline, that's a 150% bump when the business does £10k/month average, but only a 1.5% bump at £1M/month. As the business grows, the additive seasonal effect becomes proportionally irrelevant. That's the wrong behaviour for revenue: in reality, a retailer doing £1M/month sees a December lift of perhaps £300k (still roughly 30%), not £15k.</p>
+
+<p>The multiplicative model handles this correctly. Saying "December is 1.3× the trend" means a 30% Christmas lift regardless of scale. A £10k/month business gets £3k extra; a £1M/month business gets £300k extra. The percentage is constant, the pound amount scales. For revenue — and for most business metrics — multiplicative is the right structural assumption.</p>
+
+<!-- ─── 2. RATIO-TO-MOVING-AVERAGE ─────────────────────────────── -->
+
+<h2>2. Ratio-to-moving-average</h2>
+
+<p>The CMA from Page 1 estimates $T(t)$. If the multiplicative model holds, dividing the raw data by the CMA strips out the trend:</p>
+
+<div class="display-math">$$\frac{x(t)}{\text{CMA}(t)} = \frac{T(t) \times S(t) \times I(t)}{T(t)} = S(t) \times I(t)$$</div>
+
+<p>We call this quotient the <strong>ratio-to-moving-average</strong>:</p>
+
+<div class="display-math">$$\text{SI}(t) = \frac{x(t)}{\text{CMA}(t)}$$</div>
+
+<p>Each SI value tells you: "this month was X% of the trend." An SI of 1.30 means 30% above trend. An SI of 0.70 means 30% below. An SI of exactly 1.00 means right on trend.</p>
+
+<p>At this point, the trend is gone. What remains is the seasonal pattern $S(t)$ contaminated by irregular noise $I(t)$. The next step removes the noise.</p>
+
+<!-- ─── 3. AVERAGING OUT THE NOISE ─────────────────────────────── -->
+
+<h2>3. Averaging out the noise</h2>
+
+<p>The irregular component $I(t)$ is random — by definition, it doesn't repeat. A January snowstorm in Year 1 has no relation to whatever January anomaly occurs in Year 2. But the seasonal component $S(t)$ <em>does</em> repeat: $S(\text{Jan Y1}) = S(\text{Jan Y2}) = S(\text{Jan})$ by assumption.</p>
+
+<p>So if we group all SI values by calendar month and average within each group, the irregular components should approximately cancel (positive and negative shocks averaging out), while the seasonal components reinforce:</p>
+
+<div class="display-math">$$\text{raw\_index}(m) = \frac{1}{n_m}\sum_{\{t : \text{month}(t) = m\}} \text{SI}(t)$$</div>
+
+<p>Here $n_m$ is the number of years for which month $m$ has an SI value. With 24 months of data and CMA defined for months 7–18, most calendar months appear once in the SI series. With 36 months, most appear twice. The more years you have, the better the averaging works — the law of large numbers is on your side.</p>
+
+<p>The result: 12 numbers, one per calendar month, each estimating the "typical" ratio of that month to the trend. These are the <strong>raw seasonal indices</strong>.</p>
+
+<!-- ─── 4. NORMALISATION ─────────────────────────────── -->
+
+<h2>4. Normalisation</h2>
+
+<p>The raw indices won't generally sum to 12. But they <em>must</em>. Here's why.</p>
+
+<div class="theorem-box">
+<div class="label">Theorem — Normalisation Constraint</div>
+<p>The seasonal indices $S_1, S_2, \ldots, S_{12}$ must satisfy</p>
+<div class="display-math">$$\sum_{m=1}^{12} S_m = 12$$</div>
+<p>Equivalently, the average seasonal index must equal 1.0. This ensures no net seasonal distortion over a full year — the seasonal effects cancel out across 12 months.</p>
+</div>
+
+<div class="proof-box" id="proof-normalisation">
+<div class="label">Proof — normalisation preserves annual totals</div>
+<p>Consider the annual total under the multiplicative model. If the trend is approximately constant at $T$ over one year, the projected annual revenue is:</p>
+<div class="display-math">$$\sum_{m=1}^{12} T \cdot S_m = T \sum_{m=1}^{12} S_m$$</div>
+<p>We want this to equal $12T$ — twelve months at the trend level, with no net seasonal bias. This requires $\sum S_m = 12$.</p>
+<p>If the sum were 12.3, the model would project $12.3T$ in annual revenue — 2.5% more than the trend justifies. That's phantom revenue: money the seasonal pattern claims exists but doesn't. Conversely, a sum of 11.7 would underproject by 2.5%.</p>
+<p>To enforce the constraint, scale the raw indices:</p>
+<div class="display-math">$$S_m = \text{raw\_index}(m) \times \frac{12}{\displaystyle\sum_{j=1}^{12} \text{raw\_index}(j)}$$</div>
+<p>Verify: $\displaystyle\sum_{m=1}^{12} S_m = \sum_{m=1}^{12} \text{raw}(m) \times \frac{12}{\sum \text{raw}(j)} = \frac{12}{\sum \text{raw}(j)} \times \sum \text{raw}(m) = 12$.</p>
+<div class="qed">∎</div>
+</div>
+
+<!-- ─── 5. THE FULL ALGORITHM ─────────────────────────────── -->
+
+<h2>5. The full algorithm</h2>
+
+<div class="theorem-box">
+<div class="label">Definition — Ratio-to-Moving-Average Decomposition Algorithm</div>
+<p>Given $n$ months of data $x_1, \ldots, x_n$ with $n \geq 13$:</p>
+<ol>
+<li><strong>Compute CMA:</strong> for each $t$ where $7 \leq t \leq n - 6$, compute $\text{CMA}(t) = \frac{1}{12}\left(\frac{1}{2}x_{t-6} + \sum_{j=-5}^{5}x_{t+j} + \frac{1}{2}x_{t+6}\right)$.</li>
+<li><strong>Compute ratios:</strong> for each such $t$, compute $\text{SI}(t) = x(t) \;/\; \text{CMA}(t)$.</li>
+<li><strong>Average by month:</strong> for each calendar month $m = 1, \ldots, 12$, compute $\text{raw}(m) = \text{mean of all } \text{SI}(t)$ where $\text{month}(t) = m$.</li>
+<li><strong>Normalise:</strong> $S_m = \text{raw}(m) \times 12 \;/\; \sum_{j=1}^{12}\text{raw}(j)$.</li>
+</ol>
+<p>Output: 12 seasonal indices $S_1, \ldots, S_{12}$ satisfying $\sum S_m = 12$.</p>
+</div>
+
+<p>The algorithm is deterministic, nonparametric, and requires no iterative fitting. Given the data, the indices are uniquely determined. There are no hyperparameters to tune, no convergence criteria to check, no model selection to perform. This simplicity is a feature, not a limitation — at least when data is scarce.</p>
+
+<p>One subtlety: the quality of the indices depends heavily on how many SI values each calendar month has. With 24 months of data, most months get only one SI value — the "average" is a single observation. With 36 months, some months get two. With 60 months, most get three or four. The more years of data, the better the averaging in Step 3 works, because the irregular component has more chance to cancel across years.</p>
+
+<p>With only one SI value per month, the irregular component $I(t)$ is not averaged out at all — it flows directly into the seasonal index. If January Year 2 happened to have a one-off £5k invoice that was unusual, that anomaly becomes part of the "January seasonal pattern." This is a real limitation, and one we can't fix without more data. The saving grace is that the resulting indices, while noisy, are still better than no seasonal adjustment at all.</p>
+
+<h3>Interpreting the indices</h3>
+
+<p>Each normalised index $S_m$ answers the question: "In a typical month $m$, how does revenue compare to the trend?" The interpretation is always multiplicative:</p>
+<ul>
+<li>$S_m = 1.00$: month $m$ is exactly at trend. No seasonal effect.</li>
+<li>$S_m = 1.30$: month $m$ is 30% above trend. Revenue is boosted by seasonal factors.</li>
+<li>$S_m = 0.75$: month $m$ is 25% below trend. A seasonally quiet month.</li>
+<li>$S_m = 2.00$: month $m$ is double the trend. Extremely seasonal (e.g., December for a toy retailer).</li>
+</ul>
+
+<p>To forecast month $m$, multiply the projected trend by $S_m$. If the trend model says the business will be at £50k/month by next December, and $S_{\text{Dec}} = 1.57$, projected December revenue is $£50{,}000 \times 1.57 = £78{,}500$.</p>
+
+<!-- ─── 6. EXERCISES ─────────────────────────────── -->
+
+<h2>6. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — Full decomposition from 24 months</div>
+<p>Use the home furnishings retailer data from Page 1:</p>
+<table>
+<tr><th>Month</th><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th></tr>
+<tr><td>Year 1</td><td>34</td><td>31</td><td>36</td><td>40</td><td>45</td><td>48</td><td>52</td><td>38</td><td>42</td><td>50</td><td>62</td><td>78</td></tr>
+<tr><td>Year 2</td><td>38</td><td>35</td><td>40</td><td>44</td><td>50</td><td>54</td><td>57</td><td>42</td><td>47</td><td>55</td><td>68</td><td>85</td></tr>
+</table>
+<p>Compute the CMA (from Page 1), SI ratios, raw indices, and normalised seasonal indices. Show all steps.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Step 1: CMA values</strong> (computed on Page 1, Exercise 2). CMA is defined for months 7 through 18:</p>
+<table>
+<tr><th>$t$</th><th>7 (Jul Y1)</th><th>8 (Aug)</th><th>9 (Sep)</th><th>10 (Oct)</th><th>11 (Nov)</th><th>12 (Dec)</th></tr>
+<tr><td>CMA</td><td>46.50</td><td>46.83</td><td>47.17</td><td>47.50</td><td>47.88</td><td>48.33</td></tr>
+</table>
+<table>
+<tr><th>$t$</th><th>13 (Jan Y2)</th><th>14 (Feb)</th><th>15 (Mar)</th><th>16 (Apr)</th><th>17 (May)</th><th>18 (Jun)</th></tr>
+<tr><td>CMA</td><td>48.79</td><td>49.17</td><td>49.54</td><td>49.96</td><td>50.42</td><td>50.96</td></tr>
+</table>
+
+<p><strong>Step 2: SI ratios.</strong> Divide each observed value by its CMA:</p>
+<table>
+<tr><th>$t$</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th><th>16</th><th>17</th><th>18</th></tr>
+<tr><td>$x(t)$</td><td>52</td><td>38</td><td>42</td><td>50</td><td>62</td><td>78</td><td>38</td><td>35</td><td>40</td><td>44</td><td>50</td><td>54</td></tr>
+<tr><td>CMA</td><td>46.50</td><td>46.83</td><td>47.17</td><td>47.50</td><td>47.88</td><td>48.33</td><td>48.79</td><td>49.17</td><td>49.54</td><td>49.96</td><td>50.42</td><td>50.96</td></tr>
+<tr><td>SI</td><td>1.118</td><td>0.811</td><td>0.890</td><td>1.053</td><td>1.295</td><td>1.614</td><td>0.779</td><td>0.712</td><td>0.807</td><td>0.881</td><td>0.992</td><td>1.060</td></tr>
+</table>
+<p>For example, $\text{SI}(7) = 52 / 46.50 = 1.118$, meaning July Year 1 was 11.8% above trend.</p>
+
+<p><strong>Step 3: Average by calendar month.</strong> Each calendar month maps to exactly one $t$ in the range 7–18:</p>
+<ul>
+<li>Jul → $t=7$, Aug → $t=8$, Sep → $t=9$, Oct → $t=10$, Nov → $t=11$, Dec → $t=12$</li>
+<li>Jan → $t=13$, Feb → $t=14$, Mar → $t=15$, Apr → $t=16$, May → $t=17$, Jun → $t=18$</li>
+</ul>
+<p>With only one value per month, the "average" is just the value itself:</p>
+<table>
+<tr><th>Month</th><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th></tr>
+<tr><td>Raw</td><td>0.779</td><td>0.712</td><td>0.807</td><td>0.881</td><td>0.992</td><td>1.060</td><td>1.118</td><td>0.811</td><td>0.890</td><td>1.053</td><td>1.295</td><td>1.614</td></tr>
+</table>
+
+<p><strong>Step 4: Normalise.</strong> Sum the raw indices:</p>
+<div class="display-math">$$\Sigma = 0.779 + 0.712 + 0.807 + 0.881 + 0.992 + 1.060 + 1.118 + 0.811 + 0.890 + 1.053 + 1.295 + 1.614 = 12.012$$</div>
+<p>Scaling factor: $12 / 12.012 = 0.99900$.</p>
+<p>Multiply each raw index by 0.99900:</p>
+<table>
+<tr><th>Month</th><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th></tr>
+<tr><td>$S_m$</td><td>0.778</td><td>0.711</td><td>0.806</td><td>0.880</td><td>0.991</td><td>1.059</td><td>1.117</td><td>0.810</td><td>0.889</td><td>1.052</td><td>1.294</td><td>1.612</td></tr>
+</table>
+<p>Verify: $0.778 + 0.711 + 0.806 + 0.880 + 0.991 + 1.059 + 1.117 + 0.810 + 0.889 + 1.052 + 1.294 + 1.612 = 11.999 \approx 12$. (Rounding accounts for the tiny residual.)</p>
+
+<p><strong>Interpretation:</strong> December revenue is 61.2% above trend — the strongest month by far. November is 29.4% above (pre-Christmas shopping). February is the weakest at 28.9% below trend. August dips 19.0% — a summer lull. The pattern is coherent with furnishings retail: Christmas and autumn renovation peaks, post-Christmas and holiday-season troughs.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — Applied: explaining to a CFO</div>
+<p>A SaaS company reports monthly recurring revenue (£k):</p>
+<table>
+<tr><th>Month</th><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th></tr>
+<tr><td>Year 1</td><td>100</td><td>105</td><td>112</td><td>108</td><td>115</td><td>120</td><td>110</td><td>95</td><td>118</td><td>125</td><td>130</td><td>90</td></tr>
+<tr><td>Year 2</td><td>115</td><td>120</td><td>128</td><td>124</td><td>132</td><td>138</td><td>126</td><td>110</td><td>135</td><td>143</td><td>150</td><td>105</td></tr>
+</table>
+<p>The CFO asks: "Why does revenue always dip in August and December? Are we losing customers?" Extract the seasonal pattern and write a one-paragraph explanation for the CFO.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Step 1: CMA</strong> (months 7–18). Computing each:</p>
+<p>CMA(7): $\frac{1}{12}(\frac{100}{2} + 105 + 112 + 108 + 115 + 120 + 110 + 95 + 118 + 125 + 130 + 90 + \frac{115}{2}) = \frac{1335.5}{12} = 111.29$</p>
+<p>CMA(8): $\frac{1}{12}(\frac{105}{2} + 112 + 108 + 115 + 120 + 110 + 95 + 118 + 125 + 130 + 90 + 115 + \frac{120}{2}) = \frac{1350.5}{12} = 112.54$</p>
+<p>CMA(9): $\frac{1}{12}(\frac{112}{2} + 108 + 115 + 120 + 110 + 95 + 118 + 125 + 130 + 90 + 115 + 120 + \frac{128}{2}) = \frac{1366}{12} = 113.83$</p>
+<p>CMA(10): $\frac{1}{12}(\frac{108}{2} + 115 + 120 + 110 + 95 + 118 + 125 + 130 + 90 + 115 + 120 + 128 + \frac{124}{2}) = \frac{1382}{12} = 115.17$</p>
+<p>CMA(11): $\frac{1}{12}(\frac{115}{2} + 120 + 110 + 95 + 118 + 125 + 130 + 90 + 115 + 120 + 128 + 124 + \frac{132}{2}) = \frac{1398.5}{12} = 116.54$</p>
+<p>CMA(12): $\frac{1}{12}(\frac{120}{2} + 110 + 95 + 118 + 125 + 130 + 90 + 115 + 120 + 128 + 124 + 132 + \frac{138}{2}) = \frac{1416}{12} = 118.00$</p>
+<p>CMA(13): $\frac{1}{12}(\frac{110}{2} + 95 + 118 + 125 + 130 + 90 + 115 + 120 + 128 + 124 + 132 + 138 + \frac{126}{2}) = \frac{1433}{12} = 119.42$</p>
+<p>CMA(14): $\frac{1}{12}(\frac{95}{2} + 118 + 125 + 130 + 90 + 115 + 120 + 128 + 124 + 132 + 138 + 126 + \frac{110}{2}) = \frac{1448.5}{12} = 120.71$</p>
+<p>CMA(15): $\frac{1}{12}(\frac{118}{2} + 125 + 130 + 90 + 115 + 120 + 128 + 124 + 132 + 138 + 126 + 110 + \frac{135}{2}) = \frac{1464.5}{12} = 122.04$</p>
+<p>CMA(16): $\frac{1}{12}(\frac{125}{2} + 130 + 90 + 115 + 120 + 128 + 124 + 132 + 138 + 126 + 110 + 135 + \frac{143}{2}) = \frac{1482}{12} = 123.50$</p>
+<p>CMA(17): $\frac{1}{12}(\frac{130}{2} + 90 + 115 + 120 + 128 + 124 + 132 + 138 + 126 + 110 + 135 + 143 + \frac{150}{2}) = \frac{1501}{12} = 125.08$</p>
+<p>CMA(18): $\frac{1}{12}(\frac{90}{2} + 115 + 120 + 128 + 124 + 132 + 138 + 126 + 110 + 135 + 143 + 150 + \frac{105}{2}) = \frac{1518.5}{12} = 126.54$</p>
+
+<p><strong>Step 2: SI ratios:</strong></p>
+<table>
+<tr><th>$t$</th><th>7 (Jul)</th><th>8 (Aug)</th><th>9 (Sep)</th><th>10 (Oct)</th><th>11 (Nov)</th><th>12 (Dec)</th></tr>
+<tr><td>SI</td><td>$110/111.29 = 0.988$</td><td>$95/112.54 = 0.844$</td><td>$118/113.83 = 1.037$</td><td>$125/115.17 = 1.085$</td><td>$130/116.54 = 1.115$</td><td>$90/118.00 = 0.763$</td></tr>
+</table>
+<table>
+<tr><th>$t$</th><th>13 (Jan)</th><th>14 (Feb)</th><th>15 (Mar)</th><th>16 (Apr)</th><th>17 (May)</th><th>18 (Jun)</th></tr>
+<tr><td>SI</td><td>$115/119.42 = 0.963$</td><td>$120/120.71 = 0.994$</td><td>$128/122.04 = 1.049$</td><td>$124/123.50 = 1.004$</td><td>$132/125.08 = 1.055$</td><td>$138/126.54 = 1.091$</td></tr>
+</table>
+
+<p><strong>Step 3: Raw indices</strong> (one value per calendar month):</p>
+<table>
+<tr><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th></tr>
+<tr><td>0.963</td><td>0.994</td><td>1.049</td><td>1.004</td><td>1.055</td><td>1.091</td><td>0.988</td><td>0.844</td><td>1.037</td><td>1.085</td><td>1.115</td><td>0.763</td></tr>
+</table>
+
+<p><strong>Step 4: Normalise.</strong> Sum = $0.963 + 0.994 + 1.049 + 1.004 + 1.055 + 1.091 + 0.988 + 0.844 + 1.037 + 1.085 + 1.115 + 0.763 = 11.988$.</p>
+<p>Factor = $12/11.988 = 1.001$. Normalised indices:</p>
+<table>
+<tr><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th></tr>
+<tr><td>0.964</td><td>0.995</td><td>1.050</td><td>1.005</td><td>1.056</td><td>1.092</td><td>0.989</td><td>0.845</td><td>1.038</td><td>1.086</td><td>1.116</td><td>0.764</td></tr>
+</table>
+
+<p><strong>For the CFO:</strong> "You're not losing customers. The August dip (index 0.85) and December dip (index 0.76) are structural seasonal effects. Enterprise buyers freeze procurement during August holidays and year-end budget locks — new contracts simply don't close in those months. Your underlying growth trend is strong, rising about £1.3k/month. If you strip out seasonality, every single month shows growth. Plan cash reserves for the August and December dips, but don't interpret them as churn. They're as predictable as the tides."</p>
+</div>
+</details>
+</div>
+
+<!-- ─── HISTORY ─────────────────────────────── -->
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p>The ratio-to-moving-average method is the mathematical core of the <strong>X-11</strong> seasonal adjustment program, developed by Julius Shiskin at the US Census Bureau in 1965. X-11 applies the ratio-to-MA procedure iteratively — first with a rough trend estimate, then refining the seasonal factors with successively better trend estimates. Its successor <strong>X-12-ARIMA</strong> (1998) added ARIMA-based extensions to handle end-of-series effects, and <strong>X-13ARIMA-SEATS</strong> (2012) integrated signal-extraction methods from the Bank of Spain.</p>
+<p>The textbook treatment comes from Makridakis, Wheelwright and Hyndman's <em>Forecasting: Methods and Applications</em> (3rd ed., 1998), which remains the standard reference for applied time-series decomposition. The multiplicative model dominates economics and business; the additive model survives mainly in physical sciences where seasonal effects have fixed absolute magnitude (e.g., daylight hours, temperature cycles).</p>
+</div>
+
+<!-- ─── WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>If you use additive decomposition on growing revenue:</strong> the additive model assumes the seasonal swing is a fixed pound amount — say "+£15k in December." When the business averages £50k/month, that's a 30% lift. But as it grows to £100k/month, the same "+£15k" is only 15%. The model progressively underestimates December and overestimates quiet months. Forecasts become systematically wrong, and the error grows every year.</p>
+<p><strong>If you have fewer than 13 months of data:</strong> the CMA requires 6 months of padding on each side. With 12 months, $t + 6$ exceeds $n$ for every $t$ — no CMA can be computed at all. The algorithm never starts. With exactly 13 months you get one CMA value (at $t = 7$), hence one SI ratio, covering only a single calendar month. The "seasonal pattern" you'd extract is really just one month's observation dressed up as a general rule.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">Divide by the trend, average by month, normalise to 12. That's the seasonal pattern.</div>
+
+<div class="nav">
+<a href="01-moving-averages.html">← Prev: Moving Averages</a>
+<a href="03-seasonal-floor.html">Next: Seasonal Floor →</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Cash Flow Statement — Derived from Deltas — Phase 3</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>The Cash Flow Statement — Derived from Deltas</h1>
+<p class="subtitle">Phase 3 — The Accounting Identity, Page 4</p>
+
+<div class="problem-box">
+  <div class="label">The problem</div>
+  <p>You have two consecutive weekly balance sheets. The cash balance changed — but by how much, and <em>why</em>? Which portion came from operating the business, which from buying or selling assets, and which from borrowing or repaying debt? The cash flow statement decomposes $\Delta\text{Cash}$ into these three causes, and it does so algebraically from the accounting identity — no new model required.</p>
+</div>
+
+<h2>1. The Indirect Method</h2>
+
+<p>There are two ways to construct a cash flow statement. The <strong>direct method</strong> lists every individual cash receipt and payment: £5,000 received from customer X, £2,000 paid to supplier Y, £750 remitted to HMRC for PAYE. This is intuitive and precise, but it requires knowing every outstanding invoice and its expected payment date. For a 13-week forecast where you have a real aged debtor ledger, the direct method is not only possible but preferable — we will build it in <a href="../phase7/03-direct-cash-flow.html">Phase 7, Page 3</a>.</p>
+
+<p>For a 5-year projection based on growth rates, margins, and working capital ratios, you don't have individual invoices. You have aggregates. The <strong>indirect method</strong> (defined by IAS 7) works with these aggregates. It starts from net profit and asks: "the P&L said we made £X of profit — how much of that was actual cash?"</p>
+
+<p>The adjustments undo every timing difference between P&L recognition and cash movement. If revenue was recognised but cash hasn't arrived (receivables increased), we subtract. If a cost was recognised but cash hasn't left (payables increased), we add. If a non-cash charge reduced profit (depreciation), we add it back.</p>
+
+<div class="theorem-box">
+  <div class="label">Definition — Cash Flow Statement (Indirect Method)</div>
+  <p><strong>Cash from Operations (CFO):</strong></p>
+  <div class="display-math">$$\text{CFO} = \text{net\_profit} + \text{depreciation} - \Delta\text{AR} + \Delta\text{AP} + \Delta\text{VAT} + \Delta\text{CT} + \Delta\text{PAYE}$$</div>
+  <p><strong>Cash from Investing (CFI):</strong></p>
+  <div class="display-math">$$\text{CFI} = -\text{capex}$$</div>
+  <p>Capex is the purchase of fixed assets. The negative sign reflects that buying assets consumes cash.</p>
+  <p><strong>Cash from Financing (CFF):</strong></p>
+  <div class="display-math">$$\text{CFF} = \text{new\_borrowing} + \text{loan\_repayments} + \text{equity\_injections} + \text{dividends}$$</div>
+  <p>Loan repayments and dividends are negative values (cash outflows).</p>
+  <p><strong>Total cash movement:</strong></p>
+  <div class="display-math">$$\Delta\text{Cash} = \text{CFO} + \text{CFI} + \text{CFF}$$</div>
+</div>
+
+<h2>2. Why Each Adjustment Exists</h2>
+
+<p>Let us walk through every term in CFO and explain precisely why it is there.</p>
+
+<p><strong>+ net profit.</strong> This is the starting point. The P&L says the business created this much value. But "value created" and "cash generated" are different things, so we adjust.</p>
+
+<p><strong>+ depreciation.</strong> The P&L subtracted depreciation from profit, reducing the reported number. But depreciation is not a cash outflow — no money left the bank this week. The cash was spent when the asset was purchased (that's capex, in CFI). Adding depreciation back converts profit closer to cash reality. If net profit was £1,121 and depreciation was £200, the cash from operations is at least £1,321 before working capital effects.</p>
+
+<p><strong>$-\Delta$AR (change in trade receivables).</strong> If receivables increased ($\Delta\text{AR} > 0$), it means revenue was recognised in the P&L but the customer hasn't paid yet. The profit includes this revenue, but no cash arrived. So we subtract the increase. If receivables decreased, it means old invoices were collected — cash came in that wasn't part of this period's revenue. So we add the decrease. The formula $-\Delta\text{AR}$ handles both cases automatically.</p>
+
+<p><strong>$+\Delta$AP (change in trade payables).</strong> If payables increased ($\Delta\text{AP} > 0$), costs were recognised in the P&L but not yet paid in cash. The profit is reduced by these costs, but the cash is still in the bank. So we add the increase. If payables decreased, old bills were paid — cash left the bank for costs already recognised. So we subtract. The formula $+\Delta\text{AP}$ handles both.</p>
+
+<p><strong>$+\Delta$VAT, $+\Delta$CT, $+\Delta$PAYE.</strong> Same logic as payables. These are liabilities — amounts owed but not yet paid. If an accrual increased, the tax was charged in the P&L (reducing profit) but hasn't been paid yet (cash is still in the bank). If it decreased (a drain event), cash was paid out. The sign convention is identical to AP.</p>
+
+<p>Note the pattern: <em>asset increases reduce CFO</em> (cash tied up), <em>liability increases boost CFO</em> (cash retained). This is because assets on the left side of $A = L + E$ move inversely to cash from an operational perspective — more tied up in receivables means less available as cash.</p>
+
+<p>A useful mnemonic: for current assets (AR, inventory), think "assets up, cash down." Revenue went out the door but money hasn't come back yet — cash is trapped in the asset. For current liabilities (AP, tax accruals), think "liabilities up, cash stays." Costs were recognised but not yet paid — you still have the money. These working capital effects can easily dwarf net profit in any given week, especially around tax drain events.</p>
+
+<h2>3. Proof: The CF Statement Follows from A = L + E</h2>
+
+<div class="proof-box" id="proof-cf-from-identity">
+  <div class="label">Proof — $\Delta\text{Cash} = \text{CFO} + \text{CFI} + \text{CFF}$ is an algebraic consequence of the accounting identity</div>
+  <p>Start from the accounting identity at week $w$:</p>
+  <div class="display-math">$$A(w) = L(w) + E(w)$$</div>
+  <p>Expand assets into their components:</p>
+  <div class="display-math">$$\text{cash}(w) + \text{AR}(w) + \text{PPE}(w) = \text{AP}(w) + \text{VAT}(w) + \text{PAYE}(w) + \text{CT}(w) + \text{loan}(w) + \text{SC}(w) + \text{RE}(w)$$</div>
+  <p>Write the identical equation at week $w-1$ and subtract the two:</p>
+  <div class="display-math">$$\Delta\text{cash} + \Delta\text{AR} + \Delta\text{PPE} = \Delta\text{AP} + \Delta\text{VAT} + \Delta\text{PAYE} + \Delta\text{CT} + \Delta\text{loan} + \Delta\text{SC} + \Delta\text{RE}$$</div>
+  <p>Isolate $\Delta\text{cash}$ on the left:</p>
+  <div class="display-math">$$\Delta\text{cash} = -\Delta\text{AR} - \Delta\text{PPE} + \Delta\text{AP} + \Delta\text{VAT} + \Delta\text{PAYE} + \Delta\text{CT} + \Delta\text{loan} + \Delta\text{SC} + \Delta\text{RE}$$</div>
+  <p>Now substitute the known relationships that define how each item changes:</p>
+  <ul>
+    <li>$\Delta\text{RE} = \text{net\_profit} - \text{dividends}$, because retained earnings grow by profit and shrink by dividends</li>
+    <li>$\Delta\text{PPE} = \text{capex} - \text{depreciation}$, because capex increases the asset and depreciation decreases it</li>
+    <li>$\Delta\text{loan} = \text{new\_borrowing} + \text{repayments}$ (repayments are negative)</li>
+    <li>$\Delta\text{SC} = \text{equity\_injections}$</li>
+  </ul>
+  <p>Substituting:</p>
+  <div class="display-math">$$\Delta\text{cash} = -\Delta\text{AR} - (\text{capex} - \text{dep}) + \Delta\text{AP} + \Delta\text{VAT} + \Delta\text{PAYE} + \Delta\text{CT}$$</div>
+  <div class="display-math">$$+ (\text{new\_borr} + \text{repay}) + \text{eq\_inj} + (\text{NP} - \text{div})$$</div>
+  <p>Rearranging into three groups:</p>
+  <div class="display-math">$$\Delta\text{cash} = \underbrace{(\text{NP} + \text{dep} - \Delta\text{AR} + \Delta\text{AP} + \Delta\text{VAT} + \Delta\text{PAYE} + \Delta\text{CT})}_{\text{CFO}}$$</div>
+  <div class="display-math">$$+ \underbrace{(-\text{capex})}_{\text{CFI}} + \underbrace{(\text{new\_borr} + \text{repay} + \text{eq\_inj} - \text{div})}_{\text{CFF}}$$</div>
+  <p>This is exactly the cash flow statement definition from the theorem box above. The decomposition into CFO, CFI, and CFF is not a modelling choice — it is <em>forced</em> by the accounting identity and the definitions of each balance sheet item. There is no other way to decompose it that is consistent with $A = L + E$.</p>
+  <div class="qed">∎</div>
+</div>
+
+<h2>4. The Verification Check</h2>
+
+<p>On <a href="03-balance-sheet.html">Page 3</a>, we computed cash as a plug from the balance sheet. Here, we derive $\Delta\text{Cash}$ independently from the cash flow statement. These two calculations must agree:</p>
+
+<div class="display-math">$$\text{CFO} + \text{CFI} + \text{CFF} \stackrel{!}{=} \text{cash}(w) - \text{cash}(w-1)$$</div>
+
+<p>If these two numbers differ by even a penny, there is a <strong>bug</strong> in the model. Not a rounding issue, not an acceptable approximation — a genuine error in one of the line items. This is the power of the 3-way model: the cash flow statement is an independent check on the balance sheet. You have two separate derivations of the same quantity, computed from different inputs. Agreement proves consistency. Disagreement proves a bug.</p>
+
+<p>In practice, when implementing this in code, you should compute both values and assert their equality at every single week of the 260-week projection. Any discrepancy, however small, must be investigated and fixed.</p>
+
+<p>What kind of bugs does this catch? Common ones include: a sign error in the AR delta (subtracting instead of adding, or vice versa); forgetting to drain a tax accrual; applying depreciation to cash instead of PPE; double-counting a cost in both COGS and opex; omitting a new cost stream that appears on the P&L but has no corresponding BS item. Each of these would cause the CF-derived cash change to differ from the plug-derived cash change, immediately flagging the problem.</p>
+
+<p>This is fundamentally different from a model that projects cash directly. In a direct cash model, if you make an error, you get the wrong cash number — but you have no way to know it's wrong. There's no cross-check. The 3-way model, by contrast, has a built-in second opinion at every week.</p>
+
+<h2>5. Why Indirect, Not Direct?</h2>
+
+<p>The direct method is more intuitive — "we received £50,000 from customers, paid £20,000 to suppliers, paid £15,000 in wages." But it requires data we don't have in a 5-year projection. We don't have individual invoices three years from now — we have growth rates, seasonal indices, DSO ratios, and tax schedules.</p>
+
+<p>The indirect method works entirely with these aggregates. It needs only: (a) the P&L, and (b) the change in each balance sheet item. Both are available from our model.</p>
+
+<p>For short-term forecasts (13 weeks), where you have a real aged debtor ledger listing every outstanding invoice and its expected payment date, the direct method is preferable. It gives you actual expected receipts and payments, week by week. We build this in <a href="../phase7/03-direct-cash-flow.html">Phase 7, Page 3</a>.</p>
+
+<p>In the full 3-way model, both methods coexist. The first 13 weeks use direct cash flow (high precision from real invoice data). Weeks 14–260 use indirect cash flow (derived from rates and ratios). The handover between the two horizons is a modelling challenge we address in Phase 7.</p>
+
+<h2>6. Worked Example: Week with a VAT Drain</h2>
+
+<p>Using the balance sheets from <a href="03-balance-sheet.html">Page 3</a>'s Exercise 2. Let us derive the full CF statement for week 3, which includes a VAT drain event.</p>
+
+<p><strong>Week 2 BS:</strong> Cash £35,084 | AR £20,000 | PPE £39,800. AP £8,000 | VAT £4,400 | PAYE £1,000 | CT £10,696 | Loan £30,000 | SC £15,000 | RE £25,788.</p>
+<p><strong>Week 3 BS:</strong> Cash £33,226 | AR £20,000 | PPE £39,700. AP £8,000 | VAT £200 | PAYE £1,500 | CT £11,044 | Loan £30,000 | SC £15,000 | RE £27,182.</p>
+
+<p><strong>Step 1: Compute all deltas.</strong></p>
+<table>
+  <tr><th>Item</th><th>Week 2</th><th>Week 3</th><th>$\Delta$</th></tr>
+  <tr><td>Cash</td><td>£35,084</td><td>£33,226</td><td>-£1,858</td></tr>
+  <tr><td>AR</td><td>£20,000</td><td>£20,000</td><td>£0</td></tr>
+  <tr><td>PPE</td><td>£39,800</td><td>£39,700</td><td>-£100</td></tr>
+  <tr><td>AP</td><td>£8,000</td><td>£8,000</td><td>£0</td></tr>
+  <tr><td>VAT</td><td>£4,400</td><td>£200</td><td>-£4,200</td></tr>
+  <tr><td>PAYE</td><td>£1,000</td><td>£1,500</td><td>+£500</td></tr>
+  <tr><td>CT</td><td>£10,696</td><td>£11,044</td><td>+£348</td></tr>
+  <tr><td>Loan</td><td>£30,000</td><td>£30,000</td><td>£0</td></tr>
+  <tr><td>SC</td><td>£15,000</td><td>£15,000</td><td>£0</td></tr>
+  <tr><td>RE</td><td>£25,788</td><td>£27,182</td><td>+£1,394</td></tr>
+</table>
+
+<p><strong>Step 2: Identify the components.</strong> $\Delta\text{RE} = +1{,}394 = \text{net profit}$ (no dividends). $\Delta\text{PPE} = -100 = -\text{depreciation}$ (no capex). So depreciation = £100.</p>
+
+<p><strong>Step 3: Build CFO.</strong></p>
+<div class="display-math">$$\text{CFO} = \text{NP} + \text{dep} - \Delta\text{AR} + \Delta\text{AP} + \Delta\text{VAT} + \Delta\text{PAYE} + \Delta\text{CT}$$</div>
+<div class="display-math">$$= 1{,}394 + 100 - 0 + 0 + (-4{,}200) + 500 + 348$$</div>
+<div class="display-math">$$= -\text{£}1{,}858$$</div>
+
+<p>Interpretation: the business earned £1,394 profit. Add back £100 depreciation (non-cash). No working capital effect from receivables or payables (both flat). But the VAT drain <em>destroyed</em> cash: -£4,200 as the quarterly payment hit. PAYE accrual grew by £500 (charged but not yet paid — cash stays in the bank). CT accrual grew by £348 (same). Net result: cash from operations is negative. The business <em>consumed</em> cash this week despite being profitable.</p>
+
+<p><strong>Step 4: CFI and CFF.</strong></p>
+<div class="display-math">$$\text{CFI} = 0 \quad (\text{no capex})$$</div>
+<div class="display-math">$$\text{CFF} = 0 \quad (\text{no borrowing, repayments, or dividends})$$</div>
+
+<p><strong>Step 5: Total and verify.</strong></p>
+<div class="display-math">$$\Delta\text{Cash} = \text{CFO} + \text{CFI} + \text{CFF} = -1{,}858 + 0 + 0 = -\text{£}1{,}858$$</div>
+<div class="display-math">$$\text{cash}(3) - \text{cash}(2) = 33{,}226 - 35{,}084 = -\text{£}1{,}858 \quad \checkmark$$</div>
+
+<p>The CF statement ties to the BS change exactly. This is the verification check — computed two different ways, same answer.</p>
+
+<h2>7. Contrast: A Normal Week (No Drain)</h2>
+
+<p>For comparison, the CF statement for week 1 (no drain events):</p>
+
+<div class="display-math">$$\text{CFO} = 1{,}394 + 100 - 0 + 0 + 200 + 500 + 348 = \text{£}2{,}542$$</div>
+
+<p>Here, all tax accruals are <em>growing</em> — charges recognised in the P&L but not yet paid. Each growing accrual adds to CFO because the cash is retained in the business. The result: £2,542 of cash generated despite only £1,394 of profit.</p>
+
+<p>The £1,148 difference between cash generated (£2,542) and profit (£1,394) consists of: £100 depreciation add-back + £200 VAT deferred + £500 PAYE deferred + £348 CT deferred. Every pound of those deferrals will eventually drain as a cash payment — they are borrowed time, not free money. But in the week they accumulate, they boost cash.</p>
+
+<p>Verify: $\text{cash}(1) - \text{cash}(0) = 32{,}542 - 30{,}000 = \text{£}2{,}542$. Ties.</p>
+
+<h2>8. The Big Picture</h2>
+
+<p>Over a full year, the CF statement tells the story of cash in three acts:</p>
+
+<p><strong>CFO</strong> is the engine. A healthy business generates positive CFO consistently. But CFO fluctuates with tax drains — it might be +£2,500 in a normal week and -£10,000 in a VAT drain week. The annual CFO smooths these out and tells you whether the business generates cash from trading.</p>
+
+<p><strong>CFI</strong> is the investment. Negative CFI means the business is investing in assets — buying equipment, fitting out a new location. This is not a bad sign; it is the cost of growth. But it consumes cash, and if it exceeds CFO, the business needs financing.</p>
+
+<p><strong>CFF</strong> is the funding. Positive CFF means external money is coming in (loans, equity). Negative CFF means money is going out (loan repayments, dividends). Over time, a business should transition from CFF-positive (funded by investors) to CFF-negative (returning capital to investors).</p>
+
+<p>The sum must always equal $\Delta\text{Cash}$. This is not a target — it is a mathematical identity.</p>
+
+<p>A useful diagnostic: if CFO is consistently negative, the business is burning cash from operations and cannot survive without external funding. If CFO is positive but CFF is heavily negative (large loan repayments), the business may be profitable but unable to service its debt. If CFI is large and negative, the business is investing heavily — this may be good (growth) or bad (replacing failing equipment). The three-part decomposition tells you <em>where</em> cash is going, not just how much.</p>
+
+<p>For the 260-week projection, the CF statement is computed at every week. The cumulative CFO over five years tells you the total cash the business generates from trading. Compare this to cumulative CFI (total investment) and cumulative CFF (total external funding). A healthy business should, over time, generate enough CFO to fund its investment and return capital to owners — that is, cumulative CFO should exceed cumulative CFI in absolute terms, leaving CFF to trend negative as loans are repaid and dividends paid.</p>
+
+<div class="history-box">
+  <div class="label">Historical note</div>
+  <p>The cash flow statement became mandatory under IAS 7, first issued in 1977 and substantially revised in 1992 by the International Accounting Standards Committee. Before IAS 7, companies produced a "funds flow statement" or "statement of source and application of funds," which was less standardised and harder to interpret — different companies used different definitions of "funds." In the UK, FRS 102 Section 7 governs cash flow reporting. All companies above the small company threshold (turnover above £10.2m or balance sheet total above £5.1m) must produce one. The indirect method is used by the overwhelming majority of companies in practice, because it connects directly to the other two statements.</p>
+</div>
+
+<div class="break-box">
+  <div class="label">What breaks</div>
+  <ul>
+    <li><strong>Forgetting to add back depreciation.</strong> Depreciation reduced profit in the P&L but didn't reduce cash. If you don't add it back in CFO, you understate cash from operations by the depreciation amount every single week. Over 260 weeks with £200/week depreciation, that is £52,000 of phantom cash drain — the model thinks the business consumed £52,000 more cash than it actually did. For a business with multiple depreciating assets, the cumulative error can be hundreds of thousands of pounds.</li>
+    <li><strong>Wrong sign on $\Delta$AR.</strong> An increase in receivables means cash was <em>not</em> collected — it should <em>reduce</em> CFO. If you accidentally add it instead of subtracting, you double-count: the revenue appears as profit (in net profit) <em>and</em> as a cash inflow (via positive $\Delta$AR). CFO is overstated by <em>twice</em> the AR increase. This is one of the most common errors in financial modelling. The mnemonic: assets up = cash down.</li>
+  </ul>
+</div>
+
+<h2>9. Exercises</h2>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 1 — Algebraic derivation (academic)</div>
+  <p>Starting from $A = L + E$, expand each side into its components (cash, AR, PPE on the left; AP, VAT, PAYE, CT, loan, share capital, RE on the right). Take the difference between week $w$ and week $w-1$. Isolate $\Delta\text{cash}$. Substitute $\Delta\text{RE} = \text{NP} - \text{div}$ and $\Delta\text{PPE} = \text{capex} - \text{dep}$. Show that the resulting expression is identically $\text{CFO} + \text{CFI} + \text{CFF}$ as defined above.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p>Week $w$: $\text{cash} + \text{AR} + \text{PPE} = \text{AP} + \text{VAT} + \text{PAYE} + \text{CT} + \text{loan} + \text{SC} + \text{RE}$.</p>
+      <p>Week $w-1$: same with $(w-1)$ subscripts. Subtract:</p>
+      <div class="display-math">$$\Delta\text{cash} + \Delta\text{AR} + \Delta\text{PPE} = \Delta\text{AP} + \Delta\text{VAT} + \Delta\text{PAYE} + \Delta\text{CT} + \Delta\text{loan} + \Delta\text{SC} + \Delta\text{RE}$$</div>
+      <p>Isolate cash: $\Delta\text{cash} = -\Delta\text{AR} - \Delta\text{PPE} + \Delta\text{AP} + \Delta\text{VAT} + \Delta\text{PAYE} + \Delta\text{CT} + \Delta\text{loan} + \Delta\text{SC} + \Delta\text{RE}$.</p>
+      <p>Substitute: $\Delta\text{RE} = \text{NP} - \text{div}$, $\Delta\text{PPE} = \text{capex} - \text{dep}$, $\Delta\text{loan} = \text{new\_borr} + \text{repay}$, $\Delta\text{SC} = \text{eq\_inj}$.</p>
+      <div class="display-math">$$\Delta\text{cash} = -\Delta\text{AR} - \text{capex} + \text{dep} + \Delta\text{AP} + \Delta\text{VAT} + \Delta\text{PAYE} + \Delta\text{CT} + \text{new\_borr} + \text{repay} + \text{eq\_inj} + \text{NP} - \text{div}$$</div>
+      <p>Group by category:</p>
+      <div class="display-math">$$= \underbrace{(\text{NP} + \text{dep} - \Delta\text{AR} + \Delta\text{AP} + \Delta\text{VAT} + \Delta\text{PAYE} + \Delta\text{CT})}_{\text{CFO}} + \underbrace{(-\text{capex})}_{\text{CFI}} + \underbrace{(\text{new\_borr} + \text{repay} + \text{eq\_inj} - \text{div})}_{\text{CFF}}$$</div>
+      <p>This is the definition of CFO + CFI + CFF. The cash flow statement is not an independent model — it is the accounting identity, expanded, differenced, and rearranged. That is why it always ties to the balance sheet change.</p>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 2 — Full CF derivation (applied)</div>
+  <p>Given two consecutive balance sheets:</p>
+  <p><strong>Week 5:</strong> Cash £18,000 | AR £24,000 | PPE £48,000. AP £9,600 | VAT £1,800 | PAYE £2,400 | CT £6,000 | Loan £25,000 | SC £10,000 | RE £35,200.</p>
+  <p><strong>Week 6:</strong> Cash ? | AR £25,200 | PPE £47,850. AP £9,600 | VAT £2,100 | PAYE £0 | CT £6,350 | Loan £25,000 | SC £10,000 | RE £36,800.</p>
+  <p>(a) Compute cash at week 6 using the plug. (b) Compute all deltas. (c) Build the full CF statement (CFO, CFI, CFF). (d) Verify $\Delta\text{Cash}$ ties to the balance sheet.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p><strong>(a) Cash plug.</strong></p>
+      <p>L + E = £9,600 + £2,100 + £0 + £6,350 + £25,000 + £10,000 + £36,800 = £89,850.</p>
+      <p>Non-cash A = £25,200 + £47,850 = £73,050.</p>
+      <p>Cash = £89,850 - £73,050 = <strong>£16,800</strong>.</p>
+
+      <p><strong>(b) Deltas.</strong></p>
+      <table>
+        <tr><th>Item</th><th>W5</th><th>W6</th><th>$\Delta$</th></tr>
+        <tr><td>Cash</td><td>£18,000</td><td>£16,800</td><td>-£1,200</td></tr>
+        <tr><td>AR</td><td>£24,000</td><td>£25,200</td><td>+£1,200</td></tr>
+        <tr><td>PPE</td><td>£48,000</td><td>£47,850</td><td>-£150</td></tr>
+        <tr><td>AP</td><td>£9,600</td><td>£9,600</td><td>£0</td></tr>
+        <tr><td>VAT</td><td>£1,800</td><td>£2,100</td><td>+£300</td></tr>
+        <tr><td>PAYE</td><td>£2,400</td><td>£0</td><td>-£2,400</td></tr>
+        <tr><td>CT</td><td>£6,000</td><td>£6,350</td><td>+£350</td></tr>
+        <tr><td>Loan</td><td>£25,000</td><td>£25,000</td><td>£0</td></tr>
+        <tr><td>SC</td><td>£10,000</td><td>£10,000</td><td>£0</td></tr>
+        <tr><td>RE</td><td>£35,200</td><td>£36,800</td><td>+£1,600</td></tr>
+      </table>
+
+      <p><strong>(c) Cash flow statement.</strong></p>
+      <p>From the deltas: net profit = $\Delta\text{RE} = \text{£}1{,}600$ (no dividends). Depreciation = $-\Delta\text{PPE} = \text{£}150$ (no capex). No financing changes.</p>
+      <p>CFO = NP + dep - $\Delta$AR + $\Delta$AP + $\Delta$VAT + $\Delta$PAYE + $\Delta$CT</p>
+      <p>= £1,600 + £150 - £1,200 + £0 + £300 + (-£2,400) + £350</p>
+      <p>= <strong>-£1,200</strong>.</p>
+      <p>CFI = -capex = £0.</p>
+      <p>CFF = £0.</p>
+      <p>$\Delta\text{Cash} = -\text{£}1{,}200$.</p>
+
+      <p><strong>(d) Verification.</strong></p>
+      <p>$\text{cash}(6) - \text{cash}(5) = 16{,}800 - 18{,}000 = -\text{£}1{,}200$. Ties exactly.</p>
+
+      <p>Despite £1,600 net profit and £150 depreciation add-back (£1,750 pre-working-capital), the PAYE drain of £2,400 and AR increase of £1,200 consumed £3,600, overwhelming the positive contributions from VAT deferral (£300) and CT deferral (£350). The business was profitable but cash-negative — a classic working capital squeeze compounded by a tax drain event.</p>
+    </div>
+  </details>
+</div>
+
+<hr>
+
+<div class="oneliner">The cash flow statement is not a fourth model — it is the accounting identity rearranged, and that is exactly why it always ties.</div>
+
+<div class="nav">
+  <a href="03-balance-sheet.html">&larr; The Balance Sheet</a>
+  <a href="../phase4/01-dso-dpo.html">Next: DSO and DPO &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body>
+</html>

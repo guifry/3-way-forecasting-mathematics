@@ -1,0 +1,98 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adolphe Quetelet — Mathematicians</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head><body>
+
+<h1>Adolphe Quetelet (1796&ndash;1874)</h1>
+<p class="subtitle">The man who turned the bell curve into a mirror of society.</p>
+
+<h2>The Contribution</h2>
+
+<p>Before Quetelet, the arithmetic mean was a tool of astronomers. You measured the
+position of a star twenty times, averaged the results, and treated the mean as the
+&ldquo;true&rdquo; position, with individual measurements scattered around it by
+observational error. The mean was a way to filter out noise from a signal that
+genuinely existed.</p>
+
+<p>Quetelet asked a radical question: what if you applied the same logic to people?
+What if you measured the chest circumferences of five thousand Scottish soldiers,
+computed the mean, and treated the result as the measurement of a real &mdash; if
+abstract &mdash; entity? He called this entity <em>l&rsquo;homme moyen</em>, the
+average man.</p>
+
+<p>In his 1835 work <em>Sur l&rsquo;homme et le d&eacute;veloppement de ses
+facult&eacute;s</em>, Quetelet showed that human physical measurements followed the
+same bell-shaped curve that Gauss had used for astronomical errors. Heights, chest
+measurements, even birth rates and crime rates &mdash; when plotted as frequency
+distributions, they all approximated the normal distribution:</p>
+
+$$f(x) = \frac{1}{\sigma\sqrt{2\pi}} \, e^{-\frac{(x - \mu)^2}{2\sigma^2}}$$
+
+<p>This was not merely a curiosity. It meant that the mathematical machinery developed
+for astronomy &mdash; the mean, the probable error, the method of least squares &mdash;
+could be repurposed for the study of human populations. Statistics was no longer
+confined to the observatory; it could walk the streets.</p>
+
+<p>Quetelet&rsquo;s average man was controversial from the start. Critics objected that
+the mean of a population is not the same kind of thing as the mean of repeated
+measurements of a fixed quantity. A star has a true position; does a population
+have a &ldquo;true&rdquo; height? Quetelet argued yes, and that individual variation
+was analogous to observational error &mdash; a view that modern statisticians would
+treat with more nuance, but which was enormously productive as a working assumption.</p>
+
+<h2>The Context</h2>
+
+<p>Quetelet trained as an astronomer in Paris under Laplace, Fourier, and Poisson &mdash;
+three of the greatest probabilists of the age. He returned to Belgium in the 1820s
+and founded the Royal Observatory in Brussels. But his ambitions extended beyond the
+telescope. He was fascinated by the regularities he observed in social data: crime
+statistics that remained stable from year to year, mortality rates that followed
+predictable patterns, even the rate at which letters were lost in the post.</p>
+
+<p>The early nineteenth century was an era of rapid statistical data collection. National
+censuses were becoming routine. Governments were beginning to gather systematic data on
+births, deaths, crimes, and economic activity. Quetelet saw this flood of numbers as
+raw material for a new science &mdash; what he called <em>physique sociale</em>, social
+physics.</p>
+
+<p>His insight was that while individual behaviour was unpredictable, aggregate behaviour
+was remarkably stable. A single person might or might not commit a crime, but the crime
+rate for a city of a million was nearly constant from year to year. The mean, in
+Quetelet&rsquo;s hands, became not just a summary of data but a law of social
+regularity.</p>
+
+<h2>The Legacy</h2>
+
+<p>In this course, the mean appears on the very first page &mdash; <strong>Phase 0,
+page 1</strong> &mdash; as the most basic tool for summarising a dataset. When we compute
+the average monthly revenue for a business, we are doing exactly what Quetelet proposed:
+treating the mean as a representative value around which individual observations
+scatter.</p>
+
+<p>Quetelet&rsquo;s conceptual leap &mdash; that the mean of a social or economic dataset
+is meaningful, not just a mathematical convenience &mdash; is so deeply embedded in
+modern practice that we rarely question it. Every time a forecaster says &ldquo;average
+revenue is &pound;50k per month,&rdquo; they are implicitly invoking Quetelet&rsquo;s
+average man.</p>
+
+<p>His work also laid the groundwork for everything that follows in Phase 0: if the data
+is roughly normally distributed, then the mean and standard deviation together give you
+a nearly complete description of the dataset. That assumption &mdash; sometimes valid,
+sometimes not &mdash; runs through the entire course.</p>
+
+<div class="nav">
+  <a href="../index.html">&larr; Back to index</a>
+  <a href="pearson.html">Next: Pearson &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body></html>

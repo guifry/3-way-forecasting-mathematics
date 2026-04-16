@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From Ledger to Assumptions — Phase 7</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>From Ledger to Assumptions</h1>
+<p class="subtitle">Phase 7 — The Full Model Walkthrough, Page 1</p>
+
+<div class="problem-box">
+  <div class="label">The problem</div>
+  <p>You have 18 months of accounting data — sales invoices, purchase bills, a trial balance, bank transactions. From this raw ledger, you must derive <em>every single assumption</em> the forecast model needs. Each assumption has a precise formula, and each formula traces back to the phase where it was derived. This page is a guided walkthrough of that derivation.</p>
+</div>
+
+<h2>1. Base Monthly Revenue</h2>
+
+<p>Extract all paid sales invoices over the 18-month period. Group by calendar month and sum. The <strong>base monthly revenue</strong> is the arithmetic mean of these monthly totals (Phase 0, page 1 — the mean as a central tendency measure):</p>
+
+<div class="display-math">$$R_{\text{monthly}} = \frac{1}{N} \sum_{i=1}^{N} \text{revenue}_i$$</div>
+
+<p>where $N$ is the number of complete months. Convert to a weekly figure by dividing by the average number of weeks per month:</p>
+
+<div class="display-math">$$R_{\text{weekly}} = \frac{R_{\text{monthly}}}{4.33}$$</div>
+
+<p>The factor 4.33 = 52/12 is the average number of weeks per month. Some months have 4 weeks, others have 5 (in terms of partial weeks). Using 4.33 avoids systematic bias in either direction.</p>
+
+<p><strong>Worked example:</strong> 18 months of invoices total £2,700,000. $R_{\text{monthly}} = 2{,}700{,}000 / 18 = \text{£}150{,}000$. $R_{\text{weekly}} = 150{,}000 / 4.33 = \text{£}34{,}642$.</p>
+
+<p>Why use the mean and not the median? For revenue, the mean preserves the total: $\text{mean} \times N = \text{total}$. The median does not have this property. Since the projection engine multiplies the base rate by growth and seasonal factors, preserving the total ensures the projection's first year reproduces the historical total (before growth adjustment).</p>
+
+<h2>2. Growth Rate</h2>
+
+<p>Compare the average monthly revenue of the last 12 months to the prior 6 months (Phase 1, page 1 — compound growth):</p>
+
+<div class="display-math">$$g = \frac{\bar{R}_{\text{last 12}} - \bar{R}_{\text{prior 6}}}{\bar{R}_{\text{prior 6}}}$$</div>
+
+<p>Clamp to a sensible range to prevent runaway projections:</p>
+
+<div class="display-math">$$g_{\text{clamped}} = \max(-0.20, \min(0.25, g))$$</div>
+
+<p>The bounds [-20%, +25%] are asymmetric because revenue declines are self-limiting (a business that shrinks 20% per year will contract or restructure), whilst growth above 25% annually is rare outside early-stage startups. These bounds can be adjusted per industry.</p>
+
+<p><strong>Worked example:</strong> Prior 6 months avg = £140,000/month. Last 12 months avg = £155,000/month.</p>
+
+<div class="display-math">$$g = \frac{155{,}000 - 140{,}000}{140{,}000} = 0.1071 = 10.7\%$$</div>
+
+<p>Within bounds, so $g_{\text{clamped}} = 10.7\%$.</p>
+
+<h2>3. Seasonal Indices</h2>
+
+<p>Requires at least 13 months of data. Compute a 12-month centred moving average (Phase 2, page 1), then the ratio of each month's actual to its CMA (Phase 2, page 2 — multiplicative decomposition):</p>
+
+<div class="display-math">$$S_m = \frac{1}{|\{i : \text{month}(i) = m\}|} \sum_{i : \text{month}(i) = m} \frac{\text{actual}_i}{\text{CMA}_i}$$</div>
+
+<p>Normalise so the 12 indices sum to 12 (Phase 2, page 3):</p>
+
+<div class="display-math">$$S'_m = S_m \times \frac{12}{\sum_{j=1}^{12} S_j}$$</div>
+
+<p>Apply a floor of 0.5 to prevent any month projecting near-zero revenue.</p>
+
+<p><strong>Worked example (abbreviated):</strong> Suppose CMA ratios for Jan-Dec average to: 0.82, 0.88, 0.95, 1.02, 1.10, 1.15, 1.08, 1.05, 0.98, 0.95, 0.90, 1.12. Sum = 12.00 (already normalised). January's index is 0.82 — revenue in January is projected at 82% of the trend. No month falls below 0.5, so no floor adjustment needed.</p>
+
+<p>The floor of 0.5 prevents pathological projections where a very quiet month (e.g., August for a B2B company) projects near-zero revenue. In practice, even the quietest month rarely falls below 50% of the annual average. If it does, the data may reflect an anomaly (e.g., a one-off shutdown) rather than true seasonality.</p>
+
+<h2>4. DSO and DPO</h2>
+
+<p>From invoice and bill payment records, compute the payment delay for each transaction (Phase 4, page 1). This requires matching each invoice to its corresponding payment — a process called <strong>cash allocation</strong> or <strong>remittance matching</strong>. Most accounting systems track this automatically; if not, match by amount and customer within a reasonable date window.</p>
+
+<div class="display-math">$$\text{delay}_i = \text{payment\_date}_i - \text{invoice\_date}_i \quad \text{(in days)}$$</div>
+
+<p><strong>Days Sales Outstanding (DSO)</strong> = median of customer payment delays. <strong>Days Payable Outstanding (DPO)</strong> = median of supplier payment delays. Use median rather than mean to resist outliers (Phase 0, page 1). Compute quarterly medians to detect trends (Phase 4, page 2).</p>
+
+<p><strong>Worked example:</strong> 200 customer invoices with payment delays. Sorted median = 34 days. DSO = 34. Convert to weeks: $34 / 7 = 4.86 \approx 5$ weeks. Similarly, 150 supplier bills give DPO median = 28 days = 4 weeks.</p>
+
+<p>Quarterly medians reveal trends: if Q1 DSO was 30 days and Q4 DSO is 38 days, customers are paying slower. The model should use the most recent quarter's median (38 days = 5.4 ≈ 5 weeks) rather than the 18-month overall, unless there is reason to believe the trend will reverse. This judgement is one of the few places where qualitative business knowledge overrides the mechanical formula.</p>
+
+<h2>5. Gross Margin</h2>
+
+<p>From the trial balance, classify accounts into revenue and cost of goods sold (COGS). This classification is the single most consequential judgement call in the assumption derivation — it determines both the gross margin and the residual cost.</p>
+
+<div class="display-math">$$\text{gross margin} = 1 - \frac{\text{COGS}}{\text{revenue}}$$</div>
+
+<p><strong>Worked example:</strong> Revenue = £2,700,000. COGS = £1,620,000. Margin = $1 - 1{,}620{,}000 / 2{,}700{,}000 = 1 - 0.60 = 0.40$ (40%).</p>
+
+<p>COGS classification requires careful judgement. Include direct materials, direct labour, and manufacturing overheads. Exclude selling, general, and administrative expenses (SGA). If the trial balance does not separate COGS from SGA, examine individual nominal codes: codes 4000-4999 are typically COGS in UK chart-of-accounts conventions; codes 5000-7999 are typically overheads.</p>
+
+<p>Gross margin is the single most important profitability assumption. A 1% error in margin on £150,000/month revenue means £1,500/month misprojection — £78,000 over the 5-year forecast horizon. Always cross-check against industry benchmarks (e.g., UK SME average gross margin is typically 40-60% for services, 25-40% for manufacturing).</p>
+
+<h2>6. Fixed Ratio</h2>
+
+<p>From recurring expense analysis, classify each cost line as fixed, variable, or semi-variable using CVP analysis (Phase 1, page 3). Plot each cost against revenue; lines with near-zero slope are fixed, lines with positive slope are variable, lines with a positive intercept and positive slope are semi-variable. The <strong>fixed ratio</strong> is the proportion of total operating expenses that are fixed:</p>
+
+<div class="display-math">$$\text{fixed\_ratio} = \frac{\sum \text{fixed costs}}{\sum \text{total opex}}$$</div>
+
+<p><strong>Worked example:</strong> Total opex = £900,000/year. Fixed costs (rent, salaries, insurance) = £630,000. Fixed ratio = $630{,}000 / 900{,}000 = 0.70$ (70%). This means 70% of operating costs do not change with revenue volume — they must be paid regardless of whether the company has a good month or a bad one. The remaining 30% scales with activity.</p>
+
+<p>The fixed ratio is used by the engine to split costs: fixed streams grow at the inflation rate, variable streams grow at the revenue growth rate. Getting this ratio wrong has compounding effects over the 5-year forecast — a 10% error in fixed ratio translates to a progressively larger error in projected costs as growth diverges from inflation.</p>
+
+<h2>7. Recurring Streams</h2>
+
+<p>Detect recurring transactions using coefficient of variation thresholds (Phase 0, page 5). A stream is <strong>recurring</strong> if its monthly amounts have $\text{CV} < 0.30$ — meaning the standard deviation is less than 30% of the mean, indicating high regularity. Streams with $\text{CV} \geq 0.30$ are treated as non-recurring (irregular or one-off) and captured in the residual cost instead.</p>
+
+<p>Classify by frequency (weekly, monthly, quarterly) based on the transaction pattern. Normalise all to weekly amounts:</p>
+
+<div class="display-math">$$\text{weekly amount} = \begin{cases} \text{amount} & \text{if weekly} \\ \text{amount} / 4.33 & \text{if monthly} \\ \text{amount} / 13 & \text{if quarterly} \end{cases}$$</div>
+
+<p><strong>Worked example:</strong> Rent = £8,000/month (CV = 0.00) → £1,848/week. Software subscriptions = £2,400/quarter (CV = 0.05) → £185/week. Utilities = £1,200/month (CV = 0.22) → £277/week.</p>
+
+<h2>8. Residual Cost</h2>
+
+<p>Everything not captured by COGS or recurring streams. Strip out depreciation (a non-cash item):</p>
+
+<div class="display-math">$$\text{residual\_monthly} = \frac{\text{total\_opex} - \text{depreciation}}{\text{period\_months}} - \text{COGS\_monthly} - \sum \text{recurring\_monthly}$$</div>
+
+<p>Convert to weekly by dividing by 4.33.</p>
+
+<p>This formula is a <strong>residual calculation</strong> — it captures everything not already accounted for by named cost categories. It is inherently noisy: any classification error in COGS or recurring streams flows directly into the residual. For this reason, always sense-check the residual against the original accounts. If the residual exceeds 30% of total opex, the classification likely needs refinement.</p>
+
+<p><strong>Worked example:</strong> Total opex (18 months) = £1,350,000. Depreciation = £135,000. Period = 18 months. COGS monthly = £90,000. Recurring monthly = £11,600 (from step 7: £8,000 + £800 + £1,200 + £1,600).</p>
+<div class="display-math">$$\text{residual\_monthly} = \frac{1{,}350{,}000 - 135{,}000}{18} - 90{,}000 - 11{,}600 = 67{,}500 - 90{,}000 - 11{,}600 = -34{,}100$$</div>
+<p>A negative residual suggests COGS already captures most variable costs. Clamp to zero or re-examine the COGS classification. Suppose corrected COGS monthly = £55,000:</p>
+<div class="display-math">$$\text{residual\_monthly} = 67{,}500 - 55{,}000 - 11{,}600 = \text{£}900$$</div>
+<p>Weekly: $900 / 4.33 = \text{£}208$.</p>
+
+<h2>9. Capex Rate</h2>
+
+<div class="display-math">$$\text{capex\_rate} = \min\left(0.15, \frac{\text{depreciation}}{\text{income}}\right)$$</div>
+
+<p>The cap at 15% prevents over-projection for capital-light businesses (e.g., software companies with minimal fixed assets). Income here is total revenue over the period. The logic: in steady state, a company's capital expenditure roughly equals its depreciation (it replaces assets as they wear out). Using depreciation as a proxy for capex avoids the lumpiness of actual capex (which tends to come in large, irregular purchases).</p>
+
+<p><strong>Worked example:</strong> Depreciation = £135,000. Income = £2,700,000. Rate = $135{,}000 / 2{,}700{,}000 = 0.05 = 5\%$. Below cap, so capex rate = 5%.</p>
+
+<h2>10. Dividend Payout</h2>
+
+<div class="display-math">$$\text{payout} = \min\left(1, \frac{\text{dividends}}{\text{retained\_profit} + \text{dividends}}\right)$$</div>
+
+<p>Capped at 100% (cannot pay out more than total earnings plus dividends).</p>
+
+<p><strong>Worked example:</strong> Dividends declared = £80,000. Retained profit = £320,000. Payout = $80{,}000 / (320{,}000 + 80{,}000) = 0.20 = 20\%$.</p>
+
+<p>The denominator is "retained profit + dividends" rather than just "retained profit" because retained profit is <em>after</em> dividends have been deducted. Adding dividends back gives the total earnings available for distribution, making the payout ratio comparable across companies with different retention policies.</p>
+
+<p>A payout of 0% means the company retains all earnings (common for growth-stage businesses). A payout of 100% means all earnings are distributed. The cap at 100% prevents the model from projecting dividends in excess of earnings, which would reduce equity below its starting point — possible in practice (funded from reserves) but requiring explicit board approval and therefore not something to project by default.</p>
+
+<h2>11. Loan Terms</h2>
+
+<p>From the trial balance and loan schedules: outstanding balance, annual interest rate, remaining term in months. If multiple loans, list each separately. Include overdraft facilities (treated as revolving debt with no fixed term) and hire purchase agreements (treated as fixed-term loans secured against specific assets).</p>
+
+<p><strong>Worked example:</strong> One term loan: balance £500,000, rate 6.5%, remaining 48 months. One revolving facility: balance £100,000, rate 8.0%, remaining 12 months.</p>
+
+<p>For each loan, the engine needs the monthly repayment amount (calculated using the annuity formula from Phase 1, p1) and the interest/principal split at each point in time. The split changes as the balance reduces — early payments are interest-heavy, later payments are principal-heavy. This is the standard amortisation schedule.</p>
+
+<p>For the term loan: monthly payment = $\frac{500{,}000 \times 0.065/12}{1 - (1 + 0.065/12)^{-48}} = \frac{2{,}708}{1 - 0.7716} = \frac{2{,}708}{0.2284} = \text{£}11{,}857$/month approximately. Of the first payment, £2,708 is interest and £9,149 is principal.</p>
+
+<h2>12. The Complete Assumptions Page</h2>
+
+<table>
+  <tr><th>Parameter</th><th>Value</th><th>Source</th></tr>
+  <tr><td>Base weekly revenue</td><td>£34,642</td><td>Mean of monthly invoices ÷ 4.33 (Phase 0, p1)</td></tr>
+  <tr><td>Annual growth rate</td><td>10.7%</td><td>12m vs prior 6m comparison (Phase 1, p1)</td></tr>
+  <tr><td>Seasonal indices</td><td>[0.82, 0.88, ..., 1.12]</td><td>CMA ratio-to-MA (Phase 2, p1-3)</td></tr>
+  <tr><td>DSO (weeks)</td><td>5</td><td>Median payment delay (Phase 4, p1)</td></tr>
+  <tr><td>DPO (weeks)</td><td>4</td><td>Median bill delay (Phase 4, p1)</td></tr>
+  <tr><td>Gross margin</td><td>40%</td><td>1 - COGS/revenue (trial balance)</td></tr>
+  <tr><td>Fixed ratio</td><td>70%</td><td>CVP classification (Phase 1, p3)</td></tr>
+  <tr><td>Recurring streams</td><td>£2,310/week</td><td>CV &lt; 0.30 detection (Phase 0, p5)</td></tr>
+  <tr><td>Residual cost</td><td>£208/week</td><td>Opex - deprec - COGS - recurring</td></tr>
+  <tr><td>Capex rate</td><td>5%</td><td>min(0.15, deprec/income)</td></tr>
+  <tr><td>Dividend payout</td><td>20%</td><td>min(1, div/(RE + div))</td></tr>
+  <tr><td>Loan 1</td><td>£500k, 6.5%, 48m</td><td>Trial balance + schedule</td></tr>
+  <tr><td>Loan 2</td><td>£100k, 8.0%, 12m</td><td>Trial balance + schedule</td></tr>
+</table>
+
+<p>This single table is the <strong>input contract</strong> for the projection engine. Every parameter is derived, auditable, and traceable to its source formula.</p>
+
+<h3>Validation checks</h3>
+
+<p>Before passing the assumptions to the engine, run these sanity checks:</p>
+
+<ul>
+  <li><strong>Revenue sense check:</strong> $R_{\text{weekly}} \times 52$ should be within ±20% of the latest annual revenue. If not, investigate whether the mean is skewed by an outlier month.</li>
+  <li><strong>Margin bounds:</strong> gross margin should be between 0% and 100%. Negative margin means COGS exceeds revenue — either the business is loss-making (valid) or the classification is wrong (likely).</li>
+  <li><strong>DSO/DPO reasonableness:</strong> DSO above 90 days (13 weeks) is unusual outside construction and government contracting. DPO above 60 days (9 weeks) may indicate cash flow stress or aggressive payment terms.</li>
+  <li><strong>Residual non-negative:</strong> a negative residual cost suggests double-counting between COGS and recurring streams. Re-examine the classification.</li>
+  <li><strong>Growth bounds:</strong> the [-20%, +25%] clamp prevents runaway projections, but values near the bounds warrant manual review. A 25% growth rate sustained for 5 years implies revenue quadrupling.</li>
+</ul>
+
+<h3>Sensitivity of the assumptions page</h3>
+
+<p>The assumptions page is the single point through which <em>all</em> scenario analysis flows (Phase 6, p1 — adjustment algebra). To model "what if growth is 5% instead of 10.7%?", change one cell. To model "what if DSO increases to 7 weeks?", change one cell. The projection engine treats every assumption as an input parameter — never as an embedded constant.</p>
+
+<p>This separation of assumptions from logic is the fundamental architectural principle of three-way modelling. The engine is a pure function: given assumptions, it produces a forecast. Different assumptions produce different forecasts. The assumptions page is the interface between the subjective (judgement about the future) and the mechanical (calculation of consequences).</p>
+
+<div class="history-box">
+  <div class="label">Historical note</div>
+  <p>The discipline of deriving forecast assumptions from historical accounts was formalised by <strong>financial modelling training firms</strong> in the 1990s and 2000s — notably Wall Street Prep, the Corporate Finance Institute, and Macquarie Group's internal training programme. The principle that every assumption must be <em>derived, not guessed</em> is central to best-practice financial modelling. The Macquarie school, in particular, emphasised that a model is only as good as the audit trail connecting each assumption to its source data.</p>
+</div>
+
+<div class="break-box">
+  <div class="label">What breaks</div>
+  <p><strong>If you forget to strip depreciation from the residual:</strong> depreciation is a non-cash charge. Including it in residual cost double-counts the expense — once as depreciation (calculated separately in the P&amp;L) and once as a cash outflow. This inflates projected costs and understates cash generation.</p>
+  <p><strong>If you have fewer than 13 months of data:</strong> the 12-month CMA requires at least 13 data points (12 for the window plus 1 for centring). Without it, seasonal indices cannot be computed, and the model must either assume flat seasonality ($S_m = 1$ for all $m$) or source indices externally.</p>
+</div>
+
+<h2>13. Exercises</h2>
+
+<div class="exercise">
+  <span class="exercise-label">Exercise 1 (Academic)</span>
+  <p>List every assumption in the table above and trace each to its source formula, naming the specific mathematical operation used.</p>
+  <details>
+    <summary>Solution</summary>
+    <div>
+      <ol>
+        <li><strong>Base weekly revenue</strong>: arithmetic mean (Phase 0 p1) of monthly invoice sums, divided by 4.33.</li>
+        <li><strong>Growth rate</strong>: percentage change between two period averages (Phase 1 p1), clamped to [-20%, +25%].</li>
+        <li><strong>Seasonal indices</strong>: 12-month CMA (Phase 2 p1), ratio-to-moving-average (Phase 2 p2), average by month, normalise to 12 (Phase 2 p3), floor at 0.5.</li>
+        <li><strong>DSO/DPO</strong>: median of payment delays (Phase 0 p1 — median as robust central tendency; Phase 4 p1 for application to receivables/payables).</li>
+        <li><strong>Gross margin</strong>: ratio of (revenue - COGS) to revenue, from trial balance classification.</li>
+        <li><strong>Fixed ratio</strong>: proportion of fixed costs in total opex, from CVP classification (Phase 1 p3).</li>
+        <li><strong>Recurring streams</strong>: CV threshold detection (Phase 0 p5), frequency classification, weekly normalisation.</li>
+        <li><strong>Residual cost</strong>: subtraction of identified components from total opex, with depreciation excluded.</li>
+        <li><strong>Capex rate</strong>: ratio of depreciation to income, capped at 15%.</li>
+        <li><strong>Dividend payout</strong>: ratio of dividends to total earnings, capped at 100%.</li>
+        <li><strong>Loan terms</strong>: direct extraction from trial balance and amortisation schedules.</li>
+      </ol>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <span class="exercise-label">Exercise 2 (Applied)</span>
+  <p>Given the following ledger summary, derive the complete assumptions page:</p>
+  <ul>
+    <li>24 months of invoices totalling £4,320,000. Prior 12 months avg: £170,000/month. Last 12 months avg: £190,000/month.</li>
+    <li>COGS over 24 months: £2,376,000. Total opex: £1,728,000. Depreciation: £192,000.</li>
+    <li>300 customer invoices with median payment delay 42 days. 200 bills with median delay 35 days.</li>
+    <li>Recurring costs identified: rent £10,000/month, software £3,000/quarter, insurance £6,000/quarter.</li>
+    <li>Dividends: £120,000. Retained profit: £480,000.</li>
+    <li>One loan: £750,000 at 7%, 60 months remaining.</li>
+  </ul>
+  <details>
+    <summary>Solution</summary>
+    <div>
+      <p><strong>Base monthly revenue:</strong> £4,320,000 / 24 = £180,000. Weekly: £180,000 / 4.33 = <strong>£41,570</strong>.</p>
+      <p><strong>Growth rate:</strong> $(190{,}000 - 170{,}000) / 170{,}000 = 11.8\%$. Within bounds. <strong>g = 11.8%</strong>.</p>
+      <p><strong>Seasonal indices:</strong> require CMA computation from monthly data (not shown here — would follow Phase 2 method).</p>
+      <p><strong>DSO:</strong> 42 days / 7 = <strong>6 weeks</strong>. <strong>DPO:</strong> 35 days / 7 = <strong>5 weeks</strong>.</p>
+      <p><strong>Gross margin:</strong> $1 - 2{,}376{,}000 / 4{,}320{,}000 = 1 - 0.55 = $ <strong>45%</strong>.</p>
+      <p><strong>Recurring monthly:</strong> £10,000 + £1,000 + £2,000 = £13,000. Weekly: £13,000 / 4.33 = <strong>£3,002/week</strong>.</p>
+      <p><strong>Residual monthly:</strong> $(1{,}728{,}000 - 192{,}000) / 24 - 99{,}000 - 13{,}000 = 64{,}000 - 99{,}000 - 13{,}000 = -48{,}000$. Negative — COGS monthly (£2,376,000/24 = £99,000) exceeds opex net of depreciation. Re-examine: COGS may be double-counted in opex. If COGS is separate from opex: residual = $64{,}000 - 13{,}000 = \text{£}51{,}000$/month = <strong>£11,778/week</strong>.</p>
+      <p><strong>Capex rate:</strong> $192{,}000 / 4{,}320{,}000 = 4.4\%$. Below cap. <strong>4.4%</strong>.</p>
+      <p><strong>Dividend payout:</strong> $120{,}000 / (480{,}000 + 120{,}000) = 20\%$. <strong>20%</strong>.</p>
+      <p><strong>Loan:</strong> £750,000, 7%, 60 months.</p>
+    </div>
+  </details>
+</div>
+
+<hr>
+
+<div class="oneliner">Every assumption is derived from the ledger, never guessed — and every derivation traces back to its mathematical foundation.</div>
+
+<div class="nav">
+  <a href="../phase6/02-fragments-and-cascade.html">&larr; Fragment Application and Balance Cascade</a>
+  <a href="02-full-projection.html">Next: The 260-Week Projection &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body>
+</html>

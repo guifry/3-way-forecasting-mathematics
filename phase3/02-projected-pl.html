@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The P&L — Projected Flows — Phase 3</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>The P&L — Projected Flows</h1>
+<p class="subtitle">Phase 3 — The Accounting Identity, Page 2</p>
+
+<div class="problem-box">
+  <div class="label">The problem</div>
+  <p>You have a revenue baseline, an annual growth rate, and monthly seasonal indices. You have cost streams classified by CVP type. You need to project a complete weekly Profit and Loss statement for 260 weeks — five full years. Every line must be derived from explicit formulae so the model is reproducible and auditable.</p>
+</div>
+
+<h2>1. Revenue Projection</h2>
+
+<p>We built the pieces in earlier phases. <a href="../phase1/01-compound-interest.html">Phase 1, Page 1</a> gave us compound growth: $P(1+g)^{t}$. <a href="../phase2/03-multiplicative-seasonality.html">Phase 2, Page 3</a> gave us multiplicative seasonal indices $S(m)$ satisfying $\sum_{m=1}^{12} S(m) = 12$. The combined formula multiplies the growth trend by the seasonal pattern:</p>
+
+<div class="theorem-box">
+  <div class="label">Definition — Weekly Revenue Projection</div>
+  <div class="display-math">$$\text{revenue}(w) = \text{base\_weekly} \times (1 + g)^{(w-1)/52} \times S(\text{month}(w))$$</div>
+  <p>where $\text{base\_weekly}$ is the average weekly revenue at time zero, $g$ is the clamped annual growth rate, $w$ is the week number starting from 1, and $S(\text{month}(w))$ is the seasonal index for the month containing week $w$.</p>
+</div>
+
+<p>Let us unpack each component. The <strong>base weekly revenue</strong> is typically computed from recent trading data — take the last 12 months of revenue, divide by 52. This anchors the projection to reality.</p>
+
+<p>The <strong>growth factor</strong> $(1+g)^{(w-1)/52}$ smoothly compounds the annual rate across weeks. At week 1, the exponent is $0/52 = 0$, so the factor is 1. At week 53, the exponent is $52/52 = 1$, so the factor is $(1+g)$ — exactly one year of growth. Between these points, the growth is distributed evenly. We use $(w-1)$ rather than $w$ so that week 1 has no growth applied — it represents the current baseline.</p>
+
+<p>The <strong>seasonal index</strong> $S(m)$ rescales each week according to its month's historical pattern. If January has $S = 0.85$, revenue in January is 15% below the trend line. If December has $S = 1.20$, revenue is 20% above. The constraint $\sum S(m) = 12$ ensures the seasonal pattern averages to 1.0 over a full year — it redistributes revenue across months without changing the annual total.</p>
+
+<h2>2. Cost Projection by CVP Type</h2>
+
+<p>In <a href="../phase1/03-cvp.html">Phase 1, Page 3</a>, we classified every cost stream by its <strong>cost-volume-profit (CVP) behaviour</strong>: does the cost scale with revenue, stay fixed regardless of revenue, or do something in between? Each type has its own projection formula.</p>
+
+<h3>Cost of Goods Sold (COGS)</h3>
+
+<div class="theorem-box">
+  <div class="label">Definition — Gross Margin</div>
+  <p>The <strong>gross margin</strong> $\text{GM}$ is the fraction of revenue retained after subtracting direct costs:</p>
+  <div class="display-math">$$\text{GM} = \frac{\text{revenue} - \text{COGS}}{\text{revenue}} = 1 - \frac{\text{COGS}}{\text{revenue}}$$</div>
+  <p>Equivalently, $\text{COGS} = \text{revenue} \times (1 - \text{GM})$.</p>
+</div>
+
+<p>COGS is <em>purely variable</em> — it scales linearly with revenue. If your gross margin is 65%, then 35p of every pound of revenue goes to direct costs. The projection is straightforward:</p>
+
+<div class="display-math">$$\text{COGS}(w) = \text{revenue}(w) \times (1 - \text{GM})$$</div>
+
+<p>Because COGS is a fixed proportion of revenue, it inherits the same growth rate and seasonal pattern. When revenue is high in December, COGS is high too. This is correct — you sell more, so you buy more inputs.</p>
+
+<p>A constant gross margin is a simplification. In reality, margins fluctuate with input costs, pricing pressure, and product mix. For a 5-year projection, a constant margin is a reasonable baseline. If you expect margin compression (e.g., due to rising supplier costs), you can model GM as a slowly declining function of time — but the core formula remains the same.</p>
+
+<h3>Fixed costs</h3>
+
+<p>Costs like rent, insurance, and base salaries do not change with revenue. A restaurant pays the same rent whether it serves 50 or 500 covers. These costs only grow with <strong>inflation</strong>:</p>
+
+<div class="display-math">$$\text{fixed}(w) = \text{stream\_weekly} \times (1 + r_{\text{inflation}})^{(w-1)/52}$$</div>
+
+<p>The inflation rate $r_{\text{inflation}}$ is typically 2–4% per annum in the UK. Over 5 years at 3%, a £3,000/week cost grows to $3{,}000 \times (1.03)^5 = \text{£}3{,}477$ — a 16% increase.
+Not dramatic for a single stream, but cumulative across multiple fixed cost streams it adds up. A business with five fixed cost streams each inflating at 3% will see total fixed costs rise by £2,385/week over the 5-year horizon.</p>
+
+<h3>Variable costs</h3>
+
+<p>Costs like sales commissions, shipping, and payment processing fees grow with the business — as revenue rises, these costs rise proportionally. They compound at the same rate as revenue:</p>
+
+<div class="display-math">$$\text{variable}(w) = \text{stream\_weekly} \times (1 + g)^{(w-1)/52}$$</div>
+
+<p>Note: variable costs scale with the <em>growth trend</em> but typically do not have seasonal variation applied in the same way as revenue. Sales commissions, for instance, are contractual percentages — they don't change with the season, only with the long-term volume of sales. In a more sophisticated model, you might apply the seasonal factor to variable costs too (more sales in December = more commissions in December). But for the base model, we track the trend only.</p>
+
+<p>Why separate fixed from variable? Because the distinction matters enormously for profitability under stress. If revenue drops 20%, variable costs drop 20% too — they flex with the business. Fixed costs do not drop at all — rent is due regardless. A business with mostly variable costs can survive a downturn by shrinking gracefully. A business with mostly fixed costs faces a profit squeeze: costs stay high while revenue falls. The CVP classification determines how the P&L behaves under different growth scenarios.</p>
+
+<h3>Residual costs</h3>
+
+<p>Some costs don't fit neatly into fixed or variable. They are partly fixed, partly variable, with their own seasonal pattern. From <a href="../phase2/04-residual-seasonality.html">Phase 2, Page 4</a>, we project these with a blended growth rate and a dampened seasonal adjustment:</p>
+
+<div class="display-math">$$\text{residual}(w) = \text{stream\_weekly} \times (1 + r_{\text{blended}})^{(w-1)/52} \times S_{\text{dampened}}(\text{month}(w))$$</div>
+
+<p>where $r_{\text{blended}}$ is a weighted average of the inflation and growth rates, and the dampened seasonal indices $S_{\text{dampened}}$ are closer to 1.0 than the revenue seasonal indices. Dampening prevents cost projections from swinging as wildly as revenue — costs are stickier than revenue in practice.</p>
+
+<h2>3. Non-Cash and Below-the-Line Items</h2>
+
+<h3>Depreciation</h3>
+
+<p>When a business buys a piece of equipment — say a £52,000 oven for a bakery — the cost is not expensed immediately. Instead, it is <strong>depreciated</strong>: spread over the asset's useful life using straight-line allocation. On a weekly basis:</p>
+
+<div class="display-math">$$\text{weekly\_dep} = \frac{\text{asset\_cost}}{\text{useful\_life\_years} \times 52}$$</div>
+
+<p>For the £52,000 oven with a 5-year life: $52{,}000 / (5 \times 52) = \text{£}200$ per week.</p>
+
+<p>Depreciation is a <strong>non-cash charge</strong>. It reduces reported profit but does not reduce cash. The cash left the business when the asset was purchased — that was a capital expenditure (capex), captured in cash flow from investing, not in the P&L. Depreciation is merely the P&L's way of recognising that the asset is wearing out. Confusing depreciation with a cash cost is one of the most common forecasting errors. We will correct for it explicitly in the <a href="04-cash-flow-statement.html">cash flow statement</a>.</p>
+
+<h3>Interest expense</h3>
+
+<p>If the business has outstanding debt, it pays interest to the lender. From <a href="../phase1/02-geometric-series.html">Phase 1, Page 2</a>:</p>
+
+<div class="display-math">$$\text{interest}(w) = \text{loan\_balance}(w) \times \frac{r_{\text{base}} + r_{\text{spread}}}{52}$$</div>
+
+<p>where $r_{\text{base}}$ is the Bank of England base rate (currently around 4.5%) and $r_{\text{spread}}$ is the margin charged by the lender (typically 2–4% for SMEs). The weekly division distributes the annual rate evenly. Unlike depreciation, interest <em>is</em> a cash charge — money actually leaves the bank account each week (or month, depending on the loan terms).</p>
+
+<h3>Corporation tax</h3>
+
+<p>In the UK, corporation tax is levied on <strong>profit before tax (PBT)</strong>. The current main rate is 25% for profits above £250,000 (19% for profits below £50,000, with marginal relief between). For projection purposes, we use a single effective rate $\tau$:</p>
+
+<div class="display-math">$$\text{corp\_tax}(w) = \max\bigl(0,\; \text{PBT}(w) \times \tau\bigr)$$</div>
+
+<p>The $\max(0, \ldots)$ is essential: if the business makes a loss in a given week, the tax charge is zero, not negative. HMRC does not pay you for losing money (though losses can be carried forward against future profits — we ignore this simplification for now, and treat each week independently).</p>
+
+<p>Note that the tax rate applies to <em>profit before tax</em>, not to revenue. A business with £10,000 revenue and £9,500 costs has PBT of £500 and pays £125 tax — an effective rate on revenue of just 1.25%. A business with £10,000 revenue and £5,000 costs has PBT of £5,000 and pays £1,250 tax — 12.5% of revenue. The tax burden scales with profitability, not with size.</p>
+
+<p>The tax <em>charge</em> appears in the P&L each week, but the tax is <em>paid</em> on a different schedule — annually for most companies, quarterly for very large ones. This timing difference creates a corporation tax accrual on the balance sheet, which we model in <a href="03-balance-sheet.html">Page 3</a>.</p>
+
+<h2>4. The Complete P&L Formula</h2>
+
+<p>Assembling all components, the P&L has a clear waterfall structure. Each line subtracts from the one above:</p>
+
+<div class="display-math">$$\text{gross\_profit}(w) = \text{revenue}(w) - \text{COGS}(w)$$</div>
+
+<div class="display-math">$$\text{EBITDA}(w) = \text{gross\_profit}(w) - \sum_{i} \text{opex\_stream}_i(w)$$</div>
+
+<p>where the sum runs over all operating cost streams (fixed, variable, residual).</p>
+
+<div class="display-math">$$\text{EBIT}(w) = \text{EBITDA}(w) - \text{depreciation}(w)$$</div>
+
+<div class="display-math">$$\text{PBT}(w) = \text{EBIT}(w) - \text{interest}(w)$$</div>
+
+<div class="display-math">$$\text{net\_profit}(w) = \text{PBT}(w) - \text{corp\_tax}(w)$$</div>
+
+<p>In a single expression:</p>
+
+<div class="display-math">$$\text{net\_profit} = \text{revenue} - \text{COGS} - \text{opex} - \text{depreciation} - \text{interest} - \max(0,\; \text{PBT} \times \tau)$$</div>
+
+<p>This is the formula that produces the net profit figure feeding into retained earnings on the balance sheet. It is computed fresh at every week $w$ from $w = 1$ to $w = 260$, producing a complete 5-year weekly P&L.</p>
+
+<p>The acronyms: <strong>EBITDA</strong> = Earnings Before Interest, Tax, Depreciation, and Amortisation. <strong>EBIT</strong> = Earnings Before Interest and Tax. <strong>PBT</strong> = Profit Before Tax. Each level strips out a different category of cost, giving progressively finer views of the business's economics.</p>
+
+<h2>5. Worked Example: 4-Week P&L</h2>
+
+<p>Assumptions: base weekly revenue £12,000. Annual growth rate $g = 8\%$. Gross margin 65%. Three operating cost streams:</p>
+<ul>
+  <li><strong>Staff</strong>: fixed, £3,000/week, inflation 3%</li>
+  <li><strong>Marketing</strong>: variable, £1,200/week, growth 8%</li>
+  <li><strong>Office</strong>: residual, £800/week, blended rate 5%, dampened seasonal</li>
+</ul>
+<p>PPE: £52,000 oven, 5-year life → £200/week depreciation. Loan: £40,000 at 7.25% (base 5.25% + spread 2%) → £40{,}000 \times 0.0725 / 52 = \text{£}55.77$/week. Corp tax rate 25%. Projection starts in January; seasonal index $S(\text{Jan}) = 0.85$. Dampened office seasonal also 0.85.</p>
+
+<p><strong>Revenue (week 1):</strong> $12{,}000 \times (1.08)^{0/52} \times 0.85 = 12{,}000 \times 1.0000 \times 0.85 = \text{£}10{,}200$.</p>
+<p><strong>Revenue (week 2):</strong> $12{,}000 \times (1.08)^{1/52} \times 0.85 = 12{,}000 \times 1.001479 \times 0.85 \approx \text{£}10{,}215$.</p>
+<p>The week-on-week growth within January is barely perceptible — about £15. But compounded over 260 weeks, 8% annual growth turns £12,000 into $12{,}000 \times (1.08)^5 = \text{£}17{,}633$.</p>
+
+<table>
+  <tr><th>Line item</th><th>Week 1</th><th>Week 2</th><th>Week 3</th><th>Week 4</th></tr>
+  <tr><td>Revenue</td><td>£10,200</td><td>£10,215</td><td>£10,230</td><td>£10,245</td></tr>
+  <tr><td>COGS (35%)</td><td>£3,570</td><td>£3,575</td><td>£3,581</td><td>£3,586</td></tr>
+  <tr><td><strong>Gross profit</strong></td><td><strong>£6,630</strong></td><td><strong>£6,640</strong></td><td><strong>£6,650</strong></td><td><strong>£6,659</strong></td></tr>
+  <tr><td>Staff (fixed)</td><td>£3,000</td><td>£3,000</td><td>£3,000</td><td>£3,000</td></tr>
+  <tr><td>Marketing (variable)</td><td>£1,200</td><td>£1,202</td><td>£1,204</td><td>£1,205</td></tr>
+  <tr><td>Office (residual)</td><td>£680</td><td>£681</td><td>£681</td><td>£682</td></tr>
+  <tr><td><strong>EBITDA</strong></td><td><strong>£1,750</strong></td><td><strong>£1,757</strong></td><td><strong>£1,765</strong></td><td><strong>£1,772</strong></td></tr>
+  <tr><td>Depreciation</td><td>£200</td><td>£200</td><td>£200</td><td>£200</td></tr>
+  <tr><td><strong>EBIT</strong></td><td><strong>£1,550</strong></td><td><strong>£1,557</strong></td><td><strong>£1,565</strong></td><td><strong>£1,572</strong></td></tr>
+  <tr><td>Interest</td><td>£56</td><td>£56</td><td>£56</td><td>£56</td></tr>
+  <tr><td><strong>PBT</strong></td><td><strong>£1,494</strong></td><td><strong>£1,501</strong></td><td><strong>£1,509</strong></td><td><strong>£1,516</strong></td></tr>
+  <tr><td>Corp tax (25%)</td><td>£374</td><td>£375</td><td>£377</td><td>£379</td></tr>
+  <tr><td><strong>Net profit</strong></td><td><strong>£1,121</strong></td><td><strong>£1,126</strong></td><td><strong>£1,132</strong></td><td><strong>£1,137</strong></td></tr>
+</table>
+
+<p>4-week total net profit: £4,516. This is a January figure — with $S = 0.85$, revenue is 15% below trend. In a high-season month with $S = 1.20$, the same business would generate roughly £2,300/week net profit. The seasonal swing is dramatic.</p>
+
+<p>Let us verify the gross profit margin is preserved: £6,630 / £10,200 = 0.650 = 65%. It is, by construction — COGS is defined as revenue × (1 - GM).</p>
+
+<p>Notice also that fixed costs (staff at £3,000/wk) do not change across the four weeks. Variable costs barely move — the growth factor over 3 weeks is $(1.08)^{3/52} = 1.0044$, adding only £5 to the marketing budget. The meaningful variation comes from the seasonal index, which changes monthly, and from the cumulative compounding over longer horizons.</p>
+
+<p>Over a full 260-week projection, the P&L for each week is computed by this same set of formulae. The model needs only a handful of inputs: base revenue, growth rate, seasonal indices, gross margin, cost stream amounts and types, depreciation schedule, interest rate, and tax rate. Everything else is derived.</p>
+
+<h2>6. Cash vs Non-Cash — A Critical Distinction</h2>
+
+<p>The P&L tells you about <em>value creation</em>, not <em>cash movement</em>. Several P&L items have timing differences between when they are recognised and when cash actually moves:</p>
+
+<table>
+  <tr><th>P&L Item</th><th>Cash timing</th><th>BS absorber</th></tr>
+  <tr><td>Revenue</td><td>Recognised at invoice; cash arrives later (DSO delay)</td><td>Trade receivables (asset)</td></tr>
+  <tr><td>COGS</td><td>Recognised at goods receipt; supplier paid later (DPO delay)</td><td>Trade payables (liability)</td></tr>
+  <tr><td>Staff costs</td><td>Paid in same period</td><td>None (or PAYE accrual for the tax portion)</td></tr>
+  <tr><td>Other opex</td><td>Typically paid in same period</td><td>None</td></tr>
+  <tr><td>Depreciation</td><td>Never cash — already paid at purchase</td><td>Accumulated depreciation (contra-asset)</td></tr>
+  <tr><td>Interest</td><td>Paid in same period</td><td>None</td></tr>
+  <tr><td>Corp tax charge</td><td>Charged weekly; paid quarterly or annually</td><td>Tax accrual (current liability)</td></tr>
+</table>
+
+<p>The timing gaps create the working capital items on the balance sheet — receivables, payables, and accruals. Understanding which items are cash and which aren't is essential for building the cash flow statement in <a href="04-cash-flow-statement.html">Page 4</a>.</p>
+
+<div class="history-box">
+  <div class="label">Historical note</div>
+  <p>The requirement for companies to produce a profit and loss account dates to the UK Joint Stock Companies Act 1844, the first statute to mandate corporate financial reporting. The modern format — revenue at the top, net profit at the bottom — evolved through successive Companies Acts (1948, 1985, 2006) and is now governed by FRS 102 for small and medium companies and IFRS for listed companies. The underlying principle is <strong>accrual accounting</strong>: revenues and costs are recognised when earned or incurred, not when cash moves. This principle, first articulated in the 19th century, is why the P&L and cash flow are different statements — and why you need both.</p>
+</div>
+
+<div class="break-box">
+  <div class="label">What breaks</div>
+  <ul>
+    <li><strong>Treating net profit as cash profit.</strong> Depreciation is a non-cash charge of £200/week. Over 260 weeks, that is £52,000 — the entire cost of the asset. If you assume all profit is cash, you overstate cumulative cash by £52,000. For a business with multiple depreciating assets, the error can be hundreds of thousands of pounds.</li>
+    <li><strong>Ignoring seasonal adjustment.</strong> Revenue in December ($S = 1.20$) is 41% higher than in January ($S = 0.85$). Without seasonal indices, you project the same revenue every week. In a seasonal business like retail or hospitality, this means massively overstating winter revenue and understating summer revenue. Cash flow projections built on flat revenue will show false shortfalls in peak months and false surpluses in troughs — the exact opposite of reality.</li>
+  </ul>
+</div>
+
+<h2>7. Exercises</h2>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 1 — Derive the net profit formula (academic)</div>
+  <p>Starting from the five-step waterfall (revenue → gross profit → EBITDA → EBIT → PBT → net profit), substitute the formulae for each component and derive the net profit formula as a single expression in terms of revenue, GM, opex streams, depreciation, interest, and tax rate. Then identify which terms involve actual cash movement and which do not.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p>Start with the waterfall:</p>
+      <div class="display-math">$$\text{NP} = \text{PBT} - \text{tax} = (\text{EBIT} - I) - \max(0, (\text{EBIT} - I)\tau)$$</div>
+      <p>If PBT &gt; 0: $\text{NP} = (\text{EBIT} - I)(1 - \tau)$.</p>
+      <p>Expand EBIT: $\text{EBIT} = \text{EBITDA} - D = (\text{GP} - \text{opex}) - D = (R \cdot \text{GM} - \text{opex}) - D$.</p>
+      <p>Full expansion (PBT &gt; 0 case):</p>
+      <div class="display-math">$$\text{NP} = \bigl(R \cdot \text{GM} - \text{opex} - D - I\bigr)(1 - \tau)$$</div>
+      <p>where $R$ = revenue, $D$ = depreciation, $I$ = interest, $\tau$ = tax rate.</p>
+      <p><strong>Cash items:</strong> revenue (eventually, with DSO delay), COGS (eventually, with DPO delay), opex (immediate), interest (immediate).</p>
+      <p><strong>Non-cash items:</strong> depreciation (allocation of past capex), corporation tax charge (paid on a different schedule — the P&L charge and the cash payment differ in timing).</p>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 2 — Build a 12-week P&L (applied)</div>
+  <p>Assumptions: base weekly revenue £12,000; annual growth $g = 8\%$; gross margin 65%. Three cost streams: staff (fixed, £2,800/wk, inflation 3%), IT (variable, £900/wk, growth 8%), misc (residual, £600/wk, blended 5%, dampened seasonal). Depreciation £150/wk. Interest £40/wk (constant loan balance). Corp tax 25%. Seasonal indices: Jan = 0.85, Feb = 0.88, Mar = 0.95. Dampened seasonal for misc: Jan = 0.90, Feb = 0.92, Mar = 0.96. Weeks 1–4 are January, 5–8 February, 9–12 March.</p>
+  <p>Compute net profit for each 4-week block and the 12-week total.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p>Growth within 12 weeks is negligible ($(1.08)^{11/52} = 1.0016$), so we treat the growth factor as 1.00 throughout and focus on the seasonal effect.</p>
+      <p><strong>Weeks 1–4 (January):</strong></p>
+      <p>Revenue = £12,000 × 0.85 = £10,200/wk. COGS = £10,200 × 0.35 = £3,570. GP = £6,630.</p>
+      <p>Staff = £2,800. IT = £900. Misc = £600 × 0.90 = £540. Total opex = £4,240.</p>
+      <p>EBITDA = £6,630 - £4,240 = £2,390. EBIT = £2,390 - £150 = £2,240. PBT = £2,240 - £40 = £2,200. Tax = £550. NP = £1,650/wk.</p>
+      <p>4-week block: £6,600.</p>
+
+      <p><strong>Weeks 5–8 (February):</strong></p>
+      <p>Revenue = £12,000 × 0.88 = £10,560/wk. COGS = £3,696. GP = £6,864.</p>
+      <p>Staff = £2,800. IT = £900. Misc = £600 × 0.92 = £552. Total opex = £4,252.</p>
+      <p>EBITDA = £6,864 - £4,252 = £2,612. EBIT = £2,462. PBT = £2,422. Tax = £606. NP = £1,817/wk.</p>
+      <p>4-week block: £7,266.</p>
+
+      <p><strong>Weeks 9–12 (March):</strong></p>
+      <p>Revenue = £12,000 × 0.95 = £11,400/wk. COGS = £3,990. GP = £7,410.</p>
+      <p>Staff = £2,800. IT = £900. Misc = £600 × 0.96 = £576. Total opex = £4,276.</p>
+      <p>EBITDA = £7,410 - £4,276 = £3,134. EBIT = £2,984. PBT = £2,944. Tax = £736. NP = £2,208/wk.</p>
+      <p>4-week block: £8,832.</p>
+
+      <p><strong>12-week total net profit: £6,600 + £7,266 + £8,832 = £22,698.</strong></p>
+      <p>Notice how the seasonal index drives a 34% swing in weekly net profit between January (£1,650) and March (£2,208), even though the underlying growth rate is flat over this short period.</p>
+    </div>
+  </details>
+</div>
+
+<hr>
+
+<div class="oneliner">The P&L is a flow statement — it tells you how much value was created, not how much cash moved.</div>
+
+<div class="nav">
+  <a href="01-double-entry.html">&larr; Double-Entry as a Conservation Law</a>
+  <a href="03-balance-sheet.html">Next: The Balance Sheet &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dampened Seasonality for Costs — Phase 2</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Dampened Seasonality for Costs</h1>
+<p class="subtitle">Phase 2 — Seasonal Decomposition, Page 4</p>
+
+<!-- ─── THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>Revenue is seasonal — December is 50% above trend. Cost of goods sold (COGS) tracks revenue: more sales means more stock purchased, more packaging, more shipping. But rent is £3,000/month whether it's August or Christmas. Salaried staff cost the same in January as in July.</p>
+<p>Your "other operating costs" bucket contains both types: some costs that swing with revenue and some that don't. If you apply the full revenue seasonal index to rent, you'll project rent at £4,500 in December and £2,100 in a quiet month. The landlord would be surprised. How much seasonality should each cost line actually carry?</p>
+</div>
+
+<!-- ─── 1. CVP RECAP ─────────────────────────────── -->
+
+<h2>1. CVP recap</h2>
+
+<p>From <a href="../phase1/03-inflation-and-blended-growth.html">Phase 1, Page 3</a>, recall the <strong>cost-volume-profit</strong> (CVP) framework. Costs fall into three categories based on how they respond to changes in activity level:</p>
+
+<ul>
+<li><strong>Fixed costs</strong> don't change with revenue volume. Rent, business insurance, salaried staff, software licences, depreciation. Whether you sell £10k or £100k in a month, these costs stay the same. Seasonal variation: <strong>none</strong>.</li>
+<li><strong>Variable costs</strong> scale directly with revenue. COGS (cost of goods sold), sales commissions, payment processing fees (typically a percentage of revenue), packaging and shipping for physical goods. If revenue is 50% above trend, variable costs are 50% above trend too. Seasonal variation: <strong>full</strong> — they inherit the revenue seasonal pattern exactly.</li>
+<li><strong>Semi-variable costs</strong> are a mix of both. A staffing budget might include salaried managers (fixed) plus casual workers hired for busy periods (variable). A utilities bill has a standing charge (fixed) plus usage that correlates with activity (variable). Seasonal variation: <strong>partial</strong>, depending on the mix.</li>
+</ul>
+
+<p>The question is precise: given a cost line where we know (or estimate) the <strong>fixed ratio</strong> $f$ — the fraction of the cost that is fixed — what seasonal multiplier should we apply to project that cost forward?</p>
+
+<p>In practice, the fixed ratio is rarely known exactly. You estimate it from historical data (high-low method, regression) or from business knowledge ("rent is £3k/month and doesn't change; everything else scales with revenue"). Getting $f$ roughly right matters more than getting it precise. As we'll see, the dampened factor is linear in $f$, so a 10% error in $f$ produces only a proportional error in the seasonal adjustment — not a catastrophic one.</p>
+
+<!-- ─── 2. DERIVATION ─────────────────────────────── -->
+
+<h2>2. Deriving the dampened seasonal factor</h2>
+
+<p>Let $C$ be the average monthly cost for a given cost line. Decompose it:</p>
+
+<div class="display-math">$$C = C_{\text{fixed}} + C_{\text{var}}$$</div>
+
+<p>Define the fixed ratio $f = C_{\text{fixed}} / C$, so $C_{\text{fixed}} = fC$ and $C_{\text{var}} = (1-f)C$.</p>
+
+<p>In month $m$, the fixed part stays flat (its "seasonal index" is 1 for every month):</p>
+
+<div class="display-math">$$C_{\text{fixed}}(m) = fC \times 1 = fC$$</div>
+
+<p>The variable part follows the revenue seasonal index $S(m)$:</p>
+
+<div class="display-math">$$C_{\text{var}}(m) = (1-f)C \times S(m)$$</div>
+
+<p>The total cost in month $m$ is:</p>
+
+<div class="display-math">$$C(m) = fC + (1-f)C \cdot S(m)$$</div>
+
+<p>Factor out $C$:</p>
+
+<div class="display-math">$$C(m) = C \bigl[ f + (1-f) S(m) \bigr]$$</div>
+
+<p>Now rearrange the bracket. Expand:</p>
+
+<div class="display-math">$$f + (1-f)S(m) = f + S(m) - fS(m)$$</div>
+
+<p>Add and subtract 1 inside to isolate the deviation from 1:</p>
+
+<div class="display-math">$$= 1 + f - 1 + S(m) - fS(m) = 1 + (f - 1) + S(m)(1 - f)$$</div>
+
+<div class="display-math">$$= 1 + (S(m) - 1)(1 - f)$$</div>
+
+<p>To verify this final step directly: expand $(S(m) - 1)(1 - f) = S(m) - fS(m) - 1 + f$. Add 1: get $S(m) - fS(m) + f = f + (1-f)S(m)$. This matches the original expression. ✓</p>
+
+<div class="theorem-box">
+<div class="label">Theorem — Dampened Seasonal Factor</div>
+<p>For a cost line with fixed ratio $f \in [0, 1]$ and revenue seasonal index $S(m)$, the <strong>dampened seasonal factor</strong> is</p>
+<div class="display-math">$$D(m) = 1 + (S(m) - 1)(1 - f)$$</div>
+<p>The projected cost for month $m$ is $C \times D(m)$, where $C$ is the average monthly cost.</p>
+</div>
+
+<p>The formula has an elegant interpretation: the dampened factor is a <strong>weighted average</strong> of "no seasonality" (factor = 1) and "full seasonality" (factor = $S(m)$), with the fixed ratio $f$ as the weight on flatness:</p>
+
+<div class="display-math">$$D(m) = f \cdot 1 + (1 - f) \cdot S(m)$$</div>
+
+<p>This is the same expression rewritten. When $f$ is large (mostly fixed), the factor is pulled toward 1. When $f$ is small (mostly variable), the factor tracks $S(m)$.</p>
+
+<!-- ─── 3. EDGE CASES ─────────────────────────────── -->
+
+<h2>3. Verifying edge cases</h2>
+
+<p>A good formula should behave correctly at its boundaries. Let's check all four corners.</p>
+
+<p><strong>Case 1: $f = 1$ (entirely fixed).</strong></p>
+<div class="display-math">$$D(m) = 1 + (S(m) - 1)(1 - 1) = 1 + (S(m) - 1) \cdot 0 = 1$$</div>
+<p>The dampened factor is 1 for every month, regardless of $S(m)$. A purely fixed cost has no seasonal variation. Rent is £3,000 in July and £3,000 in December. ✓</p>
+
+<p><strong>Case 2: $f = 0$ (entirely variable).</strong></p>
+<div class="display-math">$$D(m) = 1 + (S(m) - 1)(1 - 0) = 1 + S(m) - 1 = S(m)$$</div>
+<p>The dampened factor equals the revenue seasonal index. A purely variable cost follows revenue exactly. If revenue is 50% above trend, COGS is 50% above trend. ✓</p>
+
+<p><strong>Case 3: $f = 0.5$ (half fixed, half variable).</strong></p>
+<div class="display-math">$$D(m) = 1 + (S(m) - 1) \times 0.5$$</div>
+<p>If $S(m) = 1.40$ (a peak month, 40% above trend):</p>
+<div class="display-math">$$D(m) = 1 + 0.40 \times 0.5 = 1 + 0.20 = 1.20$$</div>
+<p>The cost is only 20% above average — half the swing that revenue experiences. The fixed half anchors the cost; the variable half swings. ✓</p>
+
+<p><strong>Case 4: $S(m) = 1$ (an average month).</strong></p>
+<div class="display-math">$$D(m) = 1 + (1 - 1)(1 - f) = 1 + 0 = 1$$</div>
+<p>For any $f$, if the month is exactly at trend, the dampened factor is 1. No seasonal adjustment is needed for a month that's already average. ✓</p>
+
+<!-- ─── 4. WORKED NUMERICAL EXAMPLE ─────────────────────────────── -->
+
+<h2>4. Worked example: the full spectrum</h2>
+
+<p>Take two representative months: $S(\text{Jul}) = 0.70$ (quiet summer month, 30% below trend) and $S(\text{Dec}) = 1.50$ (peak Christmas month, 50% above trend). Apply the dampening formula across a range of fixed ratios for a cost line with average monthly cost of £10,000:</p>
+
+<table>
+<tr><th>$f$</th><th>Description</th><th>$D(\text{Jul})$</th><th>Cost Jul</th><th>$D(\text{Dec})$</th><th>Cost Dec</th><th>Swing</th></tr>
+<tr>
+<td>0</td><td>All variable (COGS)</td>
+<td>$1 + (-0.30)(1.0) = 0.70$</td><td>£7,000</td>
+<td>$1 + (0.50)(1.0) = 1.50$</td><td>£15,000</td>
+<td>£8,000</td>
+</tr>
+<tr>
+<td>0.2</td><td>Mostly variable</td>
+<td>$1 + (-0.30)(0.8) = 0.76$</td><td>£7,600</td>
+<td>$1 + (0.50)(0.8) = 1.40$</td><td>£14,000</td>
+<td>£6,400</td>
+</tr>
+<tr>
+<td>0.5</td><td>Half and half</td>
+<td>$1 + (-0.30)(0.5) = 0.85$</td><td>£8,500</td>
+<td>$1 + (0.50)(0.5) = 1.25$</td><td>£12,500</td>
+<td>£4,000</td>
+</tr>
+<tr>
+<td>0.8</td><td>Mostly fixed</td>
+<td>$1 + (-0.30)(0.2) = 0.94$</td><td>£9,400</td>
+<td>$1 + (0.50)(0.2) = 1.10$</td><td>£11,000</td>
+<td>£1,600</td>
+</tr>
+<tr>
+<td>1.0</td><td>All fixed (rent)</td>
+<td>$1 + (-0.30)(0.0) = 1.00$</td><td>£10,000</td>
+<td>$1 + (0.50)(0.0) = 1.00$</td><td>£10,000</td>
+<td>£0</td>
+</tr>
+</table>
+
+<p>The pattern is clear and monotonic: as $f$ increases, the seasonal swing shrinks linearly from the full revenue swing (£8,000) to zero. At $f = 0.8$, the cost swing is only £1,600 — one-fifth of the revenue swing. The formula acts as a <strong>dimmer switch</strong> on seasonality, controlled by the fixed ratio.</p>
+
+<p>Notice that the dampened factors still average to approximately 1 over a full year (since $S(m)$ averages to 1 by normalisation, so does $D(m)$). The dampening doesn't create or destroy total annual cost — it only affects how that cost is distributed across months.</p>
+
+<div class="proof-box" id="proof-dampened-annual-total">
+<div class="label">Proof — dampened factors preserve the annual total</div>
+<p>We need to show that $\sum_{m=1}^{12} D(m) = 12$, i.e., the average dampened factor is 1.</p>
+<div class="display-math">$$\sum_{m=1}^{12} D(m) = \sum_{m=1}^{12} \left[1 + (S(m) - 1)(1 - f)\right]$$</div>
+<p>Expand:</p>
+<div class="display-math">$$= \sum_{m=1}^{12} 1 + (1-f)\sum_{m=1}^{12}(S(m) - 1)$$</div>
+<div class="display-math">$$= 12 + (1-f)\left(\sum_{m=1}^{12} S(m) - 12\right)$$</div>
+<p>Since the normalised seasonal indices satisfy $\sum S(m) = 12$:</p>
+<div class="display-math">$$= 12 + (1-f)(12 - 12) = 12 + 0 = 12$$</div>
+<p>So $\sum D(m) = 12$ for any fixed ratio $f \in [0, 1]$. The dampening formula redistributes cost across months without inflating or deflating the annual total.</p>
+<div class="qed">∎</div>
+</div>
+
+<h2>5. Sensitivity to the fixed ratio</h2>
+
+<p>How wrong can you be about $f$ before the forecast becomes misleading? Consider a cost line with $S(\text{Dec}) = 1.50$ and true $f = 0.60$. The correct dampened factor is $D = 1 + (0.50)(0.40) = 1.20$. If you estimate $f = 0.40$ (off by 0.20), you get $D = 1 + (0.50)(0.60) = 1.30$ — a 10-percentage-point error. On a £10,000 cost line, that's £1,000 per month in the most seasonal month.</p>
+
+<p>The error scales as $(S(m) - 1) \times \Delta f$. For a moderate seasonal month ($S = 1.15$), a 0.20 error in $f$ produces only $(0.15)(0.20) = 0.03$ — a 3% error. For an extreme month ($S = 2.0$), the same $f$ error gives $(1.0)(0.20) = 0.20$ — a 20% error. The lesson: get $f$ right for the cost lines that dominate peak-season spending. For small or mildly seasonal cost lines, a rough estimate suffices.</p>
+
+<p>This is reassuring: no matter how you set the fixed ratio, the total annual cost projection stays correct. You could set $f = 0.3$ or $f = 0.7$ and the annual number wouldn't change — only the monthly distribution would. Getting the annual total right is non-negotiable for a cash-flow forecast; getting the monthly distribution right is important but secondary.</p>
+
+<!-- ─── 6. EXERCISES ─────────────────────────────── -->
+
+<h2>6. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — Verify edge cases algebraically</div>
+<p>For the seasonal indices $S = [0.70, 1.30]$ (representing a quiet month and a peak month), compute the dampened factor $D(m)$ for $f = 0$, $f = 0.5$, and $f = 1$. Show all arithmetic. Verify that the edge cases match the expected behaviour described in Section 3.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p>The formula is $D(m) = 1 + (S(m) - 1)(1 - f)$.</p>
+
+<p><strong>For $S = 0.70$ (quiet month, 30% below trend):</strong></p>
+<p>$f = 0$: $D = 1 + (0.70 - 1)(1 - 0) = 1 + (-0.30)(1) = 1 - 0.30 = 0.70$.</p>
+<p>This equals $S(m) = 0.70$. The cost tracks revenue exactly. ✓</p>
+<p>$f = 0.5$: $D = 1 + (0.70 - 1)(1 - 0.5) = 1 + (-0.30)(0.5) = 1 - 0.15 = 0.85$.</p>
+<p>The cost is 15% below average — half the 30% deviation of revenue. The fixed half provides ballast. ✓</p>
+<p>$f = 1$: $D = 1 + (0.70 - 1)(1 - 1) = 1 + (-0.30)(0) = 1.00$.</p>
+<p>Completely flat. The seasonal effect is fully suppressed. ✓</p>
+
+<p><strong>For $S = 1.30$ (peak month, 30% above trend):</strong></p>
+<p>$f = 0$: $D = 1 + (1.30 - 1)(1 - 0) = 1 + (0.30)(1) = 1 + 0.30 = 1.30$.</p>
+<p>Equals $S(m) = 1.30$. Full seasonal amplification. ✓</p>
+<p>$f = 0.5$: $D = 1 + (1.30 - 1)(0.5) = 1 + (0.30)(0.5) = 1 + 0.15 = 1.15$.</p>
+<p>Only 15% above average instead of 30%. The seasonal swing is halved. ✓</p>
+<p>$f = 1$: $D = 1 + (1.30 - 1)(0) = 1 + 0 = 1.00$.</p>
+<p>Flat again. ✓</p>
+
+<p><strong>Summary pattern:</strong> the deviation from 1 is $(S(m) - 1)(1 - f)$. It's the product of two factors: how far the month deviates from average ($S - 1$) and how much of the cost is variable ($1 - f$). If either is zero, there's no seasonal effect. If both are large, the effect is large. The formula is bilinear in the two inputs — the simplest possible structure that satisfies all edge cases.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — Applied: restaurant vs law firm</div>
+<p>A restaurant's costs are 80% variable ($f = 0.20$): COGS, casual kitchen staff, and ingredients all scale with covers served. Average monthly costs: £25,000.</p>
+<p>A law firm's overheads are 90% fixed ($f = 0.90$): salaried partners, office lease, professional indemnity insurance. Average monthly overheads: £40,000.</p>
+<p>Both businesses experience a December revenue seasonal index of $S(\text{Dec}) = 1.50$ and an August index of $S(\text{Aug}) = 0.60$.</p>
+<p>Compute December and August projected costs for each business. What's the practical implication for each business's cash-flow planning?</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Restaurant ($f = 0.20$, baseline £25,000):</strong></p>
+<p>December dampened factor:</p>
+<div class="display-math">$$D(\text{Dec}) = 1 + (1.50 - 1)(1 - 0.20) = 1 + (0.50)(0.80) = 1 + 0.40 = 1.40$$</div>
+<p>December cost: $£25{,}000 \times 1.40 = £35{,}000$.</p>
+<p>August dampened factor:</p>
+<div class="display-math">$$D(\text{Aug}) = 1 + (0.60 - 1)(1 - 0.20) = 1 + (-0.40)(0.80) = 1 - 0.32 = 0.68$$</div>
+<p>August cost: $£25{,}000 \times 0.68 = £17{,}000$.</p>
+<p>Seasonal cost swing: $£35{,}000 - £17{,}000 = $ <strong>£18,000</strong> (72% of baseline).</p>
+
+<p><strong>Law firm ($f = 0.90$, baseline £40,000):</strong></p>
+<p>December dampened factor:</p>
+<div class="display-math">$$D(\text{Dec}) = 1 + (1.50 - 1)(1 - 0.90) = 1 + (0.50)(0.10) = 1 + 0.05 = 1.05$$</div>
+<p>December cost: $£40{,}000 \times 1.05 = £42{,}000$.</p>
+<p>August dampened factor:</p>
+<div class="display-math">$$D(\text{Aug}) = 1 + (0.60 - 1)(1 - 0.90) = 1 + (-0.40)(0.10) = 1 - 0.04 = 0.96$$</div>
+<p>August cost: $£40{,}000 \times 0.96 = £38{,}400$.</p>
+<p>Seasonal cost swing: $£42{,}000 - £38{,}400 = $ <strong>£3,600</strong> (9% of baseline).</p>
+
+<p><strong>Practical implications:</strong></p>
+<p>The restaurant faces an £18,000 cost swing across the year. In December, it needs £10,000 more than average for ingredients, casual staff, and supplies — that's cash that must be available upfront, before the Christmas revenue lands. In August, costs drop to £17,000, but so does revenue (£25,000 × 0.60 = £15,000). The restaurant's <em>cash margin</em> is squeezed in quiet months even though costs are lower, because revenue falls faster than costs (revenue has full seasonality; costs are slightly dampened by the 20% fixed component).</p>
+<p>The law firm barely notices the seasons. Its cost swing is £3,600 — trivial relative to £40,000/month baseline. Seasonal cost forecasting is almost irrelevant here; the firm's financial planning should focus on revenue collection timing (fee invoices) rather than cost management. The £2,000 extra in December might cover a partners' Christmas dinner; the August saving might cover nothing at all.</p>
+</div>
+</details>
+</div>
+
+<!-- ─── HISTORY ─────────────────────────────── -->
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p>The dampening formula is a direct application of <strong>CVP analysis</strong> (cost-volume-profit), a staple of management accounting formalised in the 1930s. The Chartered Institute of Management Accountants (CIMA) built the semi-variable cost model into its professional curriculum: total cost = fixed component + (variable rate × activity level). Accountants have used this split for budgeting and variance analysis for nearly a century.</p>
+<p>The idea of applying <em>partial</em> seasonality to mixed cost lines follows naturally from CVP, though it's rarely stated as an explicit mathematical formula in textbooks. Most management accounting texts handle semi-variable costs by splitting them into separate fixed and variable buckets using high-low analysis or regression. The dampening approach is more practical when the split is uncertain, when cost data is limited, or when the cost line genuinely contains inseparable fixed and variable components.</p>
+</div>
+
+<!-- ─── WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>If you apply full seasonality to fixed costs:</strong> rent of £3,000/month, projected with a December seasonal index of 1.50, becomes £4,500. The model says the landlord charges 50% more at Christmas. Salaried staff at £8,000/month become £12,000 in December and £4,800 in August — as if employees accept a 40% pay cut for the summer. Summed across all fixed cost lines, this phantom seasonal swing inflates peak-month expenses by thousands of pounds, distorting the cash-flow forecast and making the business look more volatile than it actually is.</p>
+<p><strong>If you apply no seasonality to variable costs:</strong> COGS projected flat at £15,000/month, even when December revenue is 50% above trend, implies the business can sell 50% more without buying any additional stock. Gross margin would appear to expand magically in December — revenue up, COGS flat — which is internally inconsistent. The forecast breaks its own logic: revenue is seasonal but the direct costs of generating that revenue are not. Any CFO reviewing the numbers would immediately spot the contradiction.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">Dampen the seasonality by the fixed ratio: $D(m) = 1 + (S(m) - 1)(1 - f)$. Fixed costs don't swing; variable costs do; mixed costs split the difference.</div>
+
+<div class="nav">
+<a href="03-seasonal-floor.html">← Prev: Seasonal Floor</a>
+<a href="05-why-not-arima.html">Next: Why Not ARIMA? →</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

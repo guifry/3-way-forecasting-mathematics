@@ -1,0 +1,126 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carl Friedrich Gauss — Mathematicians</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head><body>
+
+<h1>Carl Friedrich Gauss (1777&ndash;1855)</h1>
+<p class="subtitle">The prince of mathematicians, and the man who taught us to fit a line through noisy data.</p>
+
+<h2>The Contribution</h2>
+
+<p>On the first day of 1801, the Italian astronomer Giuseppe Piazzi spotted a faint object
+moving against the background stars. He tracked it for forty days before it disappeared
+behind the Sun. The object was Ceres &mdash; a small body orbiting between Mars and
+Jupiter &mdash; and astronomers across Europe were desperate to find it again when it
+re-emerged months later.</p>
+
+<p>The problem was formidable. Forty days of observations, each slightly corrupted by
+atmospheric distortion and instrumental error, and from these you must predict where
+a tiny dot of light will appear in a vast sky months hence. The orbital mechanics
+alone required fitting six parameters (the elements of an elliptical orbit) to a
+handful of noisy data points.</p>
+
+<p>Gauss solved it. He was twenty-four years old. Using a method he later claimed to have
+developed at the age of eighteen, he computed an orbit for Ceres from Piazzi's noisy
+data. When the astronomer Franz Xaver von Zach pointed his telescope where Gauss
+predicted, on 7 December 1801, there it was &mdash; within half a degree of the forecast
+position. It was a triumph of mathematical prediction, and it made Gauss famous
+across Europe overnight.</p>
+
+<p>The method was <strong>least squares</strong>. Given $n$ observations
+$(x_1, y_1), \ldots, (x_n, y_n)$ and a model $\hat{y} = a + bx$, choose $a$ and $b$
+to minimise the sum of squared residuals:</p>
+
+$$S(a, b) = \sum_{i=1}^{n} (y_i - a - bx_i)^2$$
+
+<p>Why squared? Three reasons. First, squaring makes every error positive, so positive and
+negative deviations don't cancel each other out. Second, squaring penalises large errors
+more heavily than small ones &mdash; an error of 10 contributes 100 to the sum, not 10.
+Third, and most importantly for the mathematics, the squared function is smooth and
+differentiable, which means you can find its minimum by setting derivatives to zero.</p>
+
+<p>Setting $\frac{\partial S}{\partial a} = 0$ and $\frac{\partial S}{\partial b} = 0$
+gives two linear equations in two unknowns &mdash; the so-called <strong>normal equations</strong>.
+The solution is clean, explicit, and computable by hand with nothing more than addition
+and multiplication.</p>
+
+<p>Gauss published the full treatment in his 1809 masterwork <em>Theoria Motus Corporum
+Coelestium</em>. But he went further than just proposing the method. He proved that if the
+errors are normally distributed &mdash; if they follow the bell curve that now bears his
+name &mdash; then least squares gives the <em>most probable</em> values of the parameters.
+This is the result we now call the <strong>Gauss&ndash;Markov theorem</strong>, though Gauss
+never used that name and Markov's contribution came a century later.</p>
+
+<p>The Gauss&ndash;Markov theorem says something precise: among all linear unbiased estimators,
+the least-squares estimator has the smallest variance. In plain language, if your errors
+are well-behaved (zero mean, constant variance, uncorrelated), then no other linear
+method can produce more reliable estimates. This is why least squares is not merely
+popular &mdash; it is, under reasonable conditions, <em>optimal</em>.</p>
+
+<h2>The Context</h2>
+
+<p>Gauss was not working in a vacuum. Astronomers had been wrestling with observational
+error for centuries. Tycho Brahe took meticulous measurements in the sixteenth century;
+Kepler struggled for years to reconcile them with his elliptical orbits. By the
+eighteenth century, the standard practice was to take the arithmetic mean of repeated
+measurements. Everyone knew averaging helped, but nobody had a rigorous theory of
+<em>why</em>, or how to handle the more complex case where you're fitting a curve rather
+than estimating a single number.</p>
+
+<p>The late eighteenth century was the era when probability theory was maturing rapidly.
+Laplace was developing his theory of inverse probability (what we now call Bayesian
+inference). Legendre was working on geodesy and orbit determination. Gauss circled
+the same problems from a different angle. His genius was to connect the method of
+least squares to the normal distribution, giving a probabilistic justification that
+elevated it from a useful trick to a principled theory of estimation.</p>
+
+<p>There is the matter of priority. Legendre published the method of least squares in
+1805, four years before Gauss's <em>Theoria Motus</em>. Gauss insisted he had been using
+it since 1795, and his private notebooks and correspondence with colleagues lend
+credibility to this claim. But Legendre &mdash; understandably &mdash; was furious. He
+had published first, clearly and completely, and now Gauss was claiming retroactive
+priority without having put anything in print. We cover this dispute in
+<a href="legendre.html">Legendre's biography</a>.</p>
+
+<p>What matters for this course is that Gauss provided the deeper theoretical
+justification. Legendre gave us the recipe; Gauss proved it was optimal.</p>
+
+<h2>The Legacy</h2>
+
+<p>Every time you fit a straight line through data points, you are using Gauss's method.
+In this course, that happens in <strong>Phase 0, page 4</strong> when we compute trend lines
+for DSO (days sales outstanding) and DPO (days payable outstanding). The historical
+values are noisy &mdash; each quarter's DSO depends on customer mix, payment timing,
+seasonal effects &mdash; and we need a single clean trend to project forward. Least
+squares gives us that trend.</p>
+
+<p>The formula for the slope $b$ of a regression line through $n$ points:</p>
+
+$$b = \frac{n\sum x_i y_i - \sum x_i \sum y_i}{n\sum x_i^2 - (\sum x_i)^2}$$
+
+<p>is exactly what Gauss derived. The intercept follows immediately:
+$a = \bar{y} - b\bar{x}$. These two numbers &mdash; a slope and an intercept &mdash; give
+you a forecast. Plot the line, extend it forward, and read off the predicted values.</p>
+
+<p>Two hundred years later, Gauss's method remains the workhorse of quantitative
+forecasting. More sophisticated methods exist &mdash; regularised regression, Bayesian
+estimation, gradient-boosted trees &mdash; but they all begin from, or are judged against,
+the least-squares baseline that a twenty-four-year-old established while hunting for
+a lost asteroid.</p>
+
+<div class="nav">
+  <a href="../index.html">&larr; Back to index</a>
+  <a href="legendre.html">Next: Legendre &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body></html>

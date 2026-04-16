@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linear Regression — Fitting a Line — Phase 0</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Linear Regression — Fitting a Line</h1>
+<p class="subtitle">Phase 0 — The Statistical Toolkit, Page 4</p>
+
+<!-- ─── 1. THE PROBLEM ─────────────────────────────── -->
+
+<div class="problem-box">
+<div class="label">The problem</div>
+<p>A business's quarterly DSO (days sales outstanding) values are 28, 31, 33, 36. Is the business getting paid more slowly over time? And if so, by how much per quarter? You need to fit a <em>line</em> through the data, read off the slope, and decide whether the trend is real or noise.</p>
+</div>
+
+<!-- ─── 2. SETUP ─────────────────────────────── -->
+
+<h2>1. Setting up the model</h2>
+
+<p>We model the relationship as $y = a + bx$, where $x$ is the quarter number and $y$ is the DSO value. We have $n$ data points $(x_1, y_1), \ldots, (x_n, y_n)$.</p>
+
+<p>The parameter $b$ is the <strong>slope</strong> — it tells us how much $y$ changes per unit increase in $x$. A positive slope means DSO is increasing (clients are paying more slowly). A negative slope means DSO is decreasing. The parameter $a$ is the <strong>intercept</strong> — the predicted value when $x = 0$.</p>
+
+<p>The goal: find the values of $a$ and $b$ that make the line fit the data as closely as possible.</p>
+
+<!-- ─── 3. LEAST SQUARES ─────────────────────────────── -->
+
+<h2>2. The least squares objective</h2>
+
+<p>But what does "best fit" mean? We need a precise criterion. For a candidate line $y = a + bx$, the <strong>residual</strong> at point $i$ is the vertical error:</p>
+
+<div class="display-math">$$e_i = y_i - (a + bx_i)$$</div>
+
+<p>A positive residual means the data point is above the line; negative means below. We want to minimise the total error across all points. But we can't minimise the sum of residuals directly — positive and negative residuals would cancel (the same problem as with deviations in Phase 0, page 2).</p>
+
+<p>So we minimise the <strong>sum of squared residuals</strong>:</p>
+
+<div class="display-math">$$S(a, b) = \sum_{i=1}^{n} e_i^2 = \sum_{i=1}^{n} (y_i - a - bx_i)^2$$</div>
+
+<p>Why squared? The same reason as for variance: absolute values aren't differentiable, and squares penalise large errors more heavily. A line that badly misses even one point should be penalised more than a line that slightly misses several.</p>
+
+<!-- ─── 4. DERIVING THE FORMULAS ─────────────────────────────── -->
+
+<h2>3. Deriving the slope and intercept</h2>
+
+<p>$S(a, b)$ is a smooth function of two variables. To find its minimum, take partial derivatives with respect to $a$ and $b$, set them to zero, and solve the resulting system.</p>
+
+<div class="proof-box" id="proof-ols-derivation">
+<div class="label">Proof — Ordinary least squares formulas</div>
+
+<p><strong>Step 1.</strong> Partial derivative with respect to $a$:</p>
+<div class="display-math">$$\frac{\partial S}{\partial a} = \sum_{i=1}^{n} 2(y_i - a - bx_i)(-1) = -2\sum_{i=1}^{n}(y_i - a - bx_i)$$</div>
+
+<p>Setting this to zero and dividing by $-2$:</p>
+<div class="display-math">$$\sum_{i=1}^{n}(y_i - a - bx_i) = 0$$</div>
+
+<p>Expanding:</p>
+<div class="display-math">$$\sum_{i=1}^{n} y_i - na - b\sum_{i=1}^{n} x_i = 0$$</div>
+
+<p>Dividing through by $n$:</p>
+<div class="display-math">$$\bar{y} - a - b\bar{x} = 0 \implies a = \bar{y} - b\bar{x}$$</div>
+
+<p>This tells us the line passes through the point $(\bar{x}, \bar{y})$ — the centroid of the data.</p>
+
+<p><strong>Step 2.</strong> Partial derivative with respect to $b$:</p>
+<div class="display-math">$$\frac{\partial S}{\partial b} = \sum_{i=1}^{n} 2(y_i - a - bx_i)(-x_i) = -2\sum_{i=1}^{n} x_i(y_i - a - bx_i)$$</div>
+
+<p>Setting to zero and dividing by $-2$:</p>
+<div class="display-math">$$\sum_{i=1}^{n} x_i y_i - a\sum_{i=1}^{n} x_i - b\sum_{i=1}^{n} x_i^2 = 0$$</div>
+
+<p><strong>Step 3.</strong> Substitute $a = \bar{y} - b\bar{x}$ from Step 1:</p>
+<div class="display-math">$$\sum_{i=1}^n x_i y_i - (\bar{y} - b\bar{x})\sum_{i=1}^n x_i - b\sum_{i=1}^n x_i^2 = 0$$</div>
+
+<p>Since $\sum x_i = n\bar{x}$:</p>
+<div class="display-math">$$\sum x_i y_i - n\bar{x}\bar{y} + bn\bar{x}^2 - b\sum x_i^2 = 0$$</div>
+
+<p>Rearranging for $b$:</p>
+<div class="display-math">$$\sum x_i y_i - n\bar{x}\bar{y} = b\left(\sum x_i^2 - n\bar{x}^2\right)$$</div>
+
+<p><strong>Step 4.</strong> The left side equals $\sum(x_i - \bar{x})(y_i - \bar{y})$ and the right factor equals $\sum(x_i - \bar{x})^2$. To verify the left identity, expand:</p>
+<div class="display-math">$$\sum(x_i - \bar{x})(y_i - \bar{y}) = \sum x_i y_i - \bar{y}\sum x_i - \bar{x}\sum y_i + n\bar{x}\bar{y} = \sum x_i y_i - n\bar{x}\bar{y} - n\bar{x}\bar{y} + n\bar{x}\bar{y} = \sum x_i y_i - n\bar{x}\bar{y}$$</div>
+
+<p>Therefore:</p>
+<div class="display-math">$$b = \frac{\sum_{i=1}^{n}(x_i - \bar{x})(y_i - \bar{y})}{\sum_{i=1}^{n}(x_i - \bar{x})^2}$$</div>
+
+<p><strong>Step 5.</strong> And the intercept follows from Step 1: $a = \bar{y} - b\bar{x}$.</p>
+<div class="qed">∎</div>
+</div>
+
+<div class="theorem-box">
+<div class="label">Theorem — OLS Estimators</div>
+<p>The <strong>ordinary least squares</strong> line $y = a + bx$ has:</p>
+<div class="display-math">$$b = \frac{\sum_{i=1}^{n}(x_i - \bar{x})(y_i - \bar{y})}{\sum_{i=1}^{n}(x_i - \bar{x})^2}, \qquad a = \bar{y} - b\bar{x}$$</div>
+<p>The line always passes through the point $(\bar{x}, \bar{y})$.</p>
+</div>
+
+<!-- ─── 5. GEOMETRIC INTERPRETATION ─────────────────────────────── -->
+
+<h2>4. Geometric interpretation</h2>
+
+<p>Think of the $n$ observed $y$-values as a vector $\mathbf{y} \in \mathbb{R}^n$. The set of all possible fitted values $\hat{\mathbf{y}} = a\mathbf{1} + b\mathbf{x}$ forms a 2-dimensional subspace — the <strong>column space</strong> of the design matrix $X = [\mathbf{1} \mid \mathbf{x}]$.</p>
+
+<p>OLS finds the point in that subspace closest to $\mathbf{y}$ — i.e., the <strong>orthogonal projection</strong> of $\mathbf{y}$ onto the column space. The residual vector $\mathbf{e} = \mathbf{y} - \hat{\mathbf{y}}$ is perpendicular to every vector in the column space.</p>
+
+<p>This perpendicularity gives two concrete conditions: $\sum e_i = 0$ (residuals are perpendicular to the constant vector $\mathbf{1}$, meaning they sum to zero) and $\sum x_i e_i = 0$ (residuals are perpendicular to $\mathbf{x}$, meaning there's no remaining linear pattern in the residuals).</p>
+
+<p>If this geometric picture seems abstract now, it becomes central in Phase 6 (Linear Algebra), where we'll formalise projection and inner products. For now, the takeaway is: OLS is projection, and the residuals are orthogonal to the model.</p>
+
+<!-- ─── 6. WORKED EXAMPLE ─────────────────────────────── -->
+
+<h2>5. Worked example: DSO trend</h2>
+
+<p>Data: quarters $x = 1, 2, 3, 4$ with DSO $y = 28, 31, 33, 36$.</p>
+
+<p><strong>Step 1.</strong> Compute means: $\bar{x} = \frac{1+2+3+4}{4} = 2.5$, $\bar{y} = \frac{28+31+33+36}{4} = 32$.</p>
+
+<p><strong>Step 2.</strong> Compute deviations and products:</p>
+
+<table>
+<tr><th>$i$</th><th>$x_i$</th><th>$y_i$</th><th>$x_i - \bar{x}$</th><th>$y_i - \bar{y}$</th><th>$(x_i - \bar{x})(y_i - \bar{y})$</th><th>$(x_i - \bar{x})^2$</th></tr>
+<tr><td>1</td><td>1</td><td>28</td><td>$-1.5$</td><td>$-4$</td><td>$6.0$</td><td>$2.25$</td></tr>
+<tr><td>2</td><td>2</td><td>31</td><td>$-0.5$</td><td>$-1$</td><td>$0.5$</td><td>$0.25$</td></tr>
+<tr><td>3</td><td>3</td><td>33</td><td>$0.5$</td><td>$1$</td><td>$0.5$</td><td>$0.25$</td></tr>
+<tr><td>4</td><td>4</td><td>36</td><td>$1.5$</td><td>$4$</td><td>$6.0$</td><td>$2.25$</td></tr>
+</table>
+
+<p><strong>Step 3.</strong> Sums: $\sum(x_i - \bar{x})(y_i - \bar{y}) = 6 + 0.5 + 0.5 + 6 = 13$. $\sum(x_i - \bar{x})^2 = 2.25 + 0.25 + 0.25 + 2.25 = 5$.</p>
+
+<p><strong>Step 4.</strong> Slope: $b = \frac{13}{5} = 2.6$ days per quarter.</p>
+
+<p><strong>Step 5.</strong> Intercept: $a = 32 - 2.6 \times 2.5 = 32 - 6.5 = 25.5$.</p>
+
+<p><strong>Step 6.</strong> Check the line passes through $(\bar{x}, \bar{y})$: $a + b\bar{x} = 25.5 + 2.6 \times 2.5 = 25.5 + 6.5 = 32 = \bar{y}$. Confirmed.</p>
+
+<p>The fitted line is $\hat{y} = 25.5 + 2.6x$. Interpretation: DSO increases by about 2.6 days each quarter. The business is being paid more slowly over time, and the trend is clear — nearly linear.</p>
+
+<p>Let's verify with the fitted values: $\hat{y}_1 = 28.1$, $\hat{y}_2 = 30.7$, $\hat{y}_3 = 33.3$, $\hat{y}_4 = 35.9$. Residuals: $-0.1, 0.3, -0.3, 0.1$. Sum $= 0$. Good — the residuals balance out, as they must.</p>
+
+<!-- ─── 7. WHY OLS ─────────────────────────────── -->
+
+<h2>6. Why OLS and not something fancier?</h2>
+
+<p>Robust regression methods exist. <strong>Theil–Sen regression</strong> takes the median of all pairwise slopes — it's resistant to outliers. <strong>RANSAC</strong> iteratively fits lines to subsets and discards outliers. Both are more robust than OLS.</p>
+
+<p>But for small-$n$ trend detection — which is what a forecast engine does with 4–8 quarters of data — OLS is the right choice. It's simple, well-understood, has a closed-form solution (no iteration), and with so few data points, you don't have enough information to justify a more complex model. The forecast engine handles outliers separately, using the CV threshold from Phase 0, page 2, rather than building outlier resistance into the regression itself.</p>
+
+<p>When does OLS <em>stop</em> being appropriate? When $n$ is large enough to have genuine outliers mixed in, and you can't pre-filter them. In those cases, robust regression earns its keep. But with 4 quarterly observations, keep it simple.</p>
+
+<!-- ─── 8. GOODNESS OF FIT ─────────────────────────────── -->
+
+<h2>7. Measuring goodness of fit: $R^2$</h2>
+
+<p>Once you've fitted a line, you want to know: how well does it explain the data? The standard measure is the <strong>coefficient of determination</strong>, $R^2$.</p>
+
+<div class="theorem-box">
+<div class="label">Definition — Coefficient of Determination</div>
+<p>Let $\text{SS}_{\text{res}} = \sum(y_i - \hat{y}_i)^2$ be the sum of squared residuals and $\text{SS}_{\text{tot}} = \sum(y_i - \bar{y})^2$ be the total sum of squares. Then:</p>
+<div class="display-math">$$R^2 = 1 - \frac{\text{SS}_{\text{res}}}{\text{SS}_{\text{tot}}}$$</div>
+<p>$R^2$ ranges from 0 (the line explains nothing) to 1 (the line fits perfectly). It represents the fraction of variance in $y$ that the linear model explains.</p>
+</div>
+
+<p>For our DSO example: $\text{SS}_{\text{tot}} = (-4)^2 + (-1)^2 + 1^2 + 4^2 = 34$. Residuals: $-0.1, 0.3, -0.3, 0.1$. $\text{SS}_{\text{res}} = 0.01 + 0.09 + 0.09 + 0.01 = 0.2$.</p>
+
+<div class="display-math">$$R^2 = 1 - \frac{0.2}{34} = 1 - 0.006 = 0.994$$</div>
+
+<p>An $R^2$ of 0.994 means the linear trend explains 99.4% of the variation in DSO. The fit is excellent — the data is almost perfectly linear. In practice, you'll rarely see $R^2$ this high with noisy business data, but for quarterly aggregates with a clear trend, it's not unusual.</p>
+
+<p>A low $R^2$ doesn't necessarily mean the regression is useless — it means the relationship is noisy. The slope might still be meaningful even if $R^2 = 0.3$, provided you interpret it as "a tendency" rather than "a rule."</p>
+
+<p>Conversely, a high $R^2$ doesn't prove causation. If DSO rises over 4 quarters, it could be because the business is chasing larger (slower-paying) clients, or because of seasonal effects, or because of macroeconomic tightening. The regression tells you <em>that</em> there's a trend, not <em>why</em>. Interpreting the "why" requires domain knowledge that no formula can provide.</p>
+
+<!-- ─── 9. THE LINE AS A PREDICTION TOOL ─────────────────────────────── -->
+
+<h2>8. Using the fitted line for prediction</h2>
+
+<p>The fitted line $\hat{y} = a + bx$ serves as a prediction tool. Given a new value of $x$ (a future quarter), plug it in to get the predicted $y$. But the prediction is only as good as the assumption that the linear trend continues.</p>
+
+<p>Two types of prediction, with very different reliability:</p>
+
+<ul>
+<li><strong>Interpolation:</strong> predicting $y$ for an $x$ value <em>within</em> the range of the data. If your data covers quarters 1–4, predicting DSO at quarter 2.5 is interpolation. This is generally reliable.</li>
+<li><strong>Extrapolation:</strong> predicting $y$ for an $x$ value <em>outside</em> the range. Predicting DSO at quarter 8 is extrapolation. This is inherently risky — the further you go, the more you're assuming about the future.</li>
+</ul>
+
+<p>The forecast engine extrapolates by necessity (forecasting <em>is</em> extrapolation), but it limits the horizon and flags trends with low $R^2$ as unreliable. The general principle: extrapolate cautiously, and never further than you have to.</p>
+
+<!-- ─── 10. EXERCISES ─────────────────────────────── -->
+
+<h2>9. Exercises</h2>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 1 — Compute slope by hand</div>
+<p>Data: $x = 1, 2, 3, 4, 5$ and $y = 10, 13, 14, 18, 20$. Compute the OLS slope $b$ and intercept $a$. Write the equation of the fitted line.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Step 1.</strong> $\bar{x} = \frac{15}{5} = 3$, $\bar{y} = \frac{75}{5} = 15$.</p>
+<p><strong>Step 2.</strong> Build the table:</p>
+<table>
+<tr><th>$x_i - \bar{x}$</th><th>$y_i - \bar{y}$</th><th>product</th><th>$(x_i-\bar{x})^2$</th></tr>
+<tr><td>$-2$</td><td>$-5$</td><td>$10$</td><td>$4$</td></tr>
+<tr><td>$-1$</td><td>$-2$</td><td>$2$</td><td>$1$</td></tr>
+<tr><td>$0$</td><td>$-1$</td><td>$0$</td><td>$0$</td></tr>
+<tr><td>$1$</td><td>$3$</td><td>$3$</td><td>$1$</td></tr>
+<tr><td>$2$</td><td>$5$</td><td>$10$</td><td>$4$</td></tr>
+</table>
+<p><strong>Step 3.</strong> Numerator $= 10 + 2 + 0 + 3 + 10 = 25$. Denominator $= 4 + 1 + 0 + 1 + 4 = 10$.</p>
+<p><strong>Step 4.</strong> $b = \frac{25}{10} = 2.5$. $a = 15 - 2.5 \times 3 = 15 - 7.5 = 7.5$.</p>
+<p>The fitted line is $\hat{y} = 7.5 + 2.5x$. Each unit increase in $x$ corresponds to a 2.5-unit increase in $y$.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 2 — Interpret sign and magnitude</div>
+<p>A business has 5 quarters of DPO data: $x = 1,2,3,4,5$, $y = 42, 38, 35, 33, 32$. Compute the slope. What does a negative slope mean in this context?</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Step 1.</strong> $\bar{x} = 3$, $\bar{y} = \frac{180}{5} = 36$.</p>
+<p><strong>Step 2.</strong> Deviations of $y$: $6, 2, -1, -3, -4$.</p>
+<p><strong>Step 3.</strong> Products: $(-2)(6) + (-1)(2) + (0)(-1) + (1)(-3) + (2)(-4) = -12 - 2 + 0 - 3 - 8 = -25$.</p>
+<p>$(x_i - \bar{x})^2$ sum: $4 + 1 + 0 + 1 + 4 = 10$.</p>
+<p><strong>Step 4.</strong> $b = \frac{-25}{10} = -2.5$ days per quarter. $a = 36 - (-2.5)(3) = 36 + 7.5 = 43.5$.</p>
+<p>A negative slope means DPO is <em>decreasing</em> — the business is paying its suppliers faster over time. At 2.5 days per quarter, DPO drops by about 10 days per year. This could signal improving cash management, pressure from suppliers demanding quicker payment, or a deliberate strategy to capture early-payment discounts.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 3 — Verify residuals sum to zero</div>
+<p>Using the fitted line from Exercise 1 ($\hat{y} = 7.5 + 2.5x$), compute all 5 residuals $e_i = y_i - \hat{y}_i$ and verify they sum to zero.</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p>Fitted values: $\hat{y}_1 = 10$, $\hat{y}_2 = 12.5$, $\hat{y}_3 = 15$, $\hat{y}_4 = 17.5$, $\hat{y}_5 = 20$.</p>
+<p>Residuals: $e_1 = 10-10 = 0$, $e_2 = 13-12.5 = 0.5$, $e_3 = 14-15 = -1$, $e_4 = 18-17.5 = 0.5$, $e_5 = 20-20 = 0$.</p>
+<p>Sum: $0 + 0.5 - 1 + 0.5 + 0 = 0$. Confirmed. Also check $\sum x_i e_i = 1(0) + 2(0.5) + 3(-1) + 4(0.5) + 5(0) = 0 + 1 - 3 + 2 + 0 = 0$. Both orthogonality conditions hold.</p>
+</div>
+</details>
+</div>
+
+<div class="exercise">
+<div class="exercise-label">Exercise 4 — Applied: extrapolation</div>
+<p>Using the DSO data from the worked example ($\hat{y} = 25.5 + 2.6x$, quarters 1–4), extrapolate to week 104 (= quarter 8). What DSO does the model predict? What are the dangers of extrapolating this far?</p>
+<details><summary>Show solution</summary>
+<div class="solution">
+<p><strong>Step 1.</strong> Week 104 corresponds to the end of quarter 8 (since $104 / 13 = 8$). Plug in $x = 8$:</p>
+<div class="display-math">$$\hat{y} = 25.5 + 2.6 \times 8 = 25.5 + 20.8 = 46.3 \text{ days}$$</div>
+<p><strong>Step 2.</strong> The model predicts a DSO of 46.3 days by quarter 8.</p>
+<p><strong>Step 3.</strong> The dangers: we're extrapolating 4 quarters beyond our data, doubling the range. A linear trend observed over 4 points cannot be assumed to continue indefinitely. The business might renegotiate payment terms, lose a slow-paying client, enter a new market, or face macroeconomic shifts. Moreover, DSO can't grow forever — there are practical upper bounds. The further you extrapolate, the wider the uncertainty should be. Treat this as a "if nothing changes" projection, not a reliable forecast.</p>
+</div>
+</details>
+</div>
+
+<!-- ─── 9. HISTORY ─────────────────────────────── -->
+
+<div class="history-box">
+<div class="label">Historical note</div>
+<p>The method of least squares was developed independently by <a href="../mathematicians/gauss.html">Carl Friedrich Gauss</a> (who claimed to have used it since 1795, at age 18, to determine the orbit of the asteroid Ceres) and <a href="../mathematicians/legendre.html">Adrien-Marie Legendre</a> (who published it first, in 1805, in his work on comet orbits).</p>
+<p>The priority dispute was bitter. Legendre was furious when Gauss claimed prior discovery without having published. Modern historians generally credit Legendre with publication priority and Gauss with the deeper theoretical framework — Gauss connected least squares to the normal distribution in 1809, proving that OLS is the optimal estimator under Gaussian errors. This result, the <strong>Gauss–Markov theorem</strong> in its modern form, remains the theoretical backbone of regression analysis.</p>
+</div>
+
+<!-- ─── 10. WHAT BREAKS ─────────────────────────────── -->
+
+<div class="break-box">
+<div class="label">What breaks</div>
+<p><strong>Non-linear trends:</strong> if the true relationship is curved (e.g., exponential growth, seasonal oscillation), a straight line will systematically underfit. The residuals will show a pattern — negative at the ends, positive in the middle — rather than being randomly scattered. Always plot residuals to check.</p>
+<p><strong>Outliers:</strong> because OLS minimises <em>squared</em> errors, a single outlier has outsized influence — the squared term amplifies large residuals. One quarter where DSO spikes to 80 (due to a one-off dispute) can tilt the entire line. This is where the robust measures from Pages 1–3 help: flag outliers before running the regression.</p>
+</div>
+
+<hr>
+
+<div class="oneliner">OLS fits the line closest to the data by minimising squared errors — the slope tells you the trend, the intercept tells you the baseline.</div>
+
+<div class="nav">
+<a href="03-percentiles.html">← Percentiles</a>
+<a href="05-recurring-patterns.html">Next: Recurring Patterns →</a>
+</div>
+
+<script src="../nav.js"></script>
+<script src="../tutor.js"></script>
+</body>
+</html>

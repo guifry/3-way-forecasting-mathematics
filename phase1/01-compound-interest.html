@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compound Interest from First Principles — Phase 1</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Compound Interest from First Principles</h1>
+<p class="subtitle">Phase 1 — Exponential Growth and the Time Value of Money, Page 1</p>
+
+<!-- ─── PROBLEM ───── -->
+<div class="problem-box">
+  <div class="label">The problem</div>
+  <p>A startup's monthly revenue is £50,000 today, growing at 10% per year. What will revenue be in 3.7 years? Not 3 years, not 4 — <em>three point seven</em>. Simple multiplication won't cut it. We need a formula that handles fractional time.</p>
+</div>
+
+<!-- ─── 1. DISCRETE COMPOUNDING ───── -->
+<h2>1. Discrete Compounding</h2>
+
+<p>Suppose you have a principal amount $P$ and it grows by a rate $r$ each period. After one period you have the original plus the growth:</p>
+
+<div class="display-math">$$A_1 = P + P \cdot r = P(1 + r)$$</div>
+
+<p>After the second period, <em>the new principal is $A_1$</em>. Growth applies to the whole amount, not just the original:</p>
+
+<div class="display-math">$$A_2 = A_1(1 + r) = P(1 + r)(1 + r) = P(1 + r)^2$$</div>
+
+<p>After three periods:</p>
+
+<div class="display-math">$$A_3 = A_2(1 + r) = P(1 + r)^3$$</div>
+
+<div class="theorem-box">
+  <div class="label">Theorem — Discrete Compound Growth</div>
+  <p>If a quantity $P$ grows at rate $r$ per period, then after $n$ whole periods:</p>
+  <div class="display-math">$$A = P(1 + r)^n$$</div>
+  <p>The factor $(1 + r)^n$ is called the <strong>growth factor</strong>.</p>
+</div>
+
+<p>The key insight is that each period's growth <em>compounds</em> — it applies to everything accumulated so far, not just the starting value. This is the single most important idea in financial mathematics.</p>
+
+<p>Let's make this concrete. A business doing £50,000/month in revenue, growing at $r = 0.10$ annually:</p>
+
+<ul>
+  <li>End of year 1: $50{,}000 \times 1.10 = \text{£}55{,}000$</li>
+  <li>End of year 2: $55{,}000 \times 1.10 = \text{£}60{,}500$ (not £60,000)</li>
+  <li>End of year 3: $60{,}500 \times 1.10 = \text{£}66{,}550$</li>
+</ul>
+
+<p>That extra £500 in year 2 — and the extra £1,550 in year 3 — is the compounding effect. It's growth <em>on top of</em> previous growth. Over short horizons it's negligible. Over long ones it dominates everything.</p>
+
+<div class="proof-box" id="proof-compound-induction">
+  <div class="label">Proof — Compound growth by induction</div>
+  <p><em>Base case</em>: at $n = 1$, $A_1 = P(1+r)^1 = P(1+r)$. This matches our derivation above. ✓</p>
+  <p><em>Inductive step</em>: assume $A_k = P(1+r)^k$ for some $k \geq 1$. Then:</p>
+  <div class="display-math">$$A_{k+1} = A_k \cdot (1+r) = P(1+r)^k \cdot (1+r) = P(1+r)^{k+1}$$</div>
+  <p>By induction, $A_n = P(1+r)^n$ for all positive integers $n$.</p>
+  <div class="qed">∎</div>
+</div>
+
+<!-- ─── 2. WHY NOT SIMPLE INTEREST? ───── -->
+<h2>2. Why Not Simple Interest?</h2>
+
+<p><strong>Simple interest</strong> assumes growth only ever applies to the original principal — no growth on growth:</p>
+
+<div class="display-math">$$A_{\text{simple}} = P + P \cdot r \cdot n = P(1 + rn)$$</div>
+
+<p>Compare the two for $P = \text{£}50{,}000$, $r = 0.10$:</p>
+
+<table>
+  <tr><th>Year</th><th>Compound</th><th>Simple</th><th>Gap</th></tr>
+  <tr><td>1</td><td>£55,000</td><td>£55,000</td><td>£0</td></tr>
+  <tr><td>2</td><td>£60,500</td><td>£60,000</td><td>£500</td></tr>
+  <tr><td>5</td><td>£80,526</td><td>£75,000</td><td>£5,526</td></tr>
+  <tr><td>10</td><td>£129,687</td><td>£100,000</td><td>£29,687</td></tr>
+</table>
+
+<p>At year 1, they agree — because there's been no time for growth-on-growth to accumulate. After that, simple interest <em>systematically understates</em> true growth. By year 10 the gap is nearly £30,000 on a £50,000 base. That's a 30% error.</p>
+
+<p>The mathematical reason is clear: $P(1+r)^n$ is an exponential curve (convex, accelerating), while $P(1 + rn)$ is a straight line. They touch at $n = 0$ and $n = 1$, but the exponential pulls away in both directions. For any $n > 1$ and $r > 0$:</p>
+
+<div class="display-math">$$(1+r)^n > 1 + rn$$</div>
+
+<p>This is <strong>Bernoulli's inequality</strong> (strict version for $n > 1$). For forecasting over multiple years, simple interest is unusable.</p>
+
+<!-- ─── 3. FRACTIONAL EXPONENTS ───── -->
+<h2>3. Fractional Exponents and Continuous Time</h2>
+
+<p>Our formula $A = P(1+r)^n$ works for whole years. But we asked about 3.7 years. The trick is to let $n$ be any real number $t$:</p>
+
+<div class="display-math">$$A(t) = P(1 + r)^t$$</div>
+
+<p>More precisely, if we measure time in units of $T$ (say $T = 1$ year for an annual rate), and $t$ is elapsed time in those units:</p>
+
+<div class="display-math">$$A(t) = P(1 + r)^{t/T}$$</div>
+
+<p>This gives <strong>smooth, continuous growth</strong>. Revenue doesn't jump once a year — it rises steadily week by week. For our problem:</p>
+
+<div class="display-math">$$A(3.7) = 50{,}000 \times (1.10)^{3.7} = 50{,}000 \times 1.4228 \approx \text{£}71{,}141$$</div>
+
+<div class="proof-box" id="proof-integer-convergence">
+  <div class="label">Proof — Continuous equals discrete at integer boundaries</div>
+  <p>We must verify that this generalisation doesn't break the original formula. At any integer year $t = n$, we have $t/T = n/1 = n$, so:</p>
+  <div class="display-math">$$A(n) = P(1 + r)^{n/1} = P(1 + r)^n$$</div>
+  <p>which is exactly the discrete formula. The fractional-exponent version is therefore a <em>faithful extension</em> — it agrees at every integer and interpolates smoothly between them.</p>
+  <div class="qed">∎</div>
+</div>
+
+<p>For weekly granularity, set $t = w/52$ where $w$ is the week number:</p>
+
+<div class="display-math">$$A(w) = P(1 + r_{\text{annual}})^{w/52}$$</div>
+
+<p>This avoids the step discontinuity you'd get if you applied the full annual rate at week 52 and nothing before. Growth is distributed evenly across every week.</p>
+
+<p>Let's verify with a concrete example. At $r = 0.10$ annual, the weekly growth factor is $(1.10)^{1/52} = 1.00183$. That's a 0.183% weekly increase — barely noticeable week to week, but it accumulates to exactly 10% over 52 weeks:</p>
+
+<div class="display-math">$$(1.00183)^{52} = 1.10$$</div>
+
+<p>This is not an approximation. It's an algebraic identity: $\left((1+r)^{1/52}\right)^{52} = (1+r)$. The weekly formula is the annual formula in disguise.</p>
+
+<!-- ─── 4. CAGR ───── -->
+<h2>4. CAGR — Compound Annual Growth Rate</h2>
+
+<p>Given observed data — a starting value and an ending value — we often want to <em>reverse-engineer</em> the growth rate. This is the <strong>CAGR</strong>.</p>
+
+<p>Start from the compound growth equation:</p>
+
+<div class="display-math">$$\text{end} = \text{start} \times (1 + g)^{\text{years}}$$</div>
+
+<p>Divide both sides by start:</p>
+
+<div class="display-math">$$\frac{\text{end}}{\text{start}} = (1 + g)^{\text{years}}$$</div>
+
+<p>Raise both sides to the power $1/\text{years}$:</p>
+
+<div class="display-math">$$(1 + g) = \left(\frac{\text{end}}{\text{start}}\right)^{1/\text{years}}$$</div>
+
+<div class="theorem-box">
+  <div class="label">Definition — CAGR</div>
+  <div class="display-math">$$g = \left(\frac{\text{end}}{\text{start}}\right)^{1/\text{years}} - 1$$</div>
+</div>
+
+<p>When the period is exactly one year ($\text{years} = 1$), the exponent vanishes:</p>
+
+<div class="display-math">$$g = \frac{\text{end}}{\text{start}} - 1 = \frac{\text{end} - \text{start}}{\text{start}}$$</div>
+
+<p>which is the familiar percentage-change formula. CAGR generalises it to any horizon.</p>
+
+<h3>Worked example</h3>
+
+<p>A business had annual revenue of £320,000 three years ago and £410,000 this year. What is the CAGR?</p>
+
+<div class="display-math">$$g = \left(\frac{410{,}000}{320{,}000}\right)^{1/3} - 1 = (1.28125)^{0.3333} - 1 = 1.0862 - 1 = 0.0862 = 8.62\%$$</div>
+
+<p>This means the business grew at an <em>equivalent</em> rate of 8.62% per year, even though actual year-on-year growth may have been uneven (perhaps 15% one year, 3% the next). CAGR smooths out the volatility into a single representative rate, which is exactly what we need for forecasting.</p>
+
+<p>Notice that CAGR only looks at the endpoints — it ignores what happened in between. A business that crashed 50% then recovered 156% has the same CAGR as one that grew steadily. For our purposes this is fine: we want a rate to project forward, not a history lesson.</p>
+
+<!-- ─── 5. CLAMPING ───── -->
+<h2>5. Clamping Growth Rates</h2>
+
+<p>Computed growth rates can be absurd. A startup doubling revenue in three months gives $g = (2)^{1/0.25} - 1 = 15 = 1500\%$. Projecting this forward is fantasy.</p>
+
+<p>In conservative forecasting, we <strong>clamp</strong> the growth rate to a sensible band:</p>
+
+<div class="display-math">$$g_{\text{clamped}} = \max(-0.20,\; \min(g,\; 0.25))$$</div>
+
+<p>The philosophy: no business sustainably shrinks more than 20% or grows more than 25% per year over a multi-year horizon. These bounds encode <em>scepticism</em> — the forecast should reflect what's plausible, not what the most recent data point implies.</p>
+
+<p>Consider the asymmetry of the bounds. A 20% decline means the business retains 80% of its value — painful but survivable. A 25% increase means the business grows by a quarter — ambitious but not outlandish. The bounds are deliberately conservative: better to underpredict success than to build a plan on fantasy growth.</p>
+
+<p>Mathematically, clamping is just a piecewise function:</p>
+
+<div class="display-math">$$g_{\text{clamped}} = \begin{cases} -0.20 & \text{if } g < -0.20 \\ g & \text{if } -0.20 \leq g \leq 0.25 \\ 0.25 & \text{if } g > 0.25 \end{cases}$$</div>
+
+<h3>Clamping in practice</h3>
+
+<p>Suppose a SaaS startup had £12,000 monthly revenue last year and £30,000 this year. The raw CAGR is:</p>
+
+<div class="display-math">$$g = \frac{30{,}000}{12{,}000} - 1 = 1.50 = 150\%$$</div>
+
+<p>Projecting 150% growth for three years:</p>
+
+<div class="display-math">$$30{,}000 \times (1 + 1.50)^3 = 30{,}000 \times (2.50)^3 = 30{,}000 \times 15.625 = \text{£}468{,}750\text{/month}$$</div>
+
+<p>That's nearly half a million per month from a base of £30k — possible in theory, but not something to build a financial plan around. Clamped to 25%:</p>
+
+<div class="display-math">$$30{,}000 \times (1.25)^3 = 30{,}000 \times 1.9531 = \text{£}58{,}594\text{/month}$$</div>
+
+<p>Still aggressive, but within the realm of plausibility. The difference — £468k vs £59k — shows why clamping is non-negotiable in conservative forecasting.</p>
+
+<!-- ─── 6. EXERCISES ───── -->
+<h2>6. Exercises</h2>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 1 — Growth factors</div>
+  <p>Compute the growth factor $(1 + r)^n$ for: (a) $r = 0.05$, $n = 10$; (b) $r = 0.12$, $n = 5$; (c) $r = -0.03$, $n = 8$.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p>(a) $(1.05)^{10} = 1.6289$. A £100 investment becomes £162.89.</p>
+      <p>(b) $(1.12)^5 = 1.7623$. A £100 investment becomes £176.23.</p>
+      <p>(c) $(0.97)^8 = 0.7837$. A £100 value shrinks to £78.37.</p>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 2 — Discrete vs continuous intra-year</div>
+  <p>Let $P = \text{£}100{,}000$ and $r = 0.08$ annual. Compute revenue at week 26 (mid-year) using: (a) the continuous formula $P(1+r)^{26/52}$; (b) the naive "half the annual growth" formula $P(1 + r/2)$. Show they differ. Then verify both agree at week 52.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p>(a) $100{,}000 \times (1.08)^{0.5} = 100{,}000 \times 1.03923 = \text{£}103{,}923$</p>
+      <p>(b) $100{,}000 \times (1 + 0.04) = 100{,}000 \times 1.04 = \text{£}104{,}000$</p>
+      <p>Difference: £77. The naive method overstates mid-year revenue by 0.07%.</p>
+      <p>At week 52: (a) $100{,}000 \times (1.08)^{52/52} = \text{£}108{,}000$. (b) $100{,}000 \times (1 + 0.08) = \text{£}108{,}000$. They agree at integer boundaries, as proved above.</p>
+    </div>
+  </details>
+</div>
+
+<div class="exercise">
+  <div class="exercise-label">Exercise 3 — Applied: CAGR and weekly projection</div>
+  <p>A business has average monthly revenue of £40,000 in year 1 and £44,000 in year 2 (24 months of data). Compute the CAGR. Then project weekly revenue for the next 52 weeks, showing weeks 1, 13, 26, 39, and 52.</p>
+  <details>
+    <summary>Show solution</summary>
+    <div class="solution">
+      <p>Annual revenue: year 1 = £40,000 × 12 = £480,000. Year 2 = £44,000 × 12 = £528,000.</p>
+      <p>CAGR over 1 year (comparing annual totals):</p>
+      <div class="display-math">$$g = \frac{528{,}000}{480{,}000} - 1 = 0.10 = 10\%$$</div>
+      <p>Starting weekly revenue = £44,000 / 4.33 ≈ £10,162. Project forward with $A(w) = 10{,}162 \times (1.10)^{w/52}$:</p>
+      <table>
+        <tr><th>Week</th><th>Growth factor</th><th>Weekly revenue</th></tr>
+        <tr><td>1</td><td>$(1.10)^{1/52} = 1.00183$</td><td>£10,181</td></tr>
+        <tr><td>13</td><td>$(1.10)^{0.25} = 1.02411$</td><td>£10,407</td></tr>
+        <tr><td>26</td><td>$(1.10)^{0.50} = 1.04881$</td><td>£10,658</td></tr>
+        <tr><td>39</td><td>$(1.10)^{0.75} = 1.07411$</td><td>£10,915</td></tr>
+        <tr><td>52</td><td>$(1.10)^{1.00} = 1.10000$</td><td>£11,178</td></tr>
+      </table>
+    </div>
+  </details>
+</div>
+
+<!-- ─── 7. HISTORY ───── -->
+<div class="history-box">
+  <div class="label">Historical note</div>
+  <p>In 1683, <a href="../mathematicians/bernoulli.html">Jacob Bernoulli</a> asked a deceptively simple question: what happens if interest compounds not yearly, not monthly, but <em>continuously</em>? He studied the limit as the number of compounding periods $n$ tends to infinity:</p>
+  <div class="display-math">$$\lim_{n \to \infty}\left(1 + \frac{1}{n}\right)^n = e \approx 2.71828$$</div>
+  <p>This was the first appearance of Euler's number $e$ in mathematics — born not from abstract theory, but from a practical question about money.</p>
+  <p>Bernoulli showed that if you invest £1 at 100% annual interest, compounding $n$ times per year, your balance after one year is $(1 + 1/n)^n$. For $n = 1$: £2.00. For $n = 12$: £2.61. For $n = 52$: £2.69. For $n = 365$: £2.71. The limit is $e = 2.71828\ldots$ — you can never reach £2.72, no matter how frequently you compound. This ceiling is fundamental to continuous-time finance and appears throughout the mathematics of forecasting.</p>
+</div>
+
+<!-- ─── 8. WHAT BREAKS ───── -->
+<div class="break-box">
+  <div class="label">What breaks</div>
+  <ul>
+    <li><strong>Unclamped growth rates</strong> produce runaway exponentials. A 50% annual growth rate, projected 10 years, gives a factor of $57.7\times$. No real business sustains that. Always clamp.</li>
+    <li><strong>Simple interest over long horizons</strong> systematically understates growth. At 10% over 10 years, simple interest gives 2.0×; compound gives 2.59×. The error is 30%. For forecasting beyond a year or two, simple interest is unusable.</li>
+  </ul>
+</div>
+
+<hr>
+
+<div class="oneliner">Revenue tomorrow is revenue today times a growth factor — and that factor must be an exponential, not a line.</div>
+
+<div class="nav">
+  <a href="../phase0/05-recurring-patterns.html">← Recurring Patterns</a>
+  <a href="02-geometric-series.html">Next: Geometric Series →</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body>
+</html>

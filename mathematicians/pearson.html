@@ -1,0 +1,86 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karl Pearson — Mathematicians</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head><body>
+
+<h1>Karl Pearson (1857&ndash;1936)</h1>
+<p class="subtitle">The man who gave statistics its vocabulary and its first permanent home.</p>
+
+<h2>The Contribution</h2>
+
+<p>Before Pearson, statisticians talked about &ldquo;the mean error&rdquo; or &ldquo;the
+probable error&rdquo; when describing how spread out a dataset was. The terminology was
+inconsistent, the definitions varied between authors, and the notation was a mess.
+In an 1893 paper, Pearson cut through the confusion by introducing a single, clean
+term: <strong>standard deviation</strong>, denoted $\sigma$.</p>
+
+<p>The definition was precise. Given $n$ observations $x_1, \ldots, x_n$ with mean
+$\bar{x}$, the standard deviation is:</p>
+
+$$\sigma = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(x_i - \bar{x})^2}$$
+
+<p>This was not a new formula &mdash; Gauss had used the same quantity decades earlier &mdash;
+but Pearson&rsquo;s contribution was to standardise the language and make it central to
+statistical practice. He gave it a name that stuck, a symbol that stuck, and a place
+at the heart of every introductory statistics course for the next century and counting.</p>
+
+<p>But Pearson did far more than name things. He developed the <strong>chi-squared
+test</strong> (1900), the first rigorous method for testing whether observed data fit a
+theoretical distribution. He formalised the <strong>correlation coefficient</strong> $r$,
+building on Galton&rsquo;s earlier work, and gave it the mathematical treatment it
+needed to become a workhorse of applied statistics. He introduced the <strong>coefficient
+of variation</strong> $\text{CV} = \sigma / \bar{x}$, a dimensionless measure of relative
+spread that lets you compare variability across datasets measured in different units.</p>
+
+<h2>The Context</h2>
+
+<p>Pearson came to statistics through an unusual path. He studied mathematics at Cambridge,
+then spent years in Germany studying philosophy, literature, and the history of science.
+He was appointed professor of applied mathematics at University College London in 1884,
+and for years his work straddled mathematics, philosophy, and what he called the
+&ldquo;grammar of science&rdquo; &mdash; a positivist programme to ground all knowledge
+in observable, measurable data.</p>
+
+<p>His turn to statistics proper was catalysed by his collaboration with the biologist
+W.F.R. Weldon, who in the early 1890s brought him datasets on shrimp and crabs that
+didn&rsquo;t fit the normal distribution. Pearson&rsquo;s response was to develop an
+entire family of skewed distributions (the Pearson system) and the statistical tests
+to go with them. The chi-squared test emerged directly from this work.</p>
+
+<p>In 1911, Pearson founded the Department of Applied Statistics at University College
+London &mdash; the first statistics department in the world. He ran the journal
+<em>Biometrika</em>, which he had co-founded in 1901, and for three decades it was the
+primary venue for new statistical methods. Through his students, his journal, and his
+department, Pearson created statistics as an institutional discipline, not just a
+collection of techniques.</p>
+
+<h2>The Legacy</h2>
+
+<p>In this course, Pearson&rsquo;s fingerprints appear throughout <strong>Phase 0,
+page 2</strong>. When we compute the standard deviation of a revenue series, we are using
+his terminology and his notation. When we compute the coefficient of variation to compare
+the volatility of two business lines measured in different currencies, we are using a
+tool he introduced. The very language of dispersion &mdash; $\sigma$, variance, CV &mdash;
+is Pearson&rsquo;s gift to quantitative practice.</p>
+
+<p>His insistence on precise, standardised terminology was arguably as important as any
+formula. Before Pearson, every author used their own notation and their own definitions.
+After Pearson, statistics had a common vocabulary. That vocabulary is still the one
+we use today.</p>
+
+<div class="nav">
+  <a href="../index.html">&larr; Back to index</a>
+  <a href="tukey.html">Next: Tukey &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body></html>

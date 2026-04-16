@@ -1,0 +1,92 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>John Tukey — Mathematicians</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head><body>
+
+<h1>John Tukey (1915&ndash;2000)</h1>
+<p class="subtitle">Look at the data before you model it. The inventor of exploratory data analysis.</p>
+
+<h2>The Contribution</h2>
+
+<p>By the mid-twentieth century, statistics had become a discipline dominated by formal
+hypothesis testing. You stated a null hypothesis, collected data, computed a test
+statistic, and reported a p-value. The data existed to confirm or reject a theory.
+Tukey thought this was backwards.</p>
+
+<p>In his 1977 book <em>Exploratory Data Analysis</em>, Tukey argued that the first step
+in any analysis should be to <em>look at the data</em> &mdash; not to test a hypothesis,
+but to discover what the data has to tell you. He developed a toolkit of simple,
+visual, robust methods for doing exactly that.</p>
+
+<p>The most famous of these is the <strong>box plot</strong> (or box-and-whisker plot). A
+box plot displays the median, the first and third quartiles ($Q_1$ and $Q_3$), and the
+&ldquo;whiskers&rdquo; extending to the most extreme data points within a fence. The
+fence is defined by what are now called <strong>Tukey fences</strong>:</p>
+
+$$\text{Lower fence} = Q_1 - 1.5 \times \text{IQR}$$
+$$\text{Upper fence} = Q_3 + 1.5 \times \text{IQR}$$
+
+<p>where the interquartile range is $\text{IQR} = Q_3 - Q_1$. Any observation outside
+these fences is flagged as a potential outlier.</p>
+
+<p>Why 1.5? Tukey never published a rigorous derivation of this threshold. For normally
+distributed data, the fences capture approximately 99.3% of observations, so roughly
+seven in a thousand points would be flagged. In practice, the rule is remarkably
+effective: it is robust to skew, works without assuming a distribution, and gives
+sensible results across a wide range of real datasets. It has become the default
+outlier rule in most statistical software.</p>
+
+<h2>The Context</h2>
+
+<p>Tukey spent his career split between Princeton University and Bell Laboratories. At
+Bell Labs, he worked on practical problems: signal processing, communications, the
+analysis of experimental data. This dual life &mdash; theoretician and practitioner &mdash;
+shaped his statistical philosophy. He knew that real data was messy, that distributions
+were never quite normal, and that the first thing you needed was a way to see what was
+going on before committing to a model.</p>
+
+<p>His contributions extended well beyond statistics. In 1965, he and James Cooley
+published the fast Fourier transform (FFT) algorithm, one of the most important
+numerical methods of the twentieth century. He coined the word &ldquo;bit&rdquo; (binary
+digit) while working with John von Neumann. He also coined the word
+&ldquo;software&rdquo; in a 1958 article in <em>American Mathematical Monthly</em>.</p>
+
+<p>Tukey&rsquo;s emphasis on robustness &mdash; methods that work well even when
+assumptions are violated &mdash; was a direct challenge to the Pearson-Fisher tradition
+of parametric statistics. He did not reject formal inference, but he insisted that
+it should come <em>after</em> you understood your data, not before.</p>
+
+<h2>The Legacy</h2>
+
+<p>In this course, Tukey&rsquo;s ideas appear in <strong>Phase 0, page 3</strong>, where we
+work with percentiles, quartiles, and the interquartile range. When we compute $Q_1$
+and $Q_3$ of a revenue dataset, rank companies by decile, or flag an outlier using the
+$1.5 \times \text{IQR}$ rule, we are using Tukey&rsquo;s toolkit.</p>
+
+<p>The broader lesson &mdash; look at the data first &mdash; pervades the entire course.
+Before fitting a trend line, check whether the relationship is actually linear. Before
+applying seasonal decomposition, plot the data and see whether there is a seasonal
+pattern. Before computing a mean, check whether the distribution is symmetric enough
+for the mean to be meaningful. These are all Tukey&rsquo;s principles, even when his
+name is not mentioned.</p>
+
+<p>Tukey once wrote: &ldquo;The combination of some data and an aching desire for an
+answer does not ensure that a reasonable answer can be extracted from a given body
+of data.&rdquo; It remains the best one-sentence warning in all of statistics.</p>
+
+<div class="nav">
+  <a href="../index.html">&larr; Back to index</a>
+  <a href="bernoulli.html">Next: Bernoulli &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body></html>

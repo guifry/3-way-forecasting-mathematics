@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adrien-Marie Legendre — Mathematicians</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head><body>
+
+<h1>Adrien-Marie Legendre (1752&ndash;1833)</h1>
+<p class="subtitle">The man who published least squares first &mdash; and never forgave Gauss for claiming otherwise.</p>
+
+<h2>The Contribution</h2>
+
+<p>In 1805, Legendre published a short book with a long title: <em>Nouvelles m&eacute;thodes
+pour la d&eacute;termination des orbites des com&egrave;tes</em> (New Methods for the
+Determination of Comet Orbits). The book itself dealt with a practical problem in
+celestial mechanics, but its lasting gift to mathematics was tucked into an appendix
+of just a few pages.</p>
+
+<p>There, with admirable clarity, Legendre laid out the <strong>method of least squares</strong>.
+His exposition was direct and unadorned. Given a system of equations that cannot all be
+satisfied exactly &mdash; because the observations contain errors &mdash; you should choose
+the unknowns so as to make the sum of the squares of the errors as small as possible.
+He called this principle <em>"rendre minimum la somme des carr&eacute;s des erreurs"</em>,
+and he showed precisely how to carry it out.</p>
+
+<p>Legendre wrote down the normal equations, demonstrated how to solve them for the unknown
+parameters, and applied the method to a concrete problem: determining the shape of the
+Earth from geodetic arc measurements. The formulation is clean. Suppose you have $m$
+observations and you want to fit $n$ parameters (with $m > n$). Stack the observations
+into a vector $\mathbf{y}$, the parameters into $\boldsymbol{\beta}$, and the model
+into a matrix equation:</p>
+
+$$\mathbf{y} = X\boldsymbol{\beta} + \boldsymbol{\varepsilon}$$
+
+<p>Legendre's prescription: choose $\boldsymbol{\beta}$ to minimise
+$\|\boldsymbol{\varepsilon}\|^2 = \sum \varepsilon_i^2$. Differentiate, set to zero,
+solve. The result is what we now write in matrix notation as:</p>
+
+$$\hat{\boldsymbol{\beta}} = (X^T X)^{-1} X^T \mathbf{y}$$
+
+<p>Legendre did not use matrix notation &mdash; Cayley and Sylvester would not develop it
+for another half-century &mdash; but the content is identical. His appendix is, in effect,
+the founding document of regression analysis. Everything that follows &mdash; multiple
+regression, polynomial fitting, generalised least squares &mdash; is an elaboration of
+the procedure Legendre described in those few pages.</p>
+
+<h2>The Context</h2>
+
+<p>Legendre was one of the leading French mathematicians of his era. Born into a wealthy
+Parisian family, he studied at the Coll&egrave;ge Mazarin and went on to make major
+contributions to number theory, elliptic integrals, and geodesy. His <em>&Eacute;l&eacute;ments
+de g&eacute;om&eacute;trie</em> (1794) was the standard geometry textbook in France and
+America for decades.</p>
+
+<p>The geodetic problem that motivated least squares was a major scientific undertaking of
+the eighteenth century. The French Academy of Sciences had sent expeditions to Lapland
+(led by Maupertuis) and to Peru (led by La Condamine) to measure meridian arcs at
+different latitudes. The goal was to determine whether the Earth was oblate (flattened
+at the poles, as Newton predicted) or prolate (elongated, as the Cartesians maintained).
+The data confirmed Newton, but reconciling the conflicting measurements from different
+expeditions required exactly the kind of error-minimisation technique that least squares
+provides.</p>
+
+<p>Then came Gauss. In 1809, four years after Legendre's publication, Gauss published his
+own treatment of least squares in <em>Theoria Motus Corporum Coelestium</em>. The treatment
+was deeper &mdash; Gauss connected the method to the normal distribution and proved its
+optimality. But Gauss also claimed he had been using least squares since 1795, a full
+decade before Legendre published.</p>
+
+<p>Legendre was incensed. He had published first, clearly and completely. Gauss had not
+mentioned the method in any prior publication. Gauss's private correspondence &mdash;
+notably a letter to the astronomer Heinrich Olbers in 1802 mentioning "my method" of
+least squares &mdash; lends some credibility to his claim of earlier use. But Legendre
+saw this as a transparent attempt to steal credit after the fact.</p>
+
+<p>Legendre wrote to Gauss, asking him to at least acknowledge the published priority.
+Gauss, characteristically, did not budge. In later editions of his work, Gauss mentioned
+Legendre's publication only in passing, maintaining that his own unpublished use predated
+it. Legendre, in his own later writings, referred acidly to Gauss's priority claim as
+one that "we shall not comment upon."</p>
+
+<p>The consensus among historians is that both men discovered the method independently,
+Gauss probably earlier in private use but Legendre indisputably first in print. For this
+course, the priority dispute is less important than the fact that Legendre gave the
+world its first usable, published recipe for fitting a model to noisy data.</p>
+
+<h2>The Legacy</h2>
+
+<p>The formulas we use in <strong>Phase 0, page 4</strong> of this course are, at their core,
+Legendre's. When we compute a trend line through twelve quarters of DSO data, we are
+doing exactly what Legendre described in 1805: writing down a system of equations that
+the data approximately satisfy, and choosing the parameters that minimise the total
+squared error.</p>
+
+<p>The procedure is mechanical. List your data points. Compute the sums $\sum x_i$,
+$\sum y_i$, $\sum x_i y_i$, $\sum x_i^2$. Plug them into the formulas for slope and
+intercept. Draw the line. This recipe, which Legendre articulated so clearly that anyone
+could follow it, is still the first thing taught in any statistics course &mdash; and
+still the first tool reached for in any forecasting exercise.</p>
+
+<p>Legendre's other contributions are enormous. He conjectured the law of quadratic
+reciprocity (later proved by Gauss), introduced the Legendre polynomials that bear his
+name, and made foundational contributions to the theory of elliptic integrals. But for
+the purposes of this course, his appendix is what matters. It is a reminder that some
+of the most consequential mathematics hides in appendices, footnotes, and afterthoughts
+&mdash; and that being first in print is, in the end, what the historical record
+preserves.</p>
+
+<div class="nav">
+  <a href="gauss.html">&larr; Previous: Gauss</a>
+  <a href="galton.html">Next: Galton &rarr;</a>
+</div>
+
+<script src="../nav.js"></script><script src="../tutor.js"></script></body></html>
