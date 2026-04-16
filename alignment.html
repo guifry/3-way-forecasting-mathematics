@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Course–Model Alignment</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+</head>
+<body>
+
+<h1>Course&ndash;Model Alignment</h1>
+<p class="subtitle">What&rsquo;s actually in the forecasting engine, what&rsquo;s loosely there, and what&rsquo;s not there at all.</p>
+
+<p>Every concept below was checked against the source code of the forecasting model. Three tiers: <strong>core</strong> (implemented and load-bearing), <strong>lightly present</strong> (used in one place or as a minor input), and <strong>not in the model</strong> (taught for background but absent from the codebase).</p>
+
+<hr>
+
+<h2>1. Core &mdash; directly implemented in the model</h2>
+
+<p>These concepts have dedicated functions, appear in multiple engine paths, or drive key outputs. You need all of them to rebuild the model.</p>
+
+<ul class="index-list">
+  <li>
+    <a href="phase0/01-mean-and-median.html">Arithmetic Mean</a>
+    <div class="desc">Base monthly revenue, seasonal index averaging, invoice counts. Used throughout.</div>
+  </li>
+  <li>
+    <a href="phase0/01-mean-and-median.html">Median</a>
+    <div class="desc">DSO and DPO computation, recurring expense detection (median interval, median amount). The primary robust average.</div>
+  </li>
+  <li>
+    <a href="phase0/02-dispersion.html">Standard Deviation</a>
+    <div class="desc">Component of CV. Computed via <code>statistics.stdev</code> in detector and quality modules.</div>
+  </li>
+  <li>
+    <a href="phase0/02-dispersion.html">Coefficient of Variation (CV)</a>
+    <div class="desc">Recurring expense regularity test (reject if CV &gt; 0.35). Uncertainty base rate calibration (CV thresholds at 0.3 and 0.6). Confidence scoring.</div>
+  </li>
+  <li>
+    <a href="phase0/03-percentiles.html">Percentiles (P25, P50, P75, P90)</a>
+    <div class="desc">Invoice distribution characterisation in <code>quality.py</code>. Fed to assumptions tab and LLM context.</div>
+  </li>
+  <li>
+    <a href="phase0/05-recurring-patterns.html">Recurring Expense Detection</a>
+    <div class="desc">Groups bills by (supplier, category), computes median interval and CV, classifies frequency, assigns confidence. Full pipeline in <code>detector.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase0/05-recurring-patterns.html">Frequency Classification</a>
+    <div class="desc">Maps median payment interval to weekly/monthly/quarterly/annual via defined bands. Used in <code>detector.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase1/01-compound-interest.html">Compound Interest / Continuous Compounding</a>
+    <div class="desc">$(1+g)^{(w-1)/52}$ powers every projection &mdash; revenue growth, inflation, variable cost escalation. Both engines.</div>
+  </li>
+  <li>
+    <a href="phase1/01-compound-interest.html">CAGR (Simplified)</a>
+    <div class="desc">Revenue growth rate: <code>(recent_12mo_avg / prior_12mo_avg) - 1</code>, clamped to [-20%, +25%]. Computed in <code>revenue.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase1/02-geometric-series.html">Annuity Formula</a>
+    <div class="desc">$PMT = Pr/(1-(1+r)^{-n})$. Used in <code>event_injection.py :: _new_loan()</code> for amortising loan payments.</div>
+  </li>
+  <li>
+    <a href="phase1/02-geometric-series.html">Amortisation Schedule</a>
+    <div class="desc">Interest/principal split each week: <code>interest = remaining &times; rate</code>, <code>principal = PMT - interest</code>. Built in <code>_new_loan()</code>.</div>
+  </li>
+  <li>
+    <a href="phase1/03-inflation-and-blended-growth.html">CVP Cost Classification</a>
+    <div class="desc">Fixed/variable/semi-variable. Drives how each cost stream is projected. Category mapper + expense analyser + both engines.</div>
+  </li>
+  <li>
+    <a href="phase1/03-inflation-and-blended-growth.html">Blended Growth Rate</a>
+    <div class="desc"><code>(inflation + growth) / 2</code> for the residual cost bucket. One line, but architecturally important. Both engines.</div>
+  </li>
+  <li>
+    <a href="phase1/03-inflation-and-blended-growth.html">Depreciation Stripping</a>
+    <div class="desc">Removing non-cash depreciation from P&amp;L expenses to get cash-basis costs. Used in ingestion, PL engine, residual calculation.</div>
+  </li>
+  <li>
+    <a href="phase1/03-inflation-and-blended-growth.html">Frequency Normalisation</a>
+    <div class="desc">Weekly &harr; monthly conversion (4.33 factor). <code>FREQUENCY_TO_MONTHLY</code>, <code>FREQUENCY_TO_WEEKLY</code> in five-year engine.</div>
+  </li>
+  <li>
+    <a href="phase2/01-moving-averages.html">Centred Moving Average (12-month)</a>
+    <div class="desc">Half-weight endpoints. Hand-implemented in <code>seasonality.py :: compute_seasonal_indices()</code>.</div>
+  </li>
+  <li>
+    <a href="phase2/02-multiplicative-decomposition.html">Ratio-to-Moving-Average Decomposition</a>
+    <div class="desc">$SI(t) = x(t) / CMA(t)$, averaged by month, normalised to sum = 12. Core of seasonal extraction.</div>
+  </li>
+  <li>
+    <a href="phase2/02-multiplicative-decomposition.html">Seasonal Normalisation</a>
+    <div class="desc">Rescale indices so $\sum = 12$. Guarantees no net annual inflation/deflation from seasonality.</div>
+  </li>
+  <li>
+    <a href="phase2/03-seasonal-floor.html">Seasonal Index Floor with Redistribution</a>
+    <div class="desc">Clamp &ge; 0.20, redistribute surplus iteratively. <code>_apply_floor()</code> in <code>seasonality.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase2/04-dampened-seasonality.html">Dampened Seasonality</a>
+    <div class="desc">$1 + (S-1)(1-f)$ where $f$ = fixed ratio. Applied to residual costs in both engines.</div>
+  </li>
+  <li>
+    <a href="phase3/01-double-entry.html">Accounting Identity ($A = L + E$)</a>
+    <div class="desc">Enforced every week in the BS engine. Cash-as-plug is the mechanism. The constraint the whole model obeys.</div>
+  </li>
+  <li>
+    <a href="phase3/02-projected-pl.html">P&amp;L Projection (Revenue &times; Growth &times; Seasonality)</a>
+    <div class="desc">The multiplicative revenue formula plus CVP cost projection. The core of <code>pl_engine.py</code> and <code>five_year/engine.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase3/03-balance-sheet.html">Balance Sheet Roll-Forward</a>
+    <div class="desc">Receivables, payables, tax accruals, PPE, retained earnings, cash plug. <code>bs_engine.py :: roll_forward_bs()</code>.</div>
+  </li>
+  <li>
+    <a href="phase3/03-balance-sheet.html">Cash as Plug</a>
+    <div class="desc"><code>cash = total_L_E - non_cash_assets</code>. Forces BS to balance. Both <code>bs_engine.py</code> and <code>orchestrator.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase3/03-balance-sheet.html">VAT Accrual and Quarterly Drain</a>
+    <div class="desc">Output - input VAT, accumulates weekly, drains on first week of each VAT quarter. <code>bs_engine.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase3/03-balance-sheet.html">PAYE/NI Accrual and Monthly Drain</a>
+    <div class="desc"><code>staff_costs &times; 0.25</code>, drains every 4th week. <code>bs_engine.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase3/03-balance-sheet.html">Corporation Tax</a>
+    <div class="desc"><code>max(0, PBT &times; rate)</code>. Accumulates weekly, drains annually. <code>pl_engine.py</code> and <code>bs_engine.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase3/03-balance-sheet.html">Employer NI and Pension</a>
+    <div class="desc"><code>max(0, salary - threshold) &times; ni_rate</code> and <code>salary &times; pension_pct</code>. <code>employer_cost_calculator.py</code> and event injection.</div>
+  </li>
+  <li>
+    <a href="phase3/04-cash-flow-statement.html">Indirect Cash Flow Derivation</a>
+    <div class="desc">$CFO = NP + dep - \Delta AR + \Delta AP + \Delta\text{tax}$. <code>cf_engine.py :: derive_cf()</code>.</div>
+  </li>
+  <li>
+    <a href="phase4/01-dso-dpo.html">DSO and DPO</a>
+    <div class="desc">Median payment delays. <code>payment.py :: compute_dso()</code>, <code>compute_dpo()</code>. Drives receivables/payables on BS.</div>
+  </li>
+  <li>
+    <a href="phase4/01-dso-dpo.html">Cash Conversion Cycle</a>
+    <div class="desc">$CCC = DSO - DPO$. Computed in <code>orchestrator.py :: compute_business_metrics()</code>.</div>
+  </li>
+  <li>
+    <a href="phase4/02-trend-extrapolation.html">DSO/DPO Trend Extrapolation</a>
+    <div class="desc"><code>effective_dso(w) = clamp(base + slope &times; w/13, 7, 120)</code>. <code>bs_engine.py :: _effective_dso()</code>.</div>
+  </li>
+  <li>
+    <a href="phase4/02-trend-extrapolation.html">DSO Drag on Cash Receipts</a>
+    <div class="desc"><code>drag = max(0.70, 1 - annual_drag &times; year)</code>. Applied when trend &gt; 1 day/quarter. Five-year engine.</div>
+  </li>
+  <li>
+    <a href="phase5/01-random-walks.html">Square Root of Time Uncertainty</a>
+    <div class="desc">$\sigma(w) = \min(BASE + k\sqrt{w-1}, MAX)$. Both engines. Derived from Wiener process / random walk variance.</div>
+  </li>
+  <li>
+    <a href="phase5/02-uncertainty-model.html">CV-Informed Base Uncertainty Rate</a>
+    <div class="desc">CV &lt; 0.3 &rarr; 3%, CV &gt; 0.6 &rarr; 8%, else 5%. <code>_select_base_rate()</code> in uncertainty modules.</div>
+  </li>
+  <li>
+    <a href="phase5/02-uncertainty-model.html">Fan Charts (Symmetric Spread)</a>
+    <div class="desc"><code>spread = |balance| &times; &sigma;(w)</code>. Simplified Bank of England approach. Both engines.</div>
+  </li>
+  <li>
+    <a href="phase5/03-combining-uncertainties.html">Quadrature Combination</a>
+    <div class="desc">$\sigma_{\text{total}} = \sqrt{\sigma_1^2 + \sigma_2^2}$. <code>heuristic.py :: _combine_quadrature()</code>.</div>
+  </li>
+  <li>
+    <a href="phase5/03-combining-uncertainties.html">Z-Score Confidence Intervals</a>
+    <div class="desc">1.645 / 1.96 / 2.576 for 90% / 95% / 99%. <code>CONFIDENCE_Z_SCORES</code> in <code>heuristic.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase6/01-adjustment-algebra.html">Multiplier / Delta / Override Adjustments</a>
+    <div class="desc">Three types, canonical order. <code>adjustment_engine.py :: apply_scenario_adjustments()</code>.</div>
+  </li>
+  <li>
+    <a href="phase6/01-adjustment-algebra.html">DELAY Adjustment (Temporal Shift)</a>
+    <div class="desc">Shift cash flows by offset weeks. Adjustment engine and five-year engine.</div>
+  </li>
+  <li>
+    <a href="phase6/02-fragments-and-cascade.html">Independent Fragment Application</a>
+    <div class="desc">Each fragment applies to original baseline, not running total. <code>fragment_applicator.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase6/02-fragments-and-cascade.html">Balance Cascade</a>
+    <div class="desc"><code>closing(w) = opening(w) + net(w)</code>. Recalculated after any modification. Three separate implementations.</div>
+  </li>
+  <li>
+    <a href="phase6/02-fragments-and-cascade.html">FX / Interest Rate / Employer NI Macro Impacts</a>
+    <div class="desc">Relative change &times; exposed amount. <code>macro_fragment_generator.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase7/01-ledger-to-assumptions.html">Gross Margin</a>
+    <div class="desc"><code>1 - COGS/revenue</code>. Derived in <code>assumptions.py :: _derive_gross_margin()</code>.</div>
+  </li>
+  <li>
+    <a href="phase7/01-ledger-to-assumptions.html">Capex Rate</a>
+    <div class="desc"><code>min(0.15, depreciation/income)</code>. <code>assumptions.py :: _derive_capex()</code>.</div>
+  </li>
+  <li>
+    <a href="phase7/01-ledger-to-assumptions.html">Dividend Payout Ratio</a>
+    <div class="desc"><code>min(1, dividends/(retained_profit + dividends))</code>. <code>assumptions.py :: _derive_dividend_pct()</code>.</div>
+  </li>
+  <li>
+    <a href="phase7/01-ledger-to-assumptions.html">Residual Cost Calculation</a>
+    <div class="desc"><code>max(0, (|opex| - dep) / months - COGS - named_opex)</code>. PL engine and five-year engine.</div>
+  </li>
+  <li>
+    <a href="phase7/02-full-projection.html">Three-Way Forecast (P&amp;L &rarr; BS &rarr; CF)</a>
+    <div class="desc">The integration layer. <code>orchestrator.py :: compute_three_way_forecast()</code>.</div>
+  </li>
+  <li>
+    <a href="phase7/02-full-projection.html">Week-to-Month Aggregation</a>
+    <div class="desc">Flows sum, stocks snapshot last week. <code>aggregate_weeks_to_months()</code> in both engines.</div>
+  </li>
+  <li>
+    <a href="phase7/02-full-projection.html">Straight-Line Depreciation</a>
+    <div class="desc"><code>cost / (life &times; 52)</code> per week. Event injection for asset purchases.</div>
+  </li>
+  <li>
+    <a href="phase7/02-full-projection.html">Interest Expense</a>
+    <div class="desc"><code>balance &times; (base_rate + spread) / 52</code>. <code>pl_engine.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase7/03-direct-method.html">Direct Method Cash Flow (13-Week)</a>
+    <div class="desc">Match invoices/bills to payment weeks by due date. <code>DirectMethodForecastStrategy</code>.</div>
+  </li>
+  <li>
+    <a href="phase7/01-ledger-to-assumptions.html">Expense-to-Revenue Ratio</a>
+    <div class="desc"><code>total_monthly_recurring / monthly_income</code>. <code>expense_analyser.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase7/01-ledger-to-assumptions.html">Customer Concentration</a>
+    <div class="desc">Revenue share of top 1/3/5 customers. <code>quality.py :: compute_customer_concentration()</code>.</div>
+  </li>
+</ul>
+
+<hr>
+
+<h2>2. Lightly present &mdash; used in one place or as a minor input</h2>
+
+<p>These are in the codebase but only just. One helper function, one line, or one edge-case guard.</p>
+
+<ul class="index-list">
+  <li>
+    <a href="phase0/04-linear-regression.html">OLS Linear Regression (Slope Only)</a>
+    <div class="desc">Used in exactly one function: <code>payment.py :: _linear_slope()</code> for DSO/DPO trend detection. No intercept, no R&sup2;, no residual analysis. Full page is overkill.</div>
+  </li>
+  <li>
+    <a href="phase0/02-dispersion.html">Variance</a>
+    <div class="desc">Never computed directly. Only appears as an intermediate step to get standard deviation, which is then divided by the mean to get CV.</div>
+  </li>
+  <li>
+    <a href="phase1/01-compound-interest.html">Growth Rate Clamping</a>
+    <div class="desc">Clamp to [-20%, +25%]. Two lines of code in <code>revenue.py</code>. Philosophically important but mathematically trivial.</div>
+  </li>
+  <li>
+    <a href="phase1/03-inflation-and-blended-growth.html">Inflation Compounding</a>
+    <div class="desc">Same formula as revenue compounding but with the inflation rate. Applied to fixed costs. One line in each engine.</div>
+  </li>
+  <li>
+    <a href="phase3/03-balance-sheet.html">Fixed Ratio (Fixed Cost Proportion)</a>
+    <div class="desc"><code>total_fixed / total_monthly_recurring</code>. Computed once in <code>expense_analyser.py</code>, fed to the dampening formula.</div>
+  </li>
+  <li>
+    <a href="phase6/01-adjustment-algebra.html">Driver Override Resolution</a>
+    <div class="desc">Latest start_week wins when multiple overrides overlap. One function: <code>driver_overrides.py :: get_driver_value()</code>.</div>
+  </li>
+  <li>
+    <a href="phase7/02-full-projection.html">Period Months Calculation</a>
+    <div class="desc"><code>days / 30.44</code>. Two lines in <code>pl_engine.py</code> and <code>expense_analyser.py</code>.</div>
+  </li>
+  <li>
+    <a href="phase7/03-direct-method.html">Punctual Event BS Timing</a>
+    <div class="desc">Mini-ledger for one-off invoices with DSO-based collection lag. <code>punctual_bs.py</code>. Niche edge case.</div>
+  </li>
+</ul>
+
+<hr>
+
+<h2>3. Not in the model &mdash; taught for background only</h2>
+
+<p>These concepts appear in the course but have no corresponding code in the forecasting engine. They are either pedagogical context, theoretical tangents, or prerequisites for understanding something that <em>is</em> in the model.</p>
+
+<ul class="index-list">
+  <li>
+    <a href="phase0/04-linear-regression.html">R&sup2; (Coefficient of Determination)</a>
+    <div class="desc">Taught as a full section with worked example. Never computed anywhere in the codebase.</div>
+  </li>
+  <li>
+    <a href="phase0/04-linear-regression.html">Geometric / Orthogonal Projection Interpretation of OLS</a>
+    <div class="desc">Pure theory. References a &ldquo;Phase 6 (Linear Algebra)&rdquo; that doesn&rsquo;t exist. Not in the codebase.</div>
+  </li>
+  <li>
+    <a href="phase0/03-percentiles.html">Tukey Fences / IQR Outlier Detection</a>
+    <div class="desc">1.5 &times; IQR rule for outliers. Not implemented. The engine uses CV thresholds instead.</div>
+  </li>
+  <li>
+    <a href="phase0/03-percentiles.html">Five-Number Summary / Box Plots</a>
+    <div class="desc">Not computed. The page claims it&rsquo;s used &ldquo;for every invoice stream&rdquo; &mdash; this is incorrect.</div>
+  </li>
+  <li>
+    <a href="phase0/01-mean-and-median.html">Weighted Means</a>
+    <div class="desc">The page claims &ldquo;weighted means appear throughout the engine.&rdquo; They do not. No weighted mean in the inventory.</div>
+  </li>
+  <li>
+    <a href="phase0/01-mean-and-median.html">Breakdown Point of Estimators</a>
+    <div class="desc">Taught to justify why median is used for DSO. Valid pedagogy, but not in the code.</div>
+  </li>
+  <li>
+    <a href="phase0/01-mean-and-median.html">L1 Minimiser Property of the Median</a>
+    <div class="desc">Formal proof that the median minimises absolute deviations. Not used in the engine.</div>
+  </li>
+  <li>
+    <a href="phase1/01-compound-interest.html">Derivation of Euler&rsquo;s Number $e$</a>
+    <div class="desc">$\lim_{n \to \infty}(1+1/n)^n$. Historical background. The codebase uses <code>(1+r)**frac</code> without referencing $e$.</div>
+  </li>
+  <li>
+    <a href="phase1/01-compound-interest.html">Bernoulli&rsquo;s Inequality</a>
+    <div class="desc">$(1+r)^n \geq 1+rn$. Proved to show compound beats simple. Not in the code.</div>
+  </li>
+  <li>
+    <a href="phase1/02-geometric-series.html">L&rsquo;H&ocirc;pital&rsquo;s Rule (Zero-Rate Edge Case)</a>
+    <div class="desc">Used to show the annuity formula degenerates to $P/n$ at zero interest. The code handles this as a simple <code>if rate == 0</code> guard.</div>
+  </li>
+  <li>
+    <a href="phase1/03-inflation-and-blended-growth.html">AM-GM Inequality Proof</a>
+    <div class="desc">Proves arithmetic mean &ge; geometric mean to justify using AM for the blended rate. The code just computes <code>(a+b)/2</code>.</div>
+  </li>
+  <li>
+    <a href="phase2/01-moving-averages.html">Low-Pass Filter / Frequency Response Framing</a>
+    <div class="desc">The CMA explained as convolution with a rectangular kernel. The code is simple arithmetic &mdash; no signal processing.</div>
+  </li>
+  <li>
+    <a href="phase2/05-why-not-arima.html">ARIMA Model Structure</a>
+    <div class="desc">Taught to explain why it was <em>not</em> used. Deliberately absent from the codebase.</div>
+  </li>
+  <li>
+    <a href="phase5/01-random-walks.html">Wiener Process Formal Definition</a>
+    <div class="desc">Three axioms of $W(t)$. The code uses <code>sqrt(w-1)</code> &mdash; the consequence, not the formalism.</div>
+  </li>
+  <li>
+    <a href="phase5/01-random-walks.html">Fractional Brownian Motion / Hurst Parameter</a>
+    <div class="desc">Mentioned as a generalisation. Not in the codebase.</div>
+  </li>
+  <li>
+    <a href="phase5/01-random-walks.html">Central Limit Theorem</a>
+    <div class="desc">Invoked to justify the normal distribution assumption for z-scores. Not computed.</div>
+  </li>
+  <li>
+    <a href="phase5/03-combining-uncertainties.html">Normal Distribution Theory</a>
+    <div class="desc">The z-score values are hardcoded constants. No probability density computation in the engine.</div>
+  </li>
+</ul>
+
+<div class="nav">
+  <a href="index.html">&larr; Index</a>
+</div>
+
+<script src="nav.js"></script>
+<script src="tutor.js"></script>
+</body>
+</html>
