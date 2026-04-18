@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Architecture — Graph</title>
+<script src="https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+<script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+<script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #c9d1d9; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; overflow: hidden; }
+  #cy { width: 100vw; height: 100vh; }
+  #controls {
+    position: fixed; top: 16px; left: 16px; z-index: 10;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  #controls button, #controls a {
+    background: #161b22; border: 1px solid #30363d; color: #c9d1d9;
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    font-family: inherit; text-decoration: none; text-align: center;
+  }
+  #controls button:hover, #controls a:hover { background: #21262d; border-color: #484f58; }
+  #tooltip {
+    position: fixed; display: none; background: #161b22; border: 1px solid #30363d;
+    border-radius: 8px; padding: 12px 16px; max-width: 380px; z-index: 20;
+    font-size: 12px; line-height: 1.6; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  #tooltip .tt-title { font-weight: bold; margin-bottom: 4px; font-size: 13px; }
+  #tooltip .tt-formula { background: #0d1117; border-left: 2px solid #e94560; padding: 4px 8px; margin: 6px 0; border-radius: 3px; font-size: 11px; }
+  #legend {
+    position: fixed; bottom: 16px; left: 16px; z-index: 10;
+    display: flex; gap: 16px; font-size: 11px; background: #161b22ee;
+    border: 1px solid #30363d; border-radius: 6px; padding: 8px 14px;
+  }
+  .leg { display: flex; align-items: center; gap: 5px; }
+  .leg-dot { width: 10px; height: 10px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<div id="controls">
+  <button onclick="cy.fit(undefined, 40)">Fit</button>
+  <button onclick="cy.zoom(cy.zoom() * 1.3); cy.center()">Zoom +</button>
+  <button onclick="cy.zoom(cy.zoom() / 1.3); cy.center()">Zoom −</button>
+  <a href="model-diagram.html">← Detailed view</a>
+  <a href="index.html">← Index</a>
+</div>
+
+<div id="legend">
+  <div class="leg"><div class="leg-dot" style="background:#3fb950;"></div> Raw input</div>
+  <div class="leg"><div class="leg-dot" style="background:#d29922;"></div> Derived</div>
+  <div class="leg"><div class="leg-dot" style="background:#e94560;"></div> Engine</div>
+  <div class="leg"><div class="leg-dot" style="background:#58a6ff;"></div> Output</div>
+  <div class="leg"><div class="leg-dot" style="background:#bc8cff;"></div> User input</div>
+</div>
+
+<div id="tooltip"></div>
+<div id="cy"></div>
+
+<script>
+var N = function(id, label, type, tip, parent) {
+  var o = { data: { id: id, label: label, type: type, tip: tip || '' } };
+  if (parent) o.data.parent = parent;
+  return o;
+};
+var E = function(s, t, label) {
+  return { data: { source: s, target: t, label: label || '' } };
+};
+
+var nodes = [
+  // ─── RAW INPUTS ───
+  N('_inputs', 'RAW INPUTS', 'group'),
+  N('paid_inv', 'Paid Invoices\n(24 months)', 'input', 'amount, issued_on, paid_on, contact_name. From FreeAgent. Drives DSO, revenue, seasonality, customer concentration.', '_inputs'),
+  N('out_inv', 'Outstanding\nInvoices', 'input', 'amount, due_date, contact. Open AR. Drives 13-week collections.', '_inputs'),
+  N('paid_bills', 'Paid Bills\n(24 months)', 'input', 'amount, issued_on, paid_on, category, supplier. Drives DPO, recurring detection.', '_inputs'),
+  N('out_bills', 'Outstanding\nBills', 'input', 'amount, due_date, category, supplier, recurring flag. Drives 13-week payments + recurring detection.', '_inputs'),
+  N('pl_raw', 'P&L\nStatement', 'input', 'income, expenses, depreciation, dividends, retained_profit, period dates. From FreeAgent.', '_inputs'),
+  N('tb_raw', 'Trial\nBalance', 'input', 'nominal_code, account_name, total per account. Classified into P&L lines.', '_inputs'),
+  N('bs_raw', 'Balance\nSheet', 'input', 'current_assets, current_liabilities, equity, PPE, as_at_date. Opening positions for BS engine.', '_inputs'),
+  N('bank', 'Bank\nAccounts', 'input', 'current_balance, currency. Opening cash for 13-week.', '_inputs'),
+  N('categories', 'Categories', 'input', 'url, description, nominal_code, group. Maps bills to components.', '_inputs'),
+  N('macro_raw', 'External Macro\nFactors', 'input', 'BoE base rate, corp tax (HMRC), CPI, employer NI rate/threshold, living wage, FX rates (Frankfurter), commodity prices (FRED).'),
+  N('companies_house', 'Companies\nHouse', 'input', 'Industry, SIC codes. Drives macro signal relevance.'),
+
+  // ─── USER INPUTS ───
+  N('_user', 'USER INPUTS', 'group'),
+  N('driver_ov', 'Driver\nOverrides', 'user', '9 overridable drivers: growth, margin, inflation, DSO, DPO, corp_tax, capex, dividends, BoE rate. Each: (driver, value, start_week, duration). Latest-start-week wins.', '_user'),
+  N('events', 'Business\nEvents', 'user', '17 event types: hire/lose employee, new/lose customer, price change, asset purchase, loan, recurring cost, dividend, equity injection, investment property, invoice, custom.', '_user'),
+  N('sliders', 'Sliders', 'user', '9 UI sliders → converted to driver overrides via sliders_to_driver_overrides(). No LLM.', '_user'),
+  N('scenario_text', 'Scenario\nText', 'user', 'Natural language → LLM (Claude via Instructor) → extracted as driver overrides + events + custom events.', '_user'),
+
+  // ─── DERIVATION LAYER ───
+  N('_derive', 'DERIVATION LAYER', 'group'),
+
+  N('base_rev', 'Base Monthly\nRevenue', 'derive', 'mean(last 12 months of paid invoice totals). Fallback: avg weekly from 13-week. revenue.py', '_derive'),
+  N('growth', 'Revenue\nGrowth Rate', 'derive', '(last_12mo_avg / prior_12mo_avg) − 1, clamped [−20%, +25%]. Needs 6+ months, else None. revenue.py', '_derive'),
+  N('seasonal', 'Seasonal\nIndices (12)', 'derive', 'Ratio-to-CMA → average by month → normalise Σ=12 → floor at 0.20 with redistribution. Needs 13+ months, else flat 1.0. seasonality.py', '_derive'),
+  N('dso', 'DSO\n(days)', 'derive', 'median(paid_on − issued_on) on paid invoices, trailing 12mo. Needs 10+. payment.py', '_derive'),
+  N('dpo', 'DPO\n(days)', 'derive', 'median(paid_on − issued_on) on paid bills. Needs 10+. payment.py', '_derive'),
+  N('dso_trend', 'DSO Trend\n(d/quarter)', 'derive', 'OLS slope on quarterly median DSO. Needs 3+ quarters. payment.py :: _linear_slope()', '_derive'),
+  N('dpo_trend', 'DPO Trend\n(d/quarter)', 'derive', 'OLS slope on quarterly median DPO. payment.py', '_derive'),
+  N('invoice_cv', 'Invoice CV', 'derive', 'stdev(amounts) / mean(amounts). Calibrates uncertainty base rate. quality.py', '_derive'),
+  N('cust_conc', 'Customer\nConcentration', 'derive', 'Revenue share of top 1/3/5 customers. quality.py', '_derive'),
+
+  N('recurring', 'Recurring\nStreams', 'derive', 'Source 1: FreeAgent recurring=True. Source 2: pattern detection (3+ bills, group by supplier+category, reject if interval CV > 0.35 or amount CV > 0.35). Each: supplier, component, FIXED/VARIABLE, frequency, median_amount. detector.py', '_derive'),
+  N('expense_a', 'Expense\nAnalysis', 'derive', 'total_monthly_recurring, total_fixed, total_variable, fixed_ratio = fixed/total, expense_to_revenue. expense_analyser.py', '_derive'),
+
+  N('tb_class', 'TB\nClassification', 'derive', '3-tier: category group → keyword regex → nominal code range. Output: each account → P&L line (REVENUE, COGS, STAFF, PREMISES, MARKETING, INSURANCE, PROF_FEES, DEPRECIATION, OTHER_OPEX). classification.py', '_derive'),
+  N('bs_opening', 'BS Opening\nPositions', 'derive', 'Pattern-matching on account names: cash, AR, AP, VAT, corp_tax, PAYE, loans, share_capital, PPE, retained_earnings. bs_parser.py', '_derive'),
+  N('biz_profile', 'Business\nProfile', 'derive', 'Industry, FX exposure, payroll size, debt level, commodity sensitivity. Extracted from invoices + bills + P&L + Companies House. Drives macro signal relevance.', '_derive'),
+
+  // ─── ASSUMPTIONS ───
+  N('assumptions', 'Three-Way\nAssumptions\n(15 params)', 'derive', 'revenue_growth (metrics or 5%), gross_margin (TB or 100%), inflation (CPI or 3%), DSO/DPO (metrics or 30d), DSO/DPO trend, corp_tax (HMRC or 25%), VAT (20%), capex_pct (min(0.15, dep/income) or 0), dividend_pct (min(1, div/(RE+div)) or 0), BoE rate (or 5%), loan_spread (3%), fixed_ratio (or 0), FY end (March), VAT quarters [1,4,7,10]. assumptions.py'),
+
+  // ─── ENGINES ───
+  N('_engines', 'ENGINES', 'group'),
+
+  N('eng_13w', '13-Week\nDirect Method', 'engine', 'Transaction-level. Per week: collections = Σ(invoices due this week), payments = Σ(bills due) + recurring streams, residual = max(weekly_opex − recurring, 0). Net = receipts − disbursements. Closing = opening + net. 13 × WeekProjection.', '_engines'),
+
+  N('eng_5y', '5-Year\nIndirect Method', 'engine', 'Rate-based, 260 weeks. receipts = base × (1+g)^year × S(month) × drag. Fixed costs × (1+inflation)^year. Variable × (1+growth)^year. Residual × (1+blended)^year × dampened_S. Uncertainty: σ(w) = min(BASE + k√(w−1), 0.40).', '_engines'),
+
+  N('eng_pl', 'P&L Engine\n(project_pl)', 'engine', 'Per week: resolve driver overrides (latest-start-week wins). revenue = base/4.33 × growth^year × S(month). COGS = rev × (1−margin). Named opex by CVP type. Residual × blended × dampened. Depreciation flat. Interest = loan × (BoE+spread)/52. Tax = max(0, PBT×rate). pl_engine.py', '_engines'),
+
+  N('event_expand', 'Event\nExpansion', 'engine', 'Partition into recurring vs punctual. Expand each into per-week EventEffect(week, pl_effects{}, bs_effects{}). 17 handlers. Apply P&L effects after projection, recompute tax. event_injection.py', '_engines'),
+
+  N('eng_bs', 'BS Engine\n(roll_forward_bs)', 'engine', 'Per week: AR = rev × DSO/7. AP = COGS × DPO/7. PPE = opening + capex − dep. VAT accumulates, drains quarterly. PAYE accumulates, drains monthly. Corp tax accumulates, drains annually. RE = prev + NP − div. CASH = L+E − non_cash_A (THE PLUG). bs_engine.py', '_engines'),
+
+  N('eng_cf', 'CF Engine\n(derive_cf)', 'engine', 'Indirect method from BS deltas. CFO = NP + dep − ΔAR + ΔAP + ΔVAT + ΔCT + ΔPAYE + Δother. CFI = −capex. CFF = Δloans + dividends + equity. ΔCash = CFO+CFI+CFF must = BS cash change. cf_engine.py', '_engines'),
+
+  N('eng_smart', 'Smart Causal\nForecast', 'engine', 'Macro overlay on 13-week baseline. Determine relevant signals for profile. Generate ImpactFragments where current ≠ baseline factor. Apply independently to baseline (order-free). Uncertainty via quadrature. smart_forecast_assembler.py', '_engines'),
+
+  N('eng_unc', 'Uncertainty\nEngine', 'engine', 'σ(w) = min(BASE + k√(w−1), 0.40). BASE from invoice CV: <0.3→3%, >0.6→8%, else 5%. Spread = |balance| × σ. Applied to 5-year closing and three-way CF closing cash. uncertainty.py', '_engines'),
+
+  // ─── OUTPUTS ───
+  N('_outputs', 'OUTPUTS', 'group'),
+
+  N('out_13w', '13-Week\nForecast', 'output', '13 × WeekProjection: receipts/disbursements by component (collections, supplier, payroll, rent, utilities, taxes, debt, other), net, opening/closing. ForecastMetrics: min cash, runway, averages.', '_outputs'),
+  N('out_5y', '5-Year\nForecast', 'output', '260 weekly + 60 monthly projections. Each: opening, receipts, disbursements, net, closing, lower_bound, upper_bound. FiveYearForecastMetrics.', '_outputs'),
+  N('out_pl', 'Weekly/Monthly\nP&L', 'output', '260w + 60m × 18 fields: revenue, COGS, gross_profit, staff, premises, marketing, insurance, prof_fees, other_opex, depreciation, total_opex, operating_profit, interest, PBT, corp_tax, net_profit, net_margin_pct.', '_outputs'),
+  N('out_bs', 'Weekly/Monthly\nBalance Sheet', 'output', '260w + 60m × 21 fields: cash, AR, other_current, PPE, total_A, AP, VAT, corp_tax, PAYE, other_CL, total_CL, loans, total_L, share_capital, RE, total_E, total_L_E, is_balanced.', '_outputs'),
+  N('out_cf', 'Weekly/Monthly\nCash Flow', 'output', '260w + 60m × 21 fields: NP, dep_addback, ΔAR, ΔAP, ΔVAT, ΔCT, ΔPAYE, Δother, CFO, capex, CFI, new_borrowing, repayments, dividends, equity, CFF, net_CF, opening, closing, bs_check.', '_outputs'),
+  N('out_unc', 'Uncertainty\nBands', 'output', 'Per week: closing_cash, lower_bound, upper_bound, uncertainty_rate. Monthly aggregation takes last-week-of-month.', '_outputs'),
+  N('out_smart', 'Smart Causal\nResult', 'output', 'Baseline + adjusted 13-week, macro fragments (toggleable), total_macro_impact_week13, factors_considered.', '_outputs'),
+  N('out_xlsx', 'Spreadsheet\nExport', 'output', '4-sheet XLSX: assumptions, 260-week CF, 60-month CF, business health + recurring streams.', '_outputs'),
+  N('out_checks', 'Verification\nChecks', 'output', 'Check 1: A = L + E every week. Check 2: CF closing = BS cash. Check 3: NP flows into RE.', '_outputs'),
+];
+
+var edges = [
+  // Raw inputs → derivations
+  E('paid_inv', 'base_rev'), E('paid_inv', 'growth'), E('paid_inv', 'seasonal'),
+  E('paid_inv', 'dso'), E('paid_inv', 'dso_trend'),
+  E('paid_inv', 'invoice_cv'), E('paid_inv', 'cust_conc'),
+  E('paid_bills', 'dpo'), E('paid_bills', 'dpo_trend'),
+  E('paid_bills', 'recurring'), E('out_bills', 'recurring'),
+  E('categories', 'recurring'), E('categories', 'tb_class'),
+  E('pl_raw', 'expense_a'), E('recurring', 'expense_a'),
+  E('tb_raw', 'tb_class'),
+  E('bs_raw', 'bs_opening'),
+  E('paid_inv', 'biz_profile'), E('paid_bills', 'biz_profile'),
+  E('pl_raw', 'biz_profile'), E('companies_house', 'biz_profile'),
+
+  // Derivations → assumptions
+  E('growth', 'assumptions'), E('base_rev', 'assumptions'),
+  E('seasonal', 'assumptions'),
+  E('dso', 'assumptions'), E('dpo', 'assumptions'),
+  E('dso_trend', 'assumptions'), E('dpo_trend', 'assumptions'),
+  E('expense_a', 'assumptions'),
+  E('tb_class', 'assumptions'),
+  E('pl_raw', 'assumptions'),
+  E('macro_raw', 'assumptions'),
+
+  // Inputs → 13-week engine
+  E('bank', 'eng_13w'), E('out_inv', 'eng_13w'), E('out_bills', 'eng_13w'),
+  E('recurring', 'eng_13w'), E('pl_raw', 'eng_13w'),
+
+  // 13-week → 5-year
+  E('eng_13w', 'eng_5y'),
+  E('base_rev', 'eng_5y'), E('growth', 'eng_5y'), E('seasonal', 'eng_5y'),
+  E('recurring', 'eng_5y'), E('invoice_cv', 'eng_5y'),
+  E('dso_trend', 'eng_5y'), E('expense_a', 'eng_5y'),
+
+  // Assumptions → three-way engines
+  E('assumptions', 'eng_pl'),
+  E('bs_opening', 'eng_bs'),
+  E('tb_class', 'eng_pl'),
+  E('seasonal', 'eng_pl'),
+  E('base_rev', 'eng_pl'),
+
+  // User inputs → engines
+  E('driver_ov', 'eng_pl'), E('driver_ov', 'eng_bs'),
+  E('events', 'event_expand'),
+  E('sliders', 'driver_ov'),
+  E('scenario_text', 'driver_ov'), E('scenario_text', 'events'),
+
+  // Three-way internal flow
+  E('eng_pl', 'event_expand', 'P&L'),
+  E('event_expand', 'eng_bs', 'modified P&L'),
+  E('assumptions', 'eng_bs'),
+  E('eng_bs', 'eng_cf', 'BS positions'),
+  E('eng_pl', 'eng_cf', 'P&L'),
+
+  // Smart causal
+  E('eng_13w', 'eng_smart'),
+  E('biz_profile', 'eng_smart'),
+  E('macro_raw', 'eng_smart'),
+
+  // Uncertainty
+  E('invoice_cv', 'eng_unc'),
+  E('eng_5y', 'eng_unc'),
+  E('eng_cf', 'eng_unc'),
+
+  // Engines → outputs
+  E('eng_13w', 'out_13w'),
+  E('eng_5y', 'out_5y'),
+  E('eng_pl', 'out_pl'),
+  E('eng_bs', 'out_bs'), E('eng_bs', 'out_checks'),
+  E('eng_cf', 'out_cf'), E('eng_cf', 'out_checks'),
+  E('eng_unc', 'out_unc'),
+  E('eng_smart', 'out_smart'),
+  E('out_pl', 'out_xlsx'), E('out_bs', 'out_xlsx'), E('out_cf', 'out_xlsx'),
+];
+
+var colors = {
+  input: { bg: '#1a3a2a', border: '#3fb950', text: '#3fb950' },
+  derive: { bg: '#3a2a10', border: '#d29922', text: '#d29922' },
+  engine: { bg: '#3a1020', border: '#e94560', text: '#e94560' },
+  output: { bg: '#102a3a', border: '#58a6ff', text: '#58a6ff' },
+  user:   { bg: '#2a1a3a', border: '#bc8cff', text: '#bc8cff' },
+  group:  { bg: '#161b2200', border: '#30363d', text: '#484f58' },
+};
+
+var cy = cytoscape({
+  container: document.getElementById('cy'),
+  elements: { nodes: nodes, edges: edges },
+  style: [
+    {
+      selector: 'node[type="group"]',
+      style: {
+        'background-color': '#161b2200',
+        'border-width': 0,
+        'label': 'data(label)',
+        'text-valign': 'top',
+        'text-halign': 'center',
+        'font-size': '11px',
+        'color': '#484f58',
+        'font-weight': 'bold',
+        'text-margin-y': -4,
+        'padding': '20px',
+      }
+    },
+    {
+      selector: 'node[type="input"]',
+      style: {
+        'background-color': colors.input.bg,
+        'border-color': colors.input.border,
+        'border-width': 2,
+        'label': 'data(label)',
+        'text-wrap': 'wrap',
+        'text-max-width': '100px',
+        'text-valign': 'center',
+        'text-halign': 'center',
+        'font-size': '9px',
+        'color': colors.input.text,
+        'width': 120,
+        'height': 50,
+        'shape': 'round-rectangle',
+        'padding': '8px',
+      }
+    },
+    {
+      selector: 'node[type="derive"]',
+      style: {
+        'background-color': colors.derive.bg,
+        'border-color': colors.derive.border,
+        'border-width': 2,
+        'label': 'data(label)',
+        'text-wrap': 'wrap',
+        'text-max-width': '110px',
+        'text-valign': 'center',
+        'text-halign': 'center',
+        'font-size': '9px',
+        'color': colors.derive.text,
+        'width': 120,
+        'height': 50,
+        'shape': 'round-rectangle',
+      }
+    },
+    {
+      selector: 'node[type="engine"]',
+      style: {
+        'background-color': colors.engine.bg,
+        'border-color': colors.engine.border,
+        'border-width': 2.5,
+        'label': 'data(label)',
+        'text-wrap': 'wrap',
+        'text-max-width': '120px',
+        'text-valign': 'center',
+        'text-halign': 'center',
+        'font-size': '9px',
+        'color': colors.engine.text,
+        'font-weight': 'bold',
+        'width': 130,
+        'height': 60,
+        'shape': 'round-rectangle',
+      }
+    },
+    {
+      selector: 'node[type="output"]',
+      style: {
+        'background-color': colors.output.bg,
+        'border-color': colors.output.border,
+        'border-width': 2,
+        'label': 'data(label)',
+        'text-wrap': 'wrap',
+        'text-max-width': '110px',
+        'text-valign': 'center',
+        'text-halign': 'center',
+        'font-size': '9px',
+        'color': colors.output.text,
+        'width': 120,
+        'height': 50,
+        'shape': 'round-rectangle',
+      }
+    },
+    {
+      selector: 'node[type="user"]',
+      style: {
+        'background-color': colors.user.bg,
+        'border-color': colors.user.border,
+        'border-width': 2,
+        'border-style': 'dashed',
+        'label': 'data(label)',
+        'text-wrap': 'wrap',
+        'text-max-width': '100px',
+        'text-valign': 'center',
+        'text-halign': 'center',
+        'font-size': '9px',
+        'color': colors.user.text,
+        'width': 110,
+        'height': 50,
+        'shape': 'round-rectangle',
+      }
+    },
+    {
+      selector: 'edge',
+      style: {
+        'width': 1.2,
+        'line-color': '#30363d',
+        'target-arrow-color': '#30363d',
+        'target-arrow-shape': 'triangle',
+        'arrow-scale': 0.8,
+        'curve-style': 'bezier',
+        'opacity': 0.5,
+        'label': 'data(label)',
+        'font-size': '7px',
+        'color': '#484f58',
+        'text-rotation': 'autorotate',
+        'text-margin-y': -8,
+      }
+    },
+    {
+      selector: 'edge:selected, node:selected ~ edge',
+      style: { 'opacity': 1, 'width': 2 }
+    },
+    {
+      selector: 'node:selected',
+      style: { 'border-width': 3.5 }
+    },
+    {
+      selector: '.highlighted',
+      style: { 'opacity': 1, 'line-color': '#e94560', 'target-arrow-color': '#e94560', 'width': 2.5 }
+    },
+    {
+      selector: '.dimmed',
+      style: { 'opacity': 0.12 }
+    },
+    {
+      selector: '.node-highlighted',
+      style: { 'border-width': 3.5 }
+    }
+  ],
+  layout: {
+    name: 'dagre',
+    rankDir: 'LR',
+    nodeSep: 25,
+    rankSep: 80,
+    edgeSep: 15,
+    ranker: 'network-simplex',
+    padding: 40,
+  },
+  minZoom: 0.15,
+  maxZoom: 3,
+  wheelSensitivity: 0.3,
+});
+
+// Tooltip on tap
+var tooltip = document.getElementById('tooltip');
+cy.on('tap', 'node', function(evt) {
+  var node = evt.target;
+  if (node.data('type') === 'group') return;
+  var tip = node.data('tip');
+  if (!tip) return;
+  var pos = evt.renderedPosition;
+  tooltip.innerHTML = '<div class="tt-title">' + node.data('label').replace(/\n/g, ' ') + '</div>' + tip;
+  tooltip.style.display = 'block';
+  tooltip.style.left = Math.min(pos.x + 20, window.innerWidth - 400) + 'px';
+  tooltip.style.top = Math.min(pos.y + 20, window.innerHeight - 200) + 'px';
+});
+cy.on('tap', function(evt) {
+  if (evt.target === cy) {
+    tooltip.style.display = 'none';
+    cy.elements().removeClass('highlighted dimmed node-highlighted');
+  }
+});
+
+// Highlight connected edges on node tap
+cy.on('tap', 'node', function(evt) {
+  var node = evt.target;
+  if (node.data('type') === 'group') return;
+  cy.elements().removeClass('highlighted dimmed node-highlighted');
+  var connected = node.connectedEdges();
+  var connectedNodes = connected.connectedNodes();
+  cy.elements().addClass('dimmed');
+  node.removeClass('dimmed').addClass('node-highlighted');
+  connected.removeClass('dimmed').addClass('highlighted');
+  connectedNodes.removeClass('dimmed').addClass('node-highlighted');
+});
+</script>
+</body>
+</html>
