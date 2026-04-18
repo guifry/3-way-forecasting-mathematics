@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Architecture — Data Flow</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+<style>
+.flow { display: grid; grid-template-columns: 1fr 40px 1fr 40px 1fr; align-items: stretch; gap: 0; margin: 1.5rem 0; }
+.flow-col { display: flex; flex-direction: column; gap: 0.6rem; }
+.flow-arrow { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.4rem; }
+.box { border: 1px solid var(--border); border-radius: 6px; padding: 0.7rem 0.9rem; background: var(--surface); }
+.box-title { font-weight: bold; color: var(--accent); font-size: 0.85rem; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.box-items { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; }
+.box-items code { font-size: 0.72rem; color: var(--accent2, #4a9); }
+.box-input { border-left: 3px solid #4a9; }
+.box-derive { border-left: 3px solid #e9a045; }
+.box-engine { border-left: 3px solid var(--accent); }
+.box-output { border-left: 3px solid #6a9; }
+.box-user { border-left: 3px solid #a4f; }
+.engine-detail { margin: 1rem 0; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.engine-detail summary { padding: 0.7rem 1rem; cursor: pointer; font-weight: bold; color: var(--accent); font-size: 0.9rem; background: var(--surface); }
+.engine-detail summary:hover { background: var(--bg); }
+.engine-detail .inner { padding: 1rem; font-size: 0.82rem; line-height: 1.6; }
+.step { display: flex; gap: 0.6rem; margin: 0.5rem 0; align-items: flex-start; }
+.step-num { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--bg); font-size: 0.7rem; font-weight: bold; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+.step-text { flex: 1; }
+.formula-row { background: var(--surface); border-radius: 4px; padding: 0.4rem 0.7rem; margin: 0.4rem 0; font-size: 0.8rem; border-left: 2px solid var(--accent); }
+.legend { display: flex; gap: 1.2rem; flex-wrap: wrap; margin: 1rem 0; font-size: 0.78rem; }
+.legend-item { display: flex; align-items: center; gap: 0.3rem; }
+.legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border); }
+.section-flow { margin: 2rem 0; }
+.section-flow h3 { color: var(--accent); margin-bottom: 0.5rem; }
+.wide-flow { display: grid; grid-template-columns: 1fr 30px 1fr 30px 1fr 30px 1fr 30px 1fr; align-items: start; gap: 0; margin: 1.5rem 0; }
+@media (max-width: 900px) { .flow, .wide-flow { grid-template-columns: 1fr; } .flow-arrow { transform: rotate(90deg); } }
+</style>
+</head>
+<body>
+
+<h1>Model Architecture</h1>
+<p class="subtitle">Complete data flow of the three-way forecasting engine, left to right.</p>
+
+<p>Read left to right. Raw data enters on the left, passes through derivation and assumption layers, feeds into the engines, and produces outputs on the right. Click any engine box to expand its internal computation steps.</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#4a9;"></div> Raw input</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#e9a045;"></div> Derived metric</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:var(--accent);"></div> Engine</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#6a9;"></div> Output</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#a4f;"></div> User input</div>
+</div>
+
+<hr>
+
+<!-- ═══════════════ LAYER 1: RAW INPUTS → DERIVATIONS → ASSUMPTIONS ═══════════════ -->
+
+<h2>1. Data Ingestion and Assumption Derivation</h2>
+
+<div class="flow">
+
+<div class="flow-col">
+  <div class="box box-input">
+    <div class="box-title">FreeAgent Accounting Data</div>
+    <div class="box-items">
+      <strong>Invoices</strong> (outstanding + paid 24mo): amount, due_date, paid_on, issued_on, contact<br>
+      <strong>Bills</strong> (all + paid 24mo): amount, due_date, paid_on, category, supplier, recurring flag<br>
+      <strong>P&amp;L</strong>: income, expenses, depreciation, dividends, retained_profit<br>
+      <strong>Trial balance</strong>: nominal_code, name, total per account<br>
+      <strong>Balance sheet</strong>: current_assets, current_liabilities, equity, PPE<br>
+      <strong>Bank accounts</strong>: current_balance, currency<br>
+      <strong>Categories</strong>: url, description, nominal_code, group
+    </div>
+  </div>
+  <div class="box box-input">
+    <div class="box-title">External Macro Factors</div>
+    <div class="box-items">
+      <strong>BoE base rate</strong>, <strong>corp tax rate</strong>, <strong>employer NI rate/threshold</strong>, <strong>CPI</strong>, <strong>living wage</strong> (HMRC/BoE)<br>
+      <strong>FX rates</strong>: GBP/USD, GBP/EUR, etc. (Frankfurter)<br>
+      <strong>Commodity prices</strong>: Brent crude, steel, etc. (FRED)
+    </div>
+  </div>
+  <div class="box box-input">
+    <div class="box-title">Companies House</div>
+    <div class="box-items">Industry, SIC codes</div>
+  </div>
+</div>
+
+<div class="flow-arrow">&rarr;</div>
+
+<div class="flow-col">
+  <div class="box box-derive">
+    <div class="box-title">Business Metrics</div>
+    <div class="box-items">
+      <strong>Base monthly revenue</strong>: mean of last 12mo<br>
+      <strong>Growth rate</strong>: <code>(last12 / prior12) - 1</code>, clamped [-20%, +25%]<br>
+      <strong>Seasonal indices</strong> (12): ratio-to-CMA, normalised to &sum;=12, floored at 0.20<br>
+      <strong>DSO</strong>: <code>median(paid_on - issued_on)</code> on invoices<br>
+      <strong>DPO</strong>: same on bills<br>
+      <strong>DSO/DPO trend</strong>: OLS slope on quarterly medians<br>
+      <strong>CCC</strong>: DSO &minus; DPO<br>
+      <strong>Invoice CV</strong>: <code>stdev / mean</code> of invoice amounts<br>
+      <strong>Customer concentration</strong>: top-1/3/5 revenue share
+    </div>
+  </div>
+  <div class="box box-derive">
+    <div class="box-title">Recurring Streams</div>
+    <div class="box-items">
+      <strong>Source 1</strong>: FreeAgent <code>recurring=True</code> bills &rarr; high confidence<br>
+      <strong>Source 2</strong>: pattern detection &mdash; group by (supplier, category), need 3+ paid, reject if interval CV &gt; 0.35 or amount CV &gt; 0.35<br>
+      Each stream: supplier, component, cost_behaviour (FIXED/VARIABLE), frequency, median_amount
+    </div>
+  </div>
+  <div class="box box-derive">
+    <div class="box-title">Expense Analysis</div>
+    <div class="box-items">
+      <strong>Total monthly recurring</strong>: &sum;(amount &times; freq_multiplier)<br>
+      <strong>Fixed ratio</strong>: <code>total_fixed / total_monthly</code><br>
+      <strong>Expense-to-revenue ratio</strong>
+    </div>
+  </div>
+  <div class="box box-derive">
+    <div class="box-title">Trial Balance Classification</div>
+    <div class="box-items">
+      3-tier: category group &rarr; keyword regex &rarr; nominal code range<br>
+      Output: each account &rarr; P&amp;L line (REVENUE, COGS, STAFF, PREMISES, etc.)
+    </div>
+  </div>
+  <div class="box box-derive">
+    <div class="box-title">BS Opening Positions</div>
+    <div class="box-items">
+      Pattern-matching on account names: cash, receivables, payables, VAT, corp tax, PAYE, loans, share capital, PPE, retained earnings
+    </div>
+  </div>
+</div>
+
+<div class="flow-arrow">&rarr;</div>
+
+<div class="flow-col">
+  <div class="box box-derive">
+    <div class="box-title">Three-Way Assumptions (15 parameters)</div>
+    <div class="box-items">
+      <strong>Revenue growth rate</strong>: from metrics or default 5%<br>
+      <strong>Gross margin</strong>: from classified TB or default 100%<br>
+      <strong>Inflation rate</strong>: from CPI or default 3%<br>
+      <strong>DSO / DPO days</strong>: from metrics or default 30<br>
+      <strong>DSO / DPO trend</strong>: from metrics or none<br>
+      <strong>Corp tax rate</strong>: from HMRC or default 25%<br>
+      <strong>VAT rate</strong>: always 20%<br>
+      <strong>Capex %</strong>: <code>min(0.15, dep/income)</code> or 0<br>
+      <strong>Dividend %</strong>: <code>min(1, div/(RE+div))</code> or 0<br>
+      <strong>BoE base rate</strong>: from BoE or default 5%<br>
+      <strong>Loan spread</strong>: always 3%<br>
+      <strong>Fixed ratio</strong>: from expense analysis or 0<br>
+      <strong>FY end month</strong>: always March<br>
+      <strong>VAT quarter months</strong>: [1, 4, 7, 10]
+    </div>
+  </div>
+  <div class="box box-user">
+    <div class="box-title">User Inputs (optional)</div>
+    <div class="box-items">
+      <strong>Driver overrides</strong>: override any of 9 assumptions at specific weeks<br>
+      <strong>Events</strong>: 17 types (hire, loan, asset purchase, new customer, etc.)<br>
+      <strong>Sliders</strong>: 9 sliders &rarr; converted to driver overrides<br>
+      <strong>Scenario text</strong>: natural language &rarr; LLM &rarr; overrides + events
+    </div>
+  </div>
+</div>
+
+</div>
+
+<hr>
+
+<!-- ═══════════════ LAYER 2: ENGINES ═══════════════ -->
+
+<h2>2. Forecast Engines</h2>
+
+<p>Four engines, each serving a different purpose. The three-way engine is the most complex.</p>
+
+<!-- 13-WEEK -->
+<details class="engine-detail">
+<summary>13-Week Direct Method &mdash; transaction-level, highest near-term accuracy</summary>
+<div class="inner">
+
+<p><strong>Inputs</strong>: opening bank balance, outstanding invoices, outstanding bills, recurring streams, weekly opex baseline.</p>
+
+<p><strong>Per-week loop</strong> (w = 1 to 13):</p>
+
+<div class="step"><div class="step-num">1</div><div class="step-text"><strong>Customer collections</strong> = &sum;(invoice.amount where due_date &isin; this week). Week 1 also sweeps overdue invoices.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text"><strong>Supplier payments</strong> = &sum;(bill.amount where due_date &isin; this week). Week 1 also sweeps overdue bills.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text"><strong>Recurring stream expenses</strong>: for each stream, if next_expected &isin; this week, add median_amount to its component bucket (rent, payroll, utilities&hellip;), advance next_expected by frequency.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text"><strong>Residual opex</strong> = <code>max(weekly_opex &minus; total_recurring_this_week, 0)</code></div></div>
+<div class="step"><div class="step-num">5</div><div class="step-text"><strong>Net cash flow</strong> = total_receipts &minus; total_disbursements</div></div>
+<div class="step"><div class="step-num">6</div><div class="step-text"><strong>Closing balance</strong> = opening + net. Carry forward as next week&rsquo;s opening.</div></div>
+
+<div class="formula-row"><strong>Output</strong>: 13 &times; WeekProjection (receipts, disbursements by component, net, opening/closing balance) + ForecastMetrics (min cash, runway, averages).</div>
+</div>
+</details>
+
+<!-- 5-YEAR -->
+<details class="engine-detail">
+<summary>5-Year Indirect Method &mdash; rate-based projection, 260 weeks</summary>
+<div class="inner">
+
+<p><strong>Inputs</strong>: base_weekly_revenue (from 13-week avg or metrics), growth rate, seasonal indices, recurring streams, inflation, fixed_ratio, DSO trend, invoice CV.</p>
+
+<p><strong>Pre-loop</strong>:</p>
+<div class="formula-row"><code>residual_weekly = max(avg_disbursements &minus; total_recurring_weekly, 0)</code><br><code>blended_rate = (inflation + growth) / 2</code></div>
+
+<p><strong>Per-week loop</strong> (w = 1 to 260):</p>
+
+<div class="step"><div class="step-num">1</div><div class="step-text"><strong>Receipts</strong> = <code>base &times; (1+g)<sup>year</sup> &times; S(month)</code>. If DSO trend &gt; 1 d/q: <code>&times; max(0.70, 1 &minus; drag &times; year)</code></div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text"><strong>Fixed stream costs</strong>: each <code>&times; (1+inflation)<sup>year</sup></code>. <strong>Variable stream costs</strong>: each <code>&times; (1+growth)<sup>year</sup></code>.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text"><strong>Residual costs</strong> = <code>residual &times; (1+blended)<sup>year</sup> &times; dampened_seasonal</code>, where dampened = <code>1 + (S&minus;1)(1&minus;f)</code>.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text"><strong>Net</strong> = receipts &minus; disbursements. <strong>Closing</strong> = opening + net.</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-text"><strong>Uncertainty</strong>: <code>&sigma;(w) = min(BASE + k&radic;(w&minus;1), 0.40)</code>. Spread = <code>|balance| &times; &sigma;</code>.</div></div>
+
+<div class="formula-row"><strong>Output</strong>: 260 weekly + 60 monthly projections, each with uncertainty bounds.</div>
+</div>
+</details>
+
+<!-- THREE-WAY -->
+<details class="engine-detail" open>
+<summary>Three-Way Engine &mdash; P&amp;L &rarr; BS &rarr; CF, the core model</summary>
+<div class="inner">
+
+<p><strong>Inputs</strong>: all 15 assumptions, BS opening positions, classified accounts, seasonal indices, base revenue, driver overrides, event injections, P&amp;L cache.</p>
+
+<p>9 steps, executed in strict order:</p>
+
+<div class="step"><div class="step-num">0</div><div class="step-text"><strong>Partition events</strong> into recurring (hire, asset purchase&hellip;) and punctual (issue invoice, dividend, equity injection&hellip;). Expand each into per-week <code>EventEffect(week, pl_effects, bs_effects)</code>.</div></div>
+
+<div class="step"><div class="step-num">1</div><div class="step-text"><strong>Project P&amp;L</strong> (260 weeks). Per week, resolve driver overrides (latest-start-week wins), then:
+<div class="formula-row">
+<code>revenue = base_monthly / 4.33 &times; (1+growth)<sup>year</sup> &times; S(month)</code><br>
+<code>COGS = revenue &times; (1 &minus; margin)</code><br>
+<code>staff = named_opex / 4.33 &times; (1+inflation)<sup>year</sup></code> &nbsp;(FIXED)<br>
+<code>marketing = named_opex / 4.33 &times; (1+growth)<sup>year</sup></code> &nbsp;(VARIABLE)<br>
+<code>other_opex = residual / 4.33 &times; (1+blended)<sup>year</sup> &times; dampened_S</code><br>
+<code>depreciation = dep_monthly / 4.33</code> &nbsp;(flat)<br>
+<code>interest = loan_balance &times; (BoE + spread) / 52</code><br>
+<code>corp_tax = max(0, PBT &times; rate)</code><br>
+<code>net_profit = PBT &minus; tax</code>
+</div>
+</div></div>
+
+<div class="step"><div class="step-num">2</div><div class="step-text"><strong>Apply event P&amp;L effects</strong>. Add recurring then punctual deltas to each P&amp;L line. Recompute gross profit, opex, PBT, tax, net profit.</div></div>
+
+<div class="step"><div class="step-num">3</div><div class="step-text"><strong>Compute punctual BS deltas</strong>. For each one-off revenue event: create a receivable, clear after DSO days. For each one-off cost: create a payable, clear after DPO days. Mini-ledger with collection lag = <code>ceil(DSO/7)</code> weeks.</div></div>
+
+<div class="step"><div class="step-num">4</div><div class="step-text"><strong>Roll forward BS</strong> (260 weeks). Per week, resolve DSO/DPO/capex/dividend overrides, apply trends, then:
+<div class="formula-row">
+<code>trade_receivables = revenue &times; effective_DSO / 7</code> &nbsp;(excluding punctual revenue)<br>
+<code>trade_payables = COGS &times; effective_DPO / 7</code><br>
+<code>PPE = opening + cumulative_capex &minus; cumulative_depreciation</code><br>
+<code>VAT: net = (revenue &times; 20%) &minus; (COGS + cash_opex) &times; 20%</code> &mdash; accumulates, drains quarterly<br>
+<code>PAYE: staff &times; 25%</code> &mdash; accumulates, drains every 4 weeks<br>
+<code>Corp tax: from P&amp;L</code> &mdash; accumulates, drains annually<br>
+<code>retained_earnings = prev + net_profit &minus; dividends</code><br>
+<code><strong>cash = total_L_E &minus; non_cash_assets</strong></code> &nbsp;(THE PLUG)
+</div>
+</div></div>
+
+<div class="step"><div class="step-num">5</div><div class="step-text"><strong>Apply event BS effects</strong>. Cumulative stock changes: PPE, bank_loans, share_capital from event effects. Merge punctual receivables/payables from the mini-ledger.</div></div>
+
+<div class="step"><div class="step-num">6</div><div class="step-text"><strong>Recompute cash plug</strong> after all event modifications. $A = L + E$ must hold every week.</div></div>
+
+<div class="step"><div class="step-num">7</div><div class="step-text"><strong>Derive CF</strong> (indirect method, 260 weeks):
+<div class="formula-row">
+<code>CFO = net_profit + depreciation &minus; &Delta;AR + &Delta;AP + &Delta;VAT + &Delta;corp_tax + &Delta;PAYE + &Delta;other_WC</code><br>
+<code>CFI = &minus;capex</code><br>
+<code>CFF = new_borrowing + loan_repayments + dividends + equity_injections</code><br>
+<code>&Delta;Cash = CFO + CFI + CFF</code> &nbsp;&mdash; must equal <code>BS_cash(w) &minus; BS_cash(w&minus;1)</code>
+</div>
+</div></div>
+
+<div class="step"><div class="step-num">8</div><div class="step-text"><strong>Aggregate to monthly</strong> (up to 60 months). P&amp;L and CF: sum weekly values. BS: snapshot last week of each month.</div></div>
+
+<div class="formula-row"><strong>Output</strong>: 260 weekly + 60 monthly of each: P&amp;L (18 fields), BS (21 fields), CF (21 fields), plus the assumptions used.</div>
+</div>
+</details>
+
+<!-- SMART CAUSAL -->
+<details class="engine-detail">
+<summary>Smart Causal Forecast &mdash; macro signal overlay on 13-week baseline</summary>
+<div class="inner">
+
+<p><strong>Inputs</strong>: 13-week baseline forecast, business profile, current vs baseline external factors.</p>
+
+<div class="step"><div class="step-num">1</div><div class="step-text"><strong>Determine relevant signals</strong> for this business (by industry, SIC codes, exposure flags).</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text"><strong>Generate ImpactFragments</strong> for each signal where current &ne; baseline. Generators: employer NI, pension, base rate, living wage, FX, commodities. Each fragment = absolute or percentage delta on a cash flow component.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-text"><strong>Apply fragments independently</strong> to baseline: <code>result = baseline + &sum;(absolute &times; intensity) + &sum;(baseline &times; pct/100 &times; intensity)</code>. REPLACEMENT takes precedence. Cascade balances.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-text"><strong>Calculate uncertainty</strong> from fragment count and certainty levels (heuristic strategy, quadrature combination).</div></div>
+
+<div class="formula-row"><strong>Output</strong>: baseline + adjusted 13-week forecasts, uncertainty bounds, list of macro fragments with total impact.</div>
+</div>
+</details>
+
+<hr>
+
+<!-- ═══════════════ LAYER 3: OUTPUTS ═══════════════ -->
+
+<h2>3. Outputs</h2>
+
+<div class="flow">
+
+<div class="flow-col">
+  <div class="box box-engine">
+    <div class="box-title">Engine Results</div>
+    <div class="box-items">
+      <strong>13-week</strong>: 13 &times; WeekProjection (receipts/disbursements by component, net, balance)<br>
+      <strong>5-year</strong>: 260 weekly + 60 monthly (receipts, disbursements, net, balance, uncertainty bounds)<br>
+      <strong>Three-way</strong>: 260 weekly + 60 monthly of P&amp;L (18 fields), BS (21 fields), CF (21 fields)<br>
+      <strong>Smart causal</strong>: baseline + adjusted 13-week, macro fragments, uncertainty
+    </div>
+  </div>
+</div>
+
+<div class="flow-arrow">&rarr;</div>
+
+<div class="flow-col">
+  <div class="box box-output">
+    <div class="box-title">Uncertainty Bands</div>
+    <div class="box-items">
+      <strong>5-year / 3-way</strong>: $\sigma(w) = \min(\text{BASE} + k\sqrt{w-1},\; 0.40)$<br>
+      BASE from invoice CV: 3% / 5% / 8%<br>
+      Spread = $|\text{balance}| \times \sigma(w)$<br>
+      <strong>Smart causal</strong>: quadrature from fragment uncertainties
+    </div>
+  </div>
+  <div class="box box-output">
+    <div class="box-title">Verification Checks</div>
+    <div class="box-items">
+      <strong>Check 1</strong>: $A = L + E$ every week (BS balance)<br>
+      <strong>Check 2</strong>: CF closing cash = BS cash every week<br>
+      <strong>Check 3</strong>: P&amp;L net profit flows into retained earnings
+    </div>
+  </div>
+</div>
+
+<div class="flow-arrow">&rarr;</div>
+
+<div class="flow-col">
+  <div class="box box-output">
+    <div class="box-title">Client Delivery</div>
+    <div class="box-items">
+      <strong>API responses</strong>: JSON with weekly/monthly arrays<br>
+      <strong>Spreadsheet export</strong>: 4-sheet XLSX &mdash; assumptions, 260-week CF, 60-month CF, business health<br>
+      <strong>Assumptions tab</strong>: all 15 derived assumptions with source tags (derived/default)
+    </div>
+  </div>
+</div>
+
+</div>
+
+<hr>
+
+<!-- ═══════════════ CROSS-CUTTING FLOWS ═══════════════ -->
+
+<h2>4. Cross-Cutting Flows</h2>
+
+<details class="engine-detail">
+<summary>Scenario / What-If Pipeline</summary>
+<div class="inner">
+<p><strong>13-week path</strong>: user text &rarr; LLM (Claude/OpenAI/Gemini) &rarr; ScenarioAdjustment[] &rarr; adjustment engine (multipliers &rarr; deltas &rarr; overrides &rarr; delays) &rarr; modified 13-week &rarr; 5-year extension.</p>
+<p><strong>Three-way path</strong>: user text &rarr; LLM (Claude via Instructor) &rarr; ThreeWayExtractionResponse (driver overrides + named events + custom events) &rarr; converted to DriverOverride[] + AccountingEvent[] &rarr; fed into three-way engine.</p>
+<p><strong>Sliders path</strong> (no LLM): 9 slider values &rarr; <code>sliders_to_driver_overrides()</code> &rarr; DriverOverride[] &rarr; three-way engine.</p>
+</div>
+</details>
+
+<details class="engine-detail">
+<summary>Event Injection &mdash; 17 Event Types</summary>
+<div class="inner">
+<table style="width:100%; font-size:0.78rem; border-collapse:collapse;">
+<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:4px;">Event</th><th style="text-align:left;padding:4px;">P&amp;L Effect</th><th style="text-align:left;padding:4px;">BS Effect</th></tr>
+<tr><td style="padding:4px;">HIRE_EMPLOYEE</td><td>+staff (salary + NI + pension, weekly)</td><td>&mdash;</td></tr>
+<tr><td style="padding:4px;">HIRE_CONTRACTOR</td><td>+other_opex</td><td>&mdash;</td></tr>
+<tr><td style="padding:4px;">LOSE_EMPLOYEE</td><td>&minus;staff</td><td>&mdash;</td></tr>
+<tr><td style="padding:4px;">NEW_CUSTOMER</td><td>+revenue</td><td>&mdash;</td></tr>
+<tr><td style="padding:4px;">LOSE_CUSTOMER</td><td>&minus;revenue</td><td>&mdash;</td></tr>
+<tr><td style="padding:4px;">PRICE_CHANGE</td><td>+revenue (&times; multiplier)</td><td>&mdash;</td></tr>
+<tr><td style="padding:4px;">ASSET_PURCHASE</td><td>+depreciation</td><td>+PPE</td></tr>
+<tr><td style="padding:4px;">ASSET_PURCHASE_FINANCED</td><td>+depreciation + interest</td><td>+PPE, +loan</td></tr>
+<tr><td style="padding:4px;">NEW_LOAN</td><td>+interest (amortisation schedule)</td><td>+loan (drawdown), &minus;loan (repayments)</td></tr>
+<tr><td style="padding:4px;">LOAN_REPAYMENT</td><td>&mdash;</td><td>&minus;loan (one-off)</td></tr>
+<tr><td style="padding:4px;">NEW_RECURRING_COST</td><td>+P&amp;L line</td><td>&mdash;</td></tr>
+<tr><td style="padding:4px;">CANCEL_RECURRING_COST</td><td>&minus;P&amp;L line</td><td>&mdash;</td></tr>
+<tr><td style="padding:4px;">DIVIDEND_PAYMENT</td><td>&mdash;</td><td>&minus;retained_earnings</td></tr>
+<tr><td style="padding:4px;">EQUITY_INJECTION</td><td>&mdash;</td><td>+share_capital</td></tr>
+<tr><td style="padding:4px;">INVESTMENT_PROPERTY</td><td>+revenue (rental), +dep, +premises</td><td>+PPE</td></tr>
+<tr><td style="padding:4px;">ISSUE_INVOICE</td><td>+revenue (one-off)</td><td>&mdash; (punctual BS timing)</td></tr>
+<tr><td style="padding:4px;">CUSTOM</td><td>user-specified</td><td>user-specified</td></tr>
+</table>
+
+<p style="margin-top:0.8rem;">Events are partitioned into <strong>recurring</strong> (ongoing weekly P&amp;L effects) and <strong>punctual</strong> (one-off BS effects with DSO/DPO timing). Applied after P&amp;L projection but before BS roll-forward. Cash plug recomputed after all event modifications.</p>
+</div>
+</details>
+
+<details class="engine-detail">
+<summary>Driver Override Resolution</summary>
+<div class="inner">
+<p>9 overridable drivers: revenue_growth, gross_margin, inflation, DSO, DPO, corp_tax, capex, dividends, BoE_rate.</p>
+<p>Each override: <code>(driver, value, start_week, duration_weeks)</code>. At each forecast week, if multiple overrides match the same driver, <strong>latest start_week wins</strong>. If none match, base assumption value is used.</p>
+<p>P&amp;L engine resolves: growth, margin, inflation, BoE, corp_tax. BS engine resolves: DSO, DPO, capex, dividends.</p>
+</div>
+</details>
+
+<details class="engine-detail">
+<summary>Unified Two-Phase Forecast</summary>
+<div class="inner">
+<p>Production mode runs two phases:</p>
+<div class="step"><div class="step-num">1</div><div class="step-text"><strong>Phase 1</strong>: three-way engine for weeks 1&ndash;13. Uses actual invoices/bills for near-term accuracy where possible.</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-text"><strong>Phase 2</strong>: three-way engine for weeks 14&ndash;260, using Phase 1&rsquo;s final BS as the opening position. Events shifted by &minus;13 weeks.</div></div>
+<p>Combined output: 260 weeks, seamless handover at week 13.</p>
+</div>
+</details>
+
+<div class="nav">
+  <a href="index.html">&larr; Index</a>
+</div>
+
+<script src="nav.js"></script>
+<script src="tutor.js"></script>
+</body>
+</html>
