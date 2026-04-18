@@ -50,11 +50,19 @@
 
   var tools = document.createElement('div');
   tools.className = 'sidebar-tools';
-  var bioLink = document.createElement('a');
-  bioLink.href = prefix + 'index.html#biographies';
-  bioLink.className = 'sidebar-tool';
-  bioLink.textContent = 'Mathematicians';
-  tools.appendChild(bioLink);
+  var toolLinks = [
+    [prefix + 'model-diagram.html', 'Model Architecture'],
+    [prefix + 'alignment.html', 'Course–Model Alignment'],
+    [prefix + 'index.html#biographies', 'Mathematicians']
+  ];
+  toolLinks.forEach(function (t) {
+    var a = document.createElement('a');
+    a.href = t[0];
+    a.className = 'sidebar-tool';
+    if (currentPath.indexOf(t[0].replace(prefix, '').replace('#biographies', '')) > -1 && t[0].indexOf('#') === -1) a.classList.add('active');
+    a.textContent = t[1];
+    tools.appendChild(a);
+  });
   sidebar.appendChild(tools);
 
   var hr = document.createElement('hr');
