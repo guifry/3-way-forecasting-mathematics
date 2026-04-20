@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forecast Methodology — Technical Note for Advisors</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+<style>
+  body.methodology { max-width: 820px; margin: 0 auto; padding: 2rem 2.5rem 5rem; }
+  body.methodology h1 { font-size: 1.8rem; font-weight: 600; letter-spacing: -0.01em; }
+  body.methodology h2 { font-size: 1.2rem; font-weight: 600; margin-top: 2.5rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
+  body.methodology h3 { font-size: 1rem; font-weight: 600; margin-top: 1.5rem; color: var(--text); }
+  body.methodology p, body.methodology li { font-size: 0.93rem; line-height: 1.65; }
+  body.methodology .meta { font-size: 0.78rem; color: var(--muted); border: 1px solid var(--border); padding: 0.6rem 0.9rem; border-radius: 4px; margin: 1rem 0 2rem; }
+  body.methodology .meta strong { color: var(--text); }
+  body.methodology table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+  body.methodology th { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1.5px solid var(--border); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  body.methodology td { padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  body.methodology blockquote { border-left: 3px solid var(--border); padding: 0.4rem 1rem; margin: 1rem 0; color: var(--text-secondary); font-style: italic; font-size: 0.88rem; }
+  body.methodology .footnote { font-size: 0.78rem; color: var(--muted); margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+  body.methodology .toc { font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); padding: 0.8rem 1.2rem; border-radius: 4px; margin: 1.5rem 0; }
+  body.methodology .toc ol { margin: 0; padding-left: 1.4rem; }
+  body.methodology .toc li { margin: 0.15rem 0; }
+  body.methodology .toc a { color: var(--text-secondary); text-decoration: none; }
+  body.methodology .toc a:hover { color: var(--accent); }
+</style>
+</head>
+<body class="methodology">
+
+<h1>Forecast Methodology</h1>
+<p style="font-size:0.95rem; color:var(--muted); margin-top:0.3rem;">Technical note for accountants, finance leaders and lenders.</p>
+
+<div class="meta">
+  <strong>Document version:</strong> 0.1 (draft, April 2026) &nbsp;&middot;&nbsp;
+  <strong>Status:</strong> proof-of-concept &nbsp;&middot;&nbsp;
+  <strong>Audience:</strong> qualified accountants, CFOs, FP&amp;A leads, lending officers &nbsp;&middot;&nbsp;
+  <strong>Feedback welcome:</strong> see closing section.
+</div>
+
+<p>This note describes the methodology behind the three-way forecast produced by the Taisk Forecast engine. It is written for professional advisors who need to understand the mechanics underneath the user interface before recommending the tool to clients or relying on its output in their own work.</p>
+
+<p>It is not a sales document. It deliberately does not make claims about forecast accuracy. What it sets out to demonstrate is that the projection is built by deterministic procedural code following established methodology, and that the role of any large language model in the system is bounded to translating natural language into structured user intent &mdash; never to producing financial figures.</p>
+
+<div class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#scope">Scope and intended use</a></li>
+    <li><a href="#standards">Standards and frameworks the methodology draws on</a></li>
+    <li><a href="#llm">Where the language model sits, and where it does not</a></li>
+    <li><a href="#data">Data inputs and chart-of-accounts mapping</a></li>
+    <li><a href="#assumptions">How baseline assumptions are derived</a></li>
+    <li><a href="#projection">The forecasting methodology, line by line</a></li>
+    <li><a href="#articulation">Three-statement articulation</a></li>
+    <li><a href="#uncertainty">Uncertainty quantification</a></li>
+    <li><a href="#scenarios">Scenarios, overrides and event modelling</a></li>
+    <li><a href="#consistency">Internal consistency and verification</a></li>
+    <li><a href="#limitations">Known limitations and roadmap</a></li>
+    <li><a href="#references">References</a></li>
+  </ol>
+</div>
+
+<h2 id="scope">1. Scope and intended use</h2>
+
+<p>The engine produces a weekly three-way forecast (profit and loss, balance sheet, cash flow) over a horizon of up to 260 weeks (five years), with a separate transaction-level forecast for the first 13 weeks. It is built for UK small and mid-market companies operating under FRS 102 or FRS 105, with accounting data accessible through standard cloud bookkeeping integrations.</p>
+
+<p>The intended uses are:</p>
+
+<ul>
+  <li>Management forecasting and board reporting</li>
+  <li>Cash-flow planning and runway analysis</li>
+  <li>Lender packs and refinancing conversations</li>
+  <li>Scenario analysis around hiring, pricing, debt, capex and macroeconomic shocks</li>
+</ul>
+
+<p>The engine is not designed for, and should not be used for:</p>
+
+<ul>
+  <li>Forecasts incorporated in regulated communications (prospectuses, AIM admission documents, Class&nbsp;1 circulars, takeover documents) without independent reporting accountant review under SIR 2000</li>
+  <li>Replacement for a qualified accountant&rsquo;s judgement on going concern, fair value, deferred tax or impairment</li>
+  <li>Multi-entity consolidation with intercompany elimination</li>
+  <li>Group corporation tax planning, R&amp;D credit calculation or capital allowance optimisation</li>
+  <li>Inventory-heavy businesses where days-inventory-outstanding is a material driver of working capital</li>
+</ul>
+
+<p>The user remains responsible for the assumptions on which any forecast is built. The engine&rsquo;s role is to produce a defensible projection from a stated set of assumptions, with the lineage of every figure traceable back to the inputs.</p>
+
+<h2 id="standards">2. Standards and frameworks the methodology draws on</h2>
+
+<p>The engine&rsquo;s design choices are not invented. Each significant methodology choice is grounded in established practice. The principal references, by area:</p>
+
+<table>
+  <tr>
+    <th>Area</th>
+    <th>Standards and references drawn on</th>
+  </tr>
+  <tr>
+    <td>Three-statement integration and indirect cash flow</td>
+    <td>IAS&nbsp;7 <em>Statement of Cash Flows</em>; FRS&nbsp;102 Section&nbsp;7; ICAEW Financial Modelling Code; FAST Standard</td>
+  </tr>
+  <tr>
+    <td>Working capital metrics (DSO, DPO, CCC)</td>
+    <td>CFA Institute credit analysis curriculum; AFP and ACT cash forecasting guidance; GFOA</td>
+  </tr>
+  <tr>
+    <td>Cost classification (fixed / variable / semi-variable)</td>
+    <td>CIMA P2 management accounting; Horngren <em>Cost Accounting: A Managerial Emphasis</em></td>
+  </tr>
+  <tr>
+    <td>Seasonal decomposition</td>
+    <td>Classical multiplicative decomposition (ratio-to-moving-average), per Makridakis, Wheelwright &amp; Hyndman; the same mathematical core as US Census Bureau X-13ARIMA-SEATS without the parametric extension</td>
+  </tr>
+  <tr>
+    <td>Forecast uncertainty bands</td>
+    <td>Bank of England fan-chart methodology (Britton, Fisher &amp; Whitley, 1998); Wiener-process square-root-of-time rule, as in Black-Scholes</td>
+  </tr>
+  <tr>
+    <td>UK tax timing</td>
+    <td>HMRC VAT Notice&nbsp;700 series; PAYE / NI rules; Corporation Tax Manual; Pensions Act 2008 (auto-enrolment)</td>
+  </tr>
+  <tr>
+    <td>Loan amortisation</td>
+    <td>Standard present-value-of-annuity formula; ACT corporate treasury curriculum</td>
+  </tr>
+  <tr>
+    <td>Property, plant and equipment, leases</td>
+    <td>IAS&nbsp;16; FRS&nbsp;102 Section&nbsp;17; IAS&nbsp;40 (with stated simplification, see &sect;11)</td>
+  </tr>
+  <tr>
+    <td>Foundational accounting framework</td>
+    <td>Pacioli double-entry; FRS&nbsp;102 / IFRS prudence concept</td>
+  </tr>
+</table>
+
+<p>Where the engine departs from a more elaborate alternative, the rationale is documented &mdash; most notably, the choice not to use parametric ARIMA or state-space time-series models, on the basis that the typical user&rsquo;s 12 to 24 months of historical data is shorter than the 5-to-7-year minimum that ONS and US Census Bureau methodology recommends for reliable parametric identification.</p>
+
+<h2 id="llm">3. Where the language model sits, and where it does not</h2>
+
+<p>The forecast engine itself is entirely procedural. Every projection, every balance-sheet line, every cash-flow figure is produced by deterministic code following the methodology in &sect;6. No financial figure on any output is generated by a language model.</p>
+
+<p>The role of the language model is restricted to a single function: translating a user&rsquo;s natural-language scenario into a structured request that the procedural engine can consume. For example, the input <em>&ldquo;what if I hire two engineers in June and lose my biggest customer in September?&rdquo;</em> is translated by the LLM into:</p>
+
+<ul>
+  <li>A <code>HIRE_EMPLOYEE</code> event with parameters (count, salary, start week)</li>
+  <li>A <code>LOSE_CUSTOMER</code> event with parameters (monthly revenue, start week)</li>
+</ul>
+
+<p>The engine then projects the consequences of those events procedurally. The LLM&rsquo;s output is constrained by a JSON schema; outputs failing schema validation are rejected. The LLM is run with temperature&nbsp;0; structured-output validation is enforced via the Instructor library.</p>
+
+<p>The LLM does not:</p>
+
+<ul>
+  <li>Compute any P&amp;L line, balance-sheet position or cash-flow figure</li>
+  <li>Choose any growth rate, margin, tax rate or other assumption value</li>
+  <li>Override any modelling rule</li>
+  <li>Affect the verification or accounting-identity checks</li>
+</ul>
+
+<p>The same procedural separation applies to the macro-economic overlay (the &ldquo;smart causal&rdquo; layer), which propagates external factor changes (BoE base rate, FX rates, employer NI, CPI, commodity prices) into the forecast. That layer is also fully deterministic; it consumes the macro factor feeds and the business profile and computes each impact through standard sensitivity formulas.</p>
+
+<p>One consequence of this design: a forecast is fully reproducible from a stated set of inputs (assumptions, overrides, events). Two runs with identical inputs produce identical outputs, regardless of which LLM produced the structured request.</p>
+
+<h2 id="data">4. Data inputs and chart-of-accounts mapping</h2>
+
+<p>At the proof-of-concept stage the engine integrates with FreeAgent. Other UK accounting systems (Xero, QuickBooks Online, Sage) are on the roadmap. The data drawn from the source ledger is:</p>
+
+<ul>
+  <li>Paid invoices (24 months) &mdash; for revenue baseline, growth, seasonality, DSO, customer concentration</li>
+  <li>Outstanding invoices &mdash; for the 13-week direct cash forecast</li>
+  <li>Paid bills (24 months) &mdash; for DPO and recurring expense detection</li>
+  <li>Outstanding bills &mdash; for the 13-week direct cash forecast</li>
+  <li>Profit and loss statement &mdash; for cost baselines and depreciation</li>
+  <li>Trial balance with categorisation &mdash; for cost-line classification</li>
+  <li>Balance sheet &mdash; for opening positions</li>
+  <li>Bank account balances &mdash; for opening cash</li>
+</ul>
+
+<p>Trial balance accounts are mapped to standard P&amp;L lines (revenue, cost of sales, staff costs, premises, marketing, insurance, professional fees, depreciation, other operating expenses) using a three-tier classification: first by FreeAgent category group, then by regular-expression keyword matching against account names, then by nominal-code range as a fallback. The mapping logic is the same across all customers and is deterministic.</p>
+
+<p>External macro feeds (Bank of England base rate, HMRC corporation tax rate, employer NI threshold and rate, CPI, FX rates, commodity prices) are pulled from authoritative sources (BoE, HMRC, FRED, Frankfurter) on a scheduled basis. Each factor is timestamped with its effective date and source.</p>
+
+<h2 id="assumptions">5. How baseline assumptions are derived</h2>
+
+<p>The forecast is driven by a set of derived assumptions, each carrying a source tag (<em>derived</em> from the user&rsquo;s data, or <em>default</em> where data is insufficient). The user can see at a glance which assumptions are evidence-based and which are placeholders.</p>
+
+<table>
+  <tr>
+    <th>Assumption</th>
+    <th>Derivation</th>
+    <th>Default if data insufficient</th>
+  </tr>
+  <tr>
+    <td>Revenue growth rate</td>
+    <td>Trailing-12-month average vs prior-12, clamped to [&minus;20%, +25%]</td>
+    <td>5%</td>
+  </tr>
+  <tr>
+    <td>Gross margin</td>
+    <td>Derived from cost-of-sales accounts in the trial balance</td>
+    <td>100% (no COGS)</td>
+  </tr>
+  <tr>
+    <td>Inflation rate</td>
+    <td>From CPI external feed</td>
+    <td>3%</td>
+  </tr>
+  <tr>
+    <td>DSO / DPO</td>
+    <td>Median days to payment on paid invoices / bills (last 12 months, requires 10+)</td>
+    <td>30 days</td>
+  </tr>
+  <tr>
+    <td>DSO / DPO trend</td>
+    <td>OLS slope on quarterly median DSO/DPO (requires 3+ quarters)</td>
+    <td>None (no trend)</td>
+  </tr>
+  <tr>
+    <td>Seasonal indices (12)</td>
+    <td>Classical multiplicative decomposition, normalised to sum 12, floored at 0.20</td>
+    <td>Flat 1.0 in every month</td>
+  </tr>
+  <tr>
+    <td>Corporation tax rate</td>
+    <td>From HMRC external feed</td>
+    <td>25%</td>
+  </tr>
+  <tr>
+    <td>VAT rate</td>
+    <td>Standard rate</td>
+    <td>20%</td>
+  </tr>
+  <tr>
+    <td>Capex as % of revenue</td>
+    <td>min(0.15, depreciation / income), as a steady-state replacement proxy</td>
+    <td>0%</td>
+  </tr>
+  <tr>
+    <td>Dividend payout ratio</td>
+    <td>min(1, dividends / (retained profit + dividends))</td>
+    <td>0%</td>
+  </tr>
+  <tr>
+    <td>BoE base rate</td>
+    <td>From BoE external feed</td>
+    <td>5%</td>
+  </tr>
+  <tr>
+    <td>Loan spread</td>
+    <td>Default convention</td>
+    <td>3%</td>
+  </tr>
+  <tr>
+    <td>Fixed cost ratio</td>
+    <td>From recurring-stream classification (fixed / total)</td>
+    <td>0%</td>
+  </tr>
+  <tr>
+    <td>Financial year-end month</td>
+    <td>User-supplied or default</td>
+    <td>March</td>
+  </tr>
+</table>
+
+<p>Recurring expenses are detected from the bill ledger: bills are grouped by supplier and category, a stream is accepted only if there are at least three occurrences and both the interval and amount coefficients of variation are below 0.35, and the frequency (weekly, monthly, quarterly, annual) is inferred from the median interval. Streams marked as recurring directly in the source ledger are accepted with high confidence.</p>
+
+<h2 id="projection">6. The forecasting methodology, line by line</h2>
+
+<h3>6.1 Revenue</h3>
+
+<p>Weekly revenue is projected as <code>base_weekly &times; (1 + growth)<sup>year fraction</sup> &times; seasonal index for the month</code>. The growth factor uses continuous compounding to produce a smooth weekly trajectory rather than discrete annual steps. Seasonality redistributes annual revenue across months without inflating or deflating the annual total (the indices sum to 12).</p>
+
+<p>For the rate-based five-year forecast, an additional <em>DSO drag</em> factor is applied where the historical DSO trend exceeds 1 day per quarter. This adjusts cash receipts downward when collection efficiency is observably deteriorating, with a floor at 70% of the underlying revenue projection.</p>
+
+<h3>6.2 Cost of sales</h3>
+
+<p>Cost of sales is projected as <code>revenue &times; (1 &minus; gross margin)</code>, treating gross margin as a held constant across the projection horizon. This is a deliberate simplification &mdash; the engine does not auto-detect margin compression from input cost inflation or volume effects. The user can override gross margin per scenario.</p>
+
+<h3>6.3 Operating expenses</h3>
+
+<p>Operating expenses are projected by cost-volume-profit category:</p>
+
+<ul>
+  <li><strong>Fixed cost streams</strong> (rent, insurance, fixed salaries, software subscriptions): each grows at the inflation rate &mdash; <code>base &times; (1 + inflation)<sup>year fraction</sup></code></li>
+  <li><strong>Variable cost streams</strong> (commissions, transaction fees, materials proportional to revenue): each grows at the revenue growth rate &mdash; <code>base &times; (1 + growth)<sup>year fraction</sup></code></li>
+  <li><strong>Residual costs</strong> (everything in the P&amp;L not classified into a named category, after stripping non-cash depreciation): grows at a blended rate, the simple average of inflation and growth, with seasonality dampened by the fixed-cost ratio of the business</li>
+</ul>
+
+<p>Named operating expenses (staff costs, premises, marketing, insurance, professional fees) are derived from the trial balance classification and projected by their CVP type. The dampened seasonality on residual costs follows the formula <code>1 + (S &minus; 1) &times; (1 &minus; fixed ratio)</code>, which is a linear interpolation between full seasonality (when costs are fully variable) and no seasonality (when costs are fully fixed).</p>
+
+<h3>6.4 Working capital</h3>
+
+<p>Trade receivables are computed as <code>revenue &times; effective DSO / 7</code>, where the effective DSO at each forecast week is the base DSO adjusted by the historical trend (clamped to the range 7&ndash;120 days as a sanity bound). Trade payables are computed analogously from cost of sales and DPO. The cash conversion cycle is reported as DSO &minus; DPO; the engine does not currently track inventory days (DIO), as inventory data is not reliably available from the source ledger.</p>
+
+<h3>6.5 Tax timing</h3>
+
+<p>Three tax liabilities accumulate week by week and drain on their actual HMRC payment cycles:</p>
+
+<ul>
+  <li><strong>VAT.</strong> Output VAT (revenue &times; rate) less input VAT ((COGS + cash opex) &times; rate) accrues weekly and drains to zero on the first week of each VAT quarter.</li>
+  <li><strong>PAYE / NI.</strong> An aggregate payroll-tax charge of 25% of staff costs accrues weekly and drains every fourth week.</li>
+  <li><strong>Corporation tax.</strong> Computed as <code>max(0, profit before tax &times; rate)</code>, accrues weekly and drains annually, nine months after the financial year end (the standard cadence for companies below the &pound;1.5m profit threshold).</li>
+</ul>
+
+<p>The 25% PAYE / NI rate is a blended approximation across employee PAYE, employee NI, employer NI and apprenticeship levy &mdash; defensible as an aggregate but not exact for any specific employee. Hire and fire events expose a more precise calculation (salary, NI threshold, NI rate, pension percentage).</p>
+
+<h3>6.6 Depreciation, capex and PPE</h3>
+
+<p>Existing depreciation is taken from the trial balance and held flat across the projection. Capital expenditure is projected as a percentage of revenue, with the percentage derived from historical depreciation as a steady-state replacement proxy (capped at 15%). Asset purchase events (handled separately through the event injection pathway) add to PPE on the purchase week and create a straight-line depreciation stream over the asset&rsquo;s stated useful life. The engine uses straight-line depreciation only; reducing-balance and units-of-production methods are not supported.</p>
+
+<h3>6.7 Loans and interest</h3>
+
+<p>Existing loan balances are taken from the opening balance sheet. Interest expense is computed weekly as <code>balance &times; (BoE rate + spread) / 52</code>. New loan events use the standard present-value-of-annuity formula to produce a fixed weekly payment, which is split into interest (on the remaining balance) and principal (the rest); the balance amortises down over the loan&rsquo;s term. Interest-only loans, balloon loans and revolving facilities require custom event modelling.</p>
+
+<h3>6.8 Equity, dividends, retained earnings</h3>
+
+<p>Retained earnings roll forward as <code>prior + net profit &minus; dividends</code>. Dividends are projected as a percentage of net profit (capped at 100% of distributable profit). Equity injections are event-driven; share premium, multiple share classes and dilution mechanics are not modelled.</p>
+
+<h2 id="articulation">7. Three-statement articulation</h2>
+
+<p>The three statements are constructed in sequence:</p>
+
+<ol>
+  <li><strong>P&amp;L</strong> is projected first, as described in &sect;6.</li>
+  <li><strong>Balance sheet</strong> is rolled forward week by week, drawing on P&amp;L outputs (net profit flows into retained earnings; depreciation reduces PPE; revenue and cost of sales drive receivables and payables through DSO and DPO; tax accruals build and drain on their cycles).</li>
+  <li><strong>Cash</strong> is the residual that forces the balance sheet to balance: <code>cash = total equity and liabilities &minus; total non-cash assets</code>. This is the &ldquo;cash plug&rdquo; convention used in standard three-way modelling (CFI, Wall Street Prep, Macabacus, FAST). It is explicit, visible, and reported as a derived figure.</li>
+  <li><strong>Cash flow statement</strong> is then derived using the IAS 7 indirect method, working from net profit and adding back non-cash items, then adjusting for changes in balance-sheet positions:
+    <pre style="font-size:0.78rem; background:var(--surface); padding:0.6rem 0.9rem; border-radius:4px; overflow-x:auto;">
+CFO = net profit + depreciation
+      &minus; &Delta;trade receivables + &Delta;trade payables
+      + &Delta;VAT + &Delta;corp tax + &Delta;PAYE + &Delta;other working capital
+
+CFI = &minus;capex
+
+CFF = new borrowing + loan repayments + dividends paid + equity injections
+
+Net cash flow = CFO + CFI + CFF</pre>
+  </li>
+</ol>
+
+<p>The three statements articulate by construction. The accounting identity <em>Assets = Liabilities + Equity</em> is enforced at every weekly close via the cash plug. The change in cash from the cash flow statement equals the change in cash on the balance sheet at every week, by construction; the engine reports this tie as a verification check on every output (see &sect;10).</p>
+
+<h2 id="uncertainty">8. Uncertainty quantification</h2>
+
+<p>The engine produces confidence bands around the cash forecast that widen with the forecast horizon. The width grows as the square root of time &mdash; uncertainty at week 100 is approximately 10 times the uncertainty at week 1, not 100 times. This is the standard treatment of cumulative-error uncertainty in financial forecasting, derived from the Wiener-process variance property and used in the Bank of England&rsquo;s <em>Inflation Report</em> fan charts (Britton, Fisher &amp; Whitley, 1998) and the Black-Scholes option-pricing model.</p>
+
+<p>The uncertainty rate at each forecast week follows:</p>
+
+<pre style="font-size:0.85rem; background:var(--surface); padding:0.6rem 0.9rem; border-radius:4px; overflow-x:auto;">
+&sigma;(w) = min(BASE + k &middot; &radic;(w &minus; 1), MAX)
+
+where:
+  BASE = 3% / 5% / 8% depending on invoice size variability (CV)
+  MAX  = 40%
+  k    = (MAX &minus; BASE) / &radic;(259)</pre>
+
+<p>The starting uncertainty is calibrated to the volatility of the business&rsquo;s invoice sizes (the coefficient of variation): more predictable businesses get a lower starting band, more erratic ones a higher one. Bands are translated into confidence intervals using standard normal-distribution z-scores (1.645 for 90%, 1.96 for 95%, 2.576 for 99%).</p>
+
+<p>The bands are symmetric &mdash; a simplification of the Bank of England&rsquo;s asymmetric methodology, which calibrates skew to historical forecast errors and is not feasible at SMB-level data length. Where multiple independent uncertainty sources contribute (the base forecast plus a what-if scenario), they are combined in quadrature: <code>&sigma;_total = &radic;(&sigma;<sub>1</sub><sup>2</sup> + &sigma;<sub>2</sub><sup>2</sup>)</code>, the standard error-propagation formula.</p>
+
+<p>The bands assume errors are independent week to week. Serially correlated shocks (a recession, a sustained price war) will produce real-world deviations larger than the bands suggest. The bands are not a probabilistic guarantee; they are a structured representation of the model&rsquo;s own uncertainty about itself.</p>
+
+<h2 id="scenarios">9. Scenarios, overrides and event modelling</h2>
+
+<p>The user can modify the baseline forecast through three mechanisms, all of which feed structured inputs into the same procedural engine:</p>
+
+<h3>9.1 Driver overrides</h3>
+
+<p>Nine assumption drivers can be overridden directly: revenue growth, gross margin, inflation, DSO, DPO, corporation tax rate, capex percentage, dividend payout, and BoE base rate. Each override applies from a specified start week onward, optionally for a specified duration. Where multiple overrides for the same driver overlap, the latest start-week wins. Overrides can be set via sliders in the UI or via natural-language scenarios (translated by the LLM, per &sect;3).</p>
+
+<h3>9.2 Event injection</h3>
+
+<p>Seventeen event types are supported. Each is translated by the engine into a stream of weekly P&amp;L and balance-sheet effects that overlay the baseline:</p>
+
+<table>
+  <tr><th>Event</th><th>Primary effect</th></tr>
+  <tr><td>Hire / lose employee</td><td>Staff costs (salary + NI + pension)</td></tr>
+  <tr><td>Hire / lose contractor</td><td>Operating expenses</td></tr>
+  <tr><td>New / lose customer, price change</td><td>Revenue</td></tr>
+  <tr><td>Asset purchase (cash and financed)</td><td>PPE and depreciation</td></tr>
+  <tr><td>New loan, loan repayment</td><td>Debt and interest</td></tr>
+  <tr><td>New / cancel recurring cost</td><td>Operating expenses</td></tr>
+  <tr><td>Dividend payment, equity injection</td><td>Equity</td></tr>
+  <tr><td>Investment property</td><td>PPE, rental revenue, maintenance</td></tr>
+  <tr><td>Issue invoice (one-off)</td><td>Revenue and receivable</td></tr>
+  <tr><td>Custom event</td><td>User-specified P&amp;L and BS effects</td></tr>
+</table>
+
+<p>Events are partitioned into recurring (ongoing weekly effects) and punctual (one-off balance-sheet events with DSO/DPO timing). The cash plug is recomputed after all event modifications, ensuring the balance sheet still balances.</p>
+
+<h3>9.3 Adjustment composition</h3>
+
+<p>In the 13-week and 5-year cash forecasts, three types of adjustments compose: percentage multipliers (scale), absolute deltas (add or subtract), and overrides (replace). They apply in a fixed order: multipliers first, then deltas, then overrides. Multiple multipliers multiply together; multiple deltas sum; only the latest override survives. The order is documented as a known property &mdash; a delta of +&pound;5,000 followed by a multiplier of 1.1 yields a different result from the reverse order, and the chosen order prevents the delta from being scaled.</p>
+
+<h2 id="consistency">10. Internal consistency and verification</h2>
+
+<p>The engine reports two integrity checks on every output, at every weekly close:</p>
+
+<ul>
+  <li><strong>Balance check.</strong> Total assets minus (total liabilities + total equity) must equal zero. Any breach is a non-zero <code>balance_check</code> field on the weekly balance-sheet output.</li>
+  <li><strong>Cash flow tie.</strong> The change in cash from the cash flow statement must equal the change in the cash and bank line on the balance sheet. Any breach is a non-zero <code>bs_cash_check</code> field on the weekly cash-flow output.</li>
+</ul>
+
+<p>Both checks are run with effectively zero tolerance. A non-zero check indicates an engine bug, not a user data issue. These checks are visible to the user on every forecast.</p>
+
+<p>In addition, the seasonality engine maintains the invariant that the twelve seasonal indices sum to exactly 12 before and after the floor-and-redistribution step. The cumulative-balance invariant <code>opening(w+1) = closing(w)</code> is enforced throughout, with all subsequent balances automatically recalculated when any week is modified by an adjustment or event.</p>
+
+<h2 id="limitations">11. Known limitations and roadmap</h2>
+
+<p>This is a proof-of-concept engine. The following are known limitations, documented openly so that users can decide where the model is appropriate for their use and where they should rely on judgement or other tools.</p>
+
+<h3>Methodological simplifications</h3>
+
+<ul>
+  <li><strong>Time-series modelling.</strong> The engine does not use parametric ARIMA, exponential smoothing, state-space or Bayesian structural models. The justification is data length: 12&ndash;24 months is too short for reliable parametric identification (ONS recommends 7 years for X-13ARIMA). The cost of this simplification is the inability to detect changing trends, trading-day effects or Easter effects.</li>
+  <li><strong>Symmetric uncertainty bands.</strong> The full Bank of England fan-chart methodology uses asymmetric bands calibrated to historical forecast errors, which is not feasible at the data lengths typical for SMBs. The simpler symmetric bands overstate downside probability and understate upside in right-skewed cash flow distributions.</li>
+  <li><strong>Single-rate growth.</strong> The growth rate is a single annualised number applied across the projection horizon (subject to seasonality). S-curves, market saturation and industry-specific decay patterns are not captured.</li>
+  <li><strong>Constant gross margin.</strong> The engine does not auto-detect margin compression from input costs, customer mix, or volume effects.</li>
+  <li><strong>Constant fixed-cost ratio.</strong> The cost-mix is held at the historical ratio; structural shifts (outsourcing, automation) are not detected.</li>
+  <li><strong>Aggregate PAYE / NI.</strong> The 25% rate is a blended aggregate. Salary sacrifice, tax-coded variations, and apprenticeship levy thresholds are not modelled at the per-employee level outside hire events.</li>
+  <li><strong>Simplified VAT.</strong> Standard accrual VAT only. Flat-rate scheme, partial exemption, reverse charge and the cash accounting scheme are not modelled.</li>
+  <li><strong>Simplified corporation tax.</strong> Small profits rate, marginal relief, group relief, capital allowances, R&amp;D credits and the quarterly instalment regime for large companies are not modelled. Tax is computed on accounting profit, not adjusted taxable profit.</li>
+  <li><strong>No DIO.</strong> Inventory days are not separately tracked; CCC reduces to DSO &minus; DPO. Inventory-heavy businesses will see an understated CCC.</li>
+  <li><strong>Investment property.</strong> Treated as PPE rather than at fair value (IAS 40 fair-value model is not implemented).</li>
+  <li><strong>Single currency.</strong> Multi-currency forecasting is not supported as a primary mode; foreign-currency invoices and bills are translated at the prevailing rate.</li>
+</ul>
+
+<h3>Engine architecture</h3>
+
+<ul>
+  <li><strong>13-week and 5-year forecasts are computed independently.</strong> The 13-week direct cash forecast and the 5-year three-way forecast are produced by separate engine runs on the same underlying data. Week 13 cash in the 13-week view will not necessarily reconcile to week 13 cash in the 5-year view, because the former uses transaction-level data (outstanding invoices and bills) while the latter uses rate-based projection from week 1. An integrated handover is on the roadmap.</li>
+  <li><strong>No Monte Carlo simulation.</strong> Uncertainty is communicated through analytic confidence bands, not by sampling.</li>
+  <li><strong>No formal outlier detection.</strong> The engine relies on robust statistics (median over mean for payment timing) rather than explicit outlier removal.</li>
+  <li><strong>No backtest figures published.</strong> Internal backtesting is in progress but no published forecast-vs-actual variance analysis is yet available.</li>
+</ul>
+
+<h3>Operational</h3>
+
+<ul>
+  <li><strong>FreeAgent only at present.</strong> Other UK accounting integrations (Xero, QuickBooks, Sage) are on the roadmap.</li>
+  <li><strong>No Excel export of the working model.</strong> Outputs are exportable as XLSX (assumptions, weekly cash flow, monthly cash flow, business health) but the model itself is not exportable as a working spreadsheet.</li>
+  <li><strong>No audit-trail versioning of forecasts.</strong> Forecasts can be re-run on demand but a hash-stamped immutable record of each forecast run is not yet produced.</li>
+  <li><strong>No formal independent review.</strong> The methodology has not yet been reviewed by an external reporting accountant or independent quantitative auditor.</li>
+</ul>
+
+<h2 id="references">12. References</h2>
+
+<p>Selected references underlying the methodology choices in this document:</p>
+
+<ul>
+  <li>Britton, E., Fisher, P. and Whitley, J. (1998). <em>The Inflation Report projections: understanding the fan chart</em>. Bank of England Quarterly Bulletin, February 1998.</li>
+  <li>Box, G., Jenkins, G. and Reinsel, G. (2008). <em>Time Series Analysis: Forecasting and Control</em>. 4th ed.</li>
+  <li>Brealey, R., Myers, S. and Allen, F. (2020). <em>Principles of Corporate Finance</em>. 13th ed.</li>
+  <li>CFA Institute (current). <em>CFA Program Curriculum</em>, Levels I&ndash;III, Corporate Issuers and Financial Statement Analysis volumes.</li>
+  <li>CIMA (current). <em>Global Management Accounting Principles</em>; CIMA P2 syllabus on management accounting.</li>
+  <li>FAST Standards Organisation. <em>FAST Standard for Financial Modelling</em>.</li>
+  <li>HM Revenue and Customs. <em>VAT Notice 700 series</em>; <em>Corporation Tax Manual</em>; PAYE / NI rules.</li>
+  <li>Hyndman, R.J. and Athanasopoulos, G. (2021). <em>Forecasting: Principles and Practice</em>. 3rd ed.</li>
+  <li>IAS 7 <em>Statement of Cash Flows</em>; IAS 16 <em>Property, Plant and Equipment</em>; IAS 40 <em>Investment Property</em>; IFRS 9 <em>Financial Instruments</em>; IFRS 15 <em>Revenue from Contracts with Customers</em>.</li>
+  <li>ICAEW. <em>Financial Modelling Code</em>.</li>
+  <li>Horngren, C., Datar, S. and Rajan, M. (2014). <em>Cost Accounting: A Managerial Emphasis</em>. 15th ed.</li>
+  <li>Makridakis, S., Wheelwright, S. and Hyndman, R. (1998). <em>Forecasting: Methods and Applications</em>. 3rd ed.</li>
+  <li>Pacioli, L. (1494). <em>Summa de Arithmetica, Geometria, Proportioni et Proportionalit&agrave;</em>.</li>
+  <li>UK GAAP: <em>FRS 102</em> (Sections 7, 11, 17, 23, 29); <em>FRS 105</em> (micro-entities).</li>
+  <li>US Census Bureau. <em>X-13ARIMA-SEATS Reference Manual</em>.</li>
+</ul>
+
+<hr>
+
+<h2 id="feedback">Feedback</h2>
+
+<p>This is a living document at the proof-of-concept stage. The methodology will evolve and this note will be versioned and dated as it does. We welcome challenge, particularly on:</p>
+
+<ul>
+  <li>Areas where the engine&rsquo;s simplification is more material than we have acknowledged</li>
+  <li>Standards or references we have failed to cite where they apply</li>
+  <li>Methodological alternatives we should consider as the data lengths available to the engine grow</li>
+  <li>Items in the limitations list that should be brought forward in priority</li>
+</ul>
+
+<p>Direct any technical comments to the team via the contact channel of the product. Feedback from qualified accountants, finance leaders and lenders is the principal mechanism by which this methodology is sharpened.</p>
+
+<p class="footnote">This document is intended as a technical methodology note, not as a forecast, projection, or investment recommendation. Nothing in it constitutes accounting, tax, legal or investment advice. The engine is a tool to support, not replace, the judgement of qualified professionals.</p>
+
+<script src="nav.js"></script>
+<script src="tutor.js"></script>
+</body>
+</html>

@@ -51,6 +51,7 @@
   var tools = document.createElement('div');
   tools.className = 'sidebar-tools';
   var toolLinks = [
+    [prefix + 'methodology.html', 'For Advisors'],
     [prefix + 'model-graph.html', 'Model Graph'],
     [prefix + 'model-diagram.html', 'Model Details'],
     [prefix + 'alignment.html', 'Course–Model Alignment'],
