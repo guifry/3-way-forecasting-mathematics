@@ -22,8 +22,7 @@
     font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
   }
   body.hiw .hero {
-    margin-bottom: 5rem;
-    text-align: left;
+    margin-bottom: 4.5rem;
   }
   body.hiw .hero h1 {
     font-size: 2.4rem;
@@ -34,27 +33,17 @@
     color: var(--text);
   }
   body.hiw .hero p {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     line-height: 1.55;
     color: var(--text-secondary);
-    max-width: 580px;
+    max-width: 560px;
     margin: 0;
   }
   body.hiw section {
-    margin: 4.5rem 0;
-  }
-  body.hiw section h2 {
-    font-size: 0.78rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--accent);
-    margin: 0 0 1rem;
-    border: none;
-    padding: 0;
+    margin: 4rem 0;
   }
   body.hiw section h3 {
-    font-size: 1.5rem;
+    font-size: 1.45rem;
     line-height: 1.3;
     font-weight: 600;
     letter-spacing: -0.01em;
@@ -78,22 +67,23 @@
     margin: 2rem 0 0;
   }
   body.hiw .pillar h4 {
-    font-size: 0.95rem;
+    font-size: 0.98rem;
     font-weight: 600;
     color: var(--text);
-    margin: 0 0 0.4rem;
+    margin: 0 0 0.45rem;
   }
   body.hiw .pillar p {
     font-size: 0.9rem;
-    line-height: 1.55;
+    line-height: 1.6;
     color: var(--text-secondary);
     margin: 0;
   }
-  body.hiw .quiet {
-    font-size: 0.88rem;
+  body.hiw .pillar .cite {
+    display: block;
+    font-size: 0.78rem;
     color: var(--muted);
-    line-height: 1.55;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
+    font-style: italic;
   }
   body.hiw .check {
     display: flex;
@@ -107,29 +97,36 @@
     height: 6px;
     border-radius: 50%;
     background: var(--accent);
-    margin-top: 0.55rem;
+    margin-top: 0.6rem;
   }
   body.hiw .check span {
-    font-size: 0.95rem;
+    font-size: 0.96rem;
     line-height: 1.6;
     color: var(--text-secondary);
   }
   body.hiw .check span strong { color: var(--text); }
-  body.hiw .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 5rem 0;
-    border: none;
+  body.hiw .builton {
+    margin-top: 5rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid var(--border);
   }
-  body.hiw .closing {
-    font-size: 0.92rem;
+  body.hiw .builton .label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
     color: var(--muted);
-    line-height: 1.6;
-    border-left: 2px solid var(--border);
-    padding-left: 1.2rem;
-    margin: 4rem 0 0;
+    margin: 0 0 1.2rem;
   }
-  body.hiw .closing strong { color: var(--text-secondary); }
+  body.hiw .builton .standards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.4rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+  }
+  body.hiw .builton .standards span {
+    white-space: nowrap;
+  }
   @media (max-width: 600px) {
     body.hiw { padding: 2.5rem 1.4rem 4rem; }
     body.hiw .hero h1 { font-size: 1.9rem; }
@@ -140,74 +137,82 @@
 <body class="hiw">
 
 <div class="hero">
-  <h1>How the forecast works.</h1>
-  <p>A procedural three-statement model, grounded in standard accounting practice. Built to be explained.</p>
+  <h1>Three-way forecasts from your accounting data.</h1>
+  <p>Weekly P&amp;L, balance sheet and cash flow projections over five years, built on standard accounting practice.</p>
 </div>
 
 <section>
-  <h2>The model</h2>
-  <h3>Deterministic code. Standard methodology. No black boxes.</h3>
-  <p>Every figure on every projection is computed by procedural code following established financial-modelling practice. The engine takes your accounting data, derives a set of forecasting assumptions, and projects forward week by week to produce a complete profit and loss, balance sheet and cash flow statement.</p>
-  <p>The same inputs always produce the same outputs. Each assumption can be traced back to the historical data point or default value it came from.</p>
+  <h3>How your forecast is built</h3>
+  <p>Your accounting data is synced from your bookkeeping software. The engine derives a set of forecasting assumptions from your historical figures &mdash; revenue baseline, growth rate, seasonal pattern, gross margin, working-capital ratios, recurring cost streams &mdash; then projects them forward week by week to produce a complete profit and loss statement, balance sheet and cash flow statement.</p>
+  <p>Each assumption carries a source tag. You can see at a glance which figures were derived from your data and which fall back to defaults &mdash; for instance, days sales outstanding defaults to thirty days when fewer than ten paid invoices are available to compute it from.</p>
 </section>
 
 <section>
-  <h2>How AI is used</h2>
-  <h3>Language goes in. Numbers come out of code.</h3>
-  <p>A language model translates your natural-language scenarios — &ldquo;what if I hire two engineers in June and lose my biggest customer in September&rdquo; — into structured events and assumption changes that the procedural engine then projects.</p>
-  <p><strong>The language model never produces a number that appears on a financial statement.</strong> It writes the request; the deterministic model writes the answer.</p>
-</section>
-
-<section>
-  <h2>Foundations</h2>
-  <h3>Built on the same methods accountants already use.</h3>
+  <h3>What sits behind each part</h3>
   <div class="pillars">
     <div class="pillar">
       <h4>Three-statement integration</h4>
-      <p>P&amp;L flows into the balance sheet and cash flow exactly as required by IAS&nbsp;7 and FRS&nbsp;102 Section&nbsp;7, using the indirect method.</p>
+      <p>P&amp;L flows into the balance sheet, and the cash flow statement is derived from balance-sheet movements using the indirect method. Cash is the residual that makes the balance sheet balance.</p>
+      <span class="cite">IAS 7 &middot; FRS 102 s.7 &middot; FAST modelling standards</span>
     </div>
     <div class="pillar">
-      <h4>Working capital</h4>
-      <p>DSO, DPO and cash conversion cycle computed and projected per the conventions of the AFP, ACT and CFA Institute credit-analysis curricula.</p>
+      <h4>Revenue projection</h4>
+      <p>Weekly revenue projects forward at your historical growth rate, modulated by twelve monthly seasonal indices extracted from the past two years of paid invoices.</p>
+      <span class="cite">Classical multiplicative decomposition; Makridakis, Wheelwright &amp; Hyndman</span>
     </div>
     <div class="pillar">
       <h4>Cost behaviour</h4>
-      <p>Fixed, variable and residual costs classified using the cost-volume-profit framework taught in the CIMA P2 syllabus and Horngren&rsquo;s textbook.</p>
+      <p>Costs are classified as fixed, variable or residual. Fixed costs grow with inflation, variable costs grow with revenue, residual costs at a blended rate.</p>
+      <span class="cite">Cost-volume-profit framework, CIMA P2; Horngren</span>
     </div>
     <div class="pillar">
-      <h4>Seasonality</h4>
-      <p>Classical multiplicative decomposition (ratio-to-moving-average), the same mathematical core used by the ONS and the US Census Bureau.</p>
+      <h4>Working capital</h4>
+      <p>DSO and DPO are computed as the median days between invoice or bill issuance and payment &mdash; robust to outliers. Trade receivables and payables on the balance sheet derive from these.</p>
+      <span class="cite">CFA Institute credit analysis &middot; AFP &middot; ACT</span>
     </div>
     <div class="pillar">
       <h4>Tax timing</h4>
-      <p>VAT, PAYE/NI and corporation tax accruals modelled on the actual HMRC payment cycles, not as instantaneous P&amp;L charges.</p>
+      <p>VAT accrues weekly and drains on each quarter end. PAYE and NI drain monthly. Corporation tax drains nine months after your financial year end.</p>
+      <span class="cite">HMRC VAT Notice 700 series; PAYE; Corporation Tax Manual</span>
     </div>
     <div class="pillar">
       <h4>Forecast uncertainty</h4>
-      <p>Confidence bands that widen with the forecast horizon, derived from the same square-root-of-time rule used in Bank of England fan charts.</p>
+      <p>Confidence bands widen with the forecast horizon at the square root of time &mdash; the same rule used in Bank of England fan charts.</p>
+      <span class="cite">Britton, Fisher &amp; Whitley, BoE 1998</span>
     </div>
   </div>
 </section>
 
 <section>
-  <h2>Internal consistency</h2>
-  <h3>The model checks itself.</h3>
-  <div class="check"><div class="dot"></div><span><strong>Assets = Liabilities + Equity</strong> is enforced at every weekly close. Cash is the residual that makes the balance sheet balance.</span></div>
-  <div class="check"><div class="dot"></div><span><strong>Closing cash on the cash flow statement equals cash on the balance sheet</strong>, period by period, by construction.</span></div>
-  <div class="check"><div class="dot"></div><span><strong>Net profit flows into retained earnings</strong>; depreciation reduces fixed assets; working-capital changes reconcile to cash flow movements.</span></div>
-  <p class="quiet">Both balance checks are reported on every output. A breach is a model bug, not a user input issue, and surfaces immediately.</p>
+  <h3>Internal consistency</h3>
+  <div class="check"><div class="dot"></div><span><strong>Total assets equal total liabilities plus equity</strong> at every weekly close.</span></div>
+  <div class="check"><div class="dot"></div><span><strong>Closing cash on the cash flow statement equals cash on the balance sheet</strong>, week by week.</span></div>
+  <div class="check"><div class="dot"></div><span><strong>Net profit flows into retained earnings.</strong> Depreciation reduces fixed assets. Working-capital changes reconcile to cash flow movements.</span></div>
 </section>
 
 <section>
-  <h2>What it isn&rsquo;t</h2>
-  <h3>Honest about scope.</h3>
-  <p>The engine is a tool to produce a defensible projection from a stated set of assumptions. It does not replace the judgement of a qualified accountant on going concern, fair value, deferred tax or impairment. It is not designed for forecasts that go into regulated communications without independent reporting accountant review.</p>
-  <p>It is at the proof-of-concept stage. The methodology will continue to develop, and feedback from qualified accountants and finance leaders is the principal mechanism by which it sharpens.</p>
+  <h3>Where AI fits in</h3>
+  <p>You can describe scenarios in plain English. <em>&ldquo;What if I hire two engineers in June and lose my biggest customer in September.&rdquo;</em> A language model parses this into structured driver overrides and accounting events.</p>
+  <p>The procedural engine then projects the consequences. <strong>Numbers come from code.</strong> The AI translates intent.</p>
 </section>
 
-<hr class="divider">
-
-<p class="closing"><strong>A note on accuracy.</strong> Every forecast carries uncertainty. The engine&rsquo;s purpose is not to claim a level of precision it cannot deliver, but to produce a projection whose construction can be explained, defended and reproduced.</p>
+<div class="builton">
+  <p class="label">Built on</p>
+  <div class="standards">
+    <span>IAS 7</span>
+    <span>FRS 102</span>
+    <span>IAS 16</span>
+    <span>IFRS 9</span>
+    <span>HMRC tax rules</span>
+    <span>CIMA P2</span>
+    <span>CFA Institute</span>
+    <span>AFP</span>
+    <span>ACT</span>
+    <span>FAST modelling standards</span>
+    <span>ICAEW Financial Modelling Code</span>
+    <span>Bank of England fan-chart methodology</span>
+  </div>
+</div>
 
 <script src="nav.js"></script>
 <script src="tutor.js"></script>
